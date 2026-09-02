@@ -1,4 +1,5 @@
-type FilmStatus = never; // TODO: vervang door de toegelaten statussen
+// TODO: beschrijf de mogelijke statussen van een film.
+type FilmStatus = never;
 
 interface Film {
   // TODO: beschrijf een film
@@ -8,10 +9,11 @@ interface Vertoning {
   // TODO: beschrijf een vertoning
 }
 
-type FilmPreview = never; // TODO: gebruik Pick
-type NieuweFilm = never; // TODO: gebruik Omit
-type FilmUpdate = never; // TODO: gebruik Partial en Omit
-type ReadonlyFilm = never; // TODO: gebruik Readonly
+// TODO: leid deze types af uit Film zonder de properties opnieuw uit te schrijven.
+type FilmPreview = never;
+type NieuweFilm = never;
+type FilmUpdate = never;
+type ReadonlyFilm = never;
 
 const films = [
   {
@@ -79,12 +81,12 @@ interface ApiResponse<T> {
 }
 
 const findById = <T>(items: T[], id: number): T | undefined => {
-  // TODO: beperk T zodat item.id veilig gebruikt kan worden
+  // TODO: zorg ervoor dat deze functie veilig met item.id kan werken.
   return undefined;
 };
 
 const isFilmStatus = (waarde: unknown): waarde is FilmStatus => {
-  // TODO: controleer de drie toegelaten statussen
+  // TODO: controleer of de ontvangen waarde een geldige filmstatus is.
   return false;
 };
 
@@ -98,10 +100,11 @@ const parseFilm = (waarde: unknown): Film => {
   throw new Error("Nog niet geïmplementeerd");
 };
 
-type LaadResultaat<T> = never; // TODO: maak de discriminated union
+// TODO: beschrijf de mogelijke resultaten tijdens het laden van data.
+type LaadResultaat<T> = never;
 
 const beschrijfLaadResultaat = <T>(resultaat: LaadResultaat<T>): string => {
-  // TODO: handel iedere status af en voorzie een exhaustiveness check
+  // TODO: geef voor ieder mogelijk resultaat een duidelijke beschrijving.
   return "Nog niet geïmplementeerd";
 };
 

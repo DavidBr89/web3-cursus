@@ -110,14 +110,14 @@ Maak een interface `Vertoning` met een id, film-id, starttijd, zaal en het aanta
 
 ### Herbruikbare types
 
-Vertrek van `Film` en maak met utility types:
+Vertrek van `Film` en maak de volgende afgeleide types. Hergebruik telkens het bestaande type en kies zelf welke TypeScript-hulpmiddelen daarvoor geschikt zijn:
 
 - `FilmPreview`, met alleen `id`, `titel` en `status`;
 - `NieuweFilm`, met alle nodige gegevens behalve `id`;
-- `FilmUpdate`, waarin alle aanpasbare eigenschappen optioneel zijn;
+- `FilmUpdate`, waarin alle eigenschappen die aangepast mogen worden optioneel zijn;
 - `ReadonlyFilm`, waarvan properties niet opnieuw toegewezen mogen worden.
 
-Maak geen tweede volledige kopie van de interface `Film`.
+Schrijf de properties van `Film` niet opnieuw uit in deze types.
 
 ## Deel 2: Getypeerde functies
 
