@@ -33,10 +33,10 @@ const sidebars = {
     },
     {
       type: "category",
-      label: "Typescript",
+      label: "TypeScript",
       link: { type: "doc", id: "typescript" },
       collapsed: true,
-      items: ["typescript"],
+      items: ["typescript", "typescript-oefening"],
     },
     {
       type: "category",

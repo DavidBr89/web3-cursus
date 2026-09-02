@@ -1,0 +1,184 @@
+---
+title: "Classroom50-oefening: TypeScript"
+sidebar_label: "Oefening"
+sidebar_position: 4
+---
+
+import useBaseUrl from "@docusaurus/useBaseUrl";
+
+## Waarom deze oefening?
+
+In [TypeScript](./typescript.mdx) heb je gezien hoe types fouten vroeger zichtbaar maken en je code duidelijker maken. In dit labo pas je die leerstof toe op gegevens uit de bioscoopwebapplicatie.
+
+Dit is **één Classroom50-assignment** waarin je stap voor stap een getypeerde laag voor films en vertoningen uitwerkt. Je bouwt hier nog geen React-interface.
+
+<aside className="courseCallout courseCallout--info">
+
+<strong className="courseCallout__title">Classroom50</strong>
+
+Accepteer de assignment met je GitHub account. Classroom50 maakt daarna je persoonlijke repository aan, die je lokaal kan clonen.
+
+<a
+  className="assignmentAcceptLink"
+  href="https://classroom50.org/HoGent-web3/web-3/assignments/typescript/accept"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span>
+  <span>Assignment accepteren</span>
+  <span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Geen `any`</strong>
+
+Gebruik nergens `any` om een TypeScript-fout snel te omzeilen. Wanneer gegevens nog niet vertrouwd kunnen worden, vertrek je van `unknown` en controleer je de waarde met narrowing of een type guard.
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de nodige projectconfiguratie. Met dit bestand kan je de opdracht ook vooraf bekijken of lokaal voorbereiden.
+
+<a
+  className="downloadLink"
+  href={useBaseUrl("/files/typescript-starter.ts")}
+  download
+>
+  <span className="downloadLink__icon" aria-hidden="true">↓</span>
+  <span>Starterscode downloaden</span>
+  <span className="downloadLink__meta">TS</span>
+</a>
+
+## Werkwijze
+
+1. Accepteer de assignment in Classroom50.
+2. Clone je persoonlijke repository en open ze in VS Code.
+3. Installeer de dependencies zoals aangegeven in de `README`.
+4. Werk de opdrachten in volgorde af en verwijder de `TODO`-meldingen.
+5. Controleer regelmatig de TypeScript-fouten en voer de meegeleverde tests uit.
+6. Commit en push regelmatig naar je persoonlijke repository.
+
+## Situatie
+
+De bioscoop ontvangt filmgegevens van een externe bron. Die gegevens worden omgezet naar types die later in de applicatie gebruikt kunnen worden. Je schrijft types en functies voor films, vertoningen en laadresultaten.
+
+## Deel 1: Domeintypes
+
+### Film en status
+
+Maak een interface `Film` met deze eigenschappen:
+
+- `id`: een getal;
+- `titel`: tekst;
+- `speelduur`: een getal in minuten;
+- `genres`: een array van teksten;
+- `status`: alleen `"concept"`, `"actief"` of `"gearchiveerd"`;
+- `beschrijving`: optionele tekst.
+
+Maak voor de status een apart type `FilmStatus`. Gebruik dit type in `Film` en type daarna de meegeleverde array `films`.
+
+### Vertoning
+
+Maak een interface `Vertoning` met een id, film-id, starttijd, zaal en het aantal vrije plaatsen. Gebruik voor `starttijd` voorlopig een `Date`.
+
+### Herbruikbare types
+
+Vertrek van `Film` en maak met utility types:
+
+- `FilmPreview`, met alleen `id`, `titel` en `status`;
+- `NieuweFilm`, met alle nodige gegevens behalve `id`;
+- `FilmUpdate`, waarin alle aanpasbare eigenschappen optioneel zijn;
+- `ReadonlyFilm`, waarvan properties niet opnieuw toegewezen mogen worden.
+
+Maak geen tweede volledige kopie van de interface `Film`.
+
+## Deel 2: Getypeerde functies
+
+Voorzie expliciete parameter- en returntypes voor de volgende functies:
+
+- `getActieveFilms(films)`: returnt alleen actieve films;
+- `findFilmById(films, id)`: returnt de gevonden film of `undefined`;
+- `maakFilmPreview(film)`: returnt alleen de gegevens uit `FilmPreview`;
+- `maakNieuweFilm(data, id)`: voegt een id toe en returnt een volledige `Film`;
+- `pasFilmAan(film, wijzigingen)`: returnt een nieuwe film met de wijzigingen, zonder het oorspronkelijke object te muteren;
+- `getVertoningenVoorFilm(vertoningen, filmId)`: returnt alle vertoningen voor één film.
+
+Controleer bij elke functie of TypeScript ook op de plaats waar je de functie gebruikt het juiste type kan afleiden.
+
+## Deel 3: Generics
+
+### API-resultaat
+
+Maak een generiek type `ApiResponse<T>` met:
+
+- `success`: een boolean;
+- `data`: een waarde van type `T`;
+- `message`: tekst.
+
+Gebruik dit type voor een response met één film en voor een response met een array van films. De type-informatie van `data` moet in beide gevallen behouden blijven.
+
+### Zoeken op id
+
+Werk `findById<T>()` af zodat de functie gebruikt kan worden voor zowel films als vertoningen. Het generieke type moet minstens een numerieke property `id` hebben. De returnwaarde houdt rekening met een id dat niet bestaat.
+
+## Deel 4: Onbekende gegevens controleren
+
+De functie `parseFilm()` ontvangt `unknown`, omdat gegevens van buiten de applicatie niet automatisch vertrouwd mogen worden.
+
+1. Schrijf een type guard `isFilm(waarde): waarde is Film`.
+2. Controleer minstens de verplichte properties en hun types.
+3. Controleer dat `genres` een array is waarin ieder element tekst is.
+4. Controleer dat `status` een geldige `FilmStatus` is.
+5. Laat `parseFilm()` een duidelijke `Error` gooien wanneer de waarde geen geldige film is.
+
+Test de functie met minstens één geldige en twee ongeldige waarden. Gebruik geen type assertion om de controles over te slaan.
+
+## Deel 5: Laadtoestanden
+
+Maak een discriminated union `LaadResultaat<T>` met drie mogelijke toestanden:
+
+- `loading`;
+- `success`, met getypeerde data;
+- `error`, met een foutmelding.
+
+Werk daarna `beschrijfLaadResultaat()` af. De functie returnt voor elke toestand een duidelijke boodschap. Gebruik `switch` op de status zodat TypeScript het type in iedere tak kan vernauwen.
+
+Voeg zelf een compile-time controle toe waardoor een vergeten toestand later zichtbaar wordt wanneer de union uitgebreid wordt.
+
+## Deel 6: Typefouten onderzoeken
+
+De starterscode bevat expres enkele regels die niet correct zijn. Bekijk per regel eerst de melding van TypeScript en leg in een commentaar kort uit wat er fout loopt. Corrigeer daarna de code zonder `any`, `@ts-ignore` of een onveilige type assertion te gebruiken.
+
+Onderzoek minstens deze situaties:
+
+- een ongeldige filmstatus;
+- tekst gebruiken waar een getal verwacht wordt;
+- een optionele property gebruiken zonder controle;
+- een property aanpassen op een readonly object;
+- data uit `unknown` gebruiken vóór ze gecontroleerd is.
+
+## Oplevering
+
+Push minstens het volgende naar je persoonlijke Classroom50-repository:
+
+- alle uitgewerkte types en functies;
+- tests of controles voor normale én foutieve situaties;
+- korte commentaren bij de onderzochte TypeScript-fouten;
+- een `README` met je naam en een korte uitleg over één keuze die je maakte;
+- één voorbeeld van AI-code die je verbeterde of verwierp, wanneer je AI gebruikte.
+
+## Wat moet je kunnen uitleggen?
+
+De lector kan je vragen om een deel van je oplossing toe te lichten of aan te passen. Je moet onder andere kunnen uitleggen:
+
+- waarom een property optioneel of verplicht is;
+- wanneer je een interface, type alias of literal union gebruikte;
+- welke returntypes rekening houden met een ontbrekend resultaat;
+- waarom je generics gebruikt en welke beperking `extends` oplegt;
+- waarom externe gegevens eerst `unknown` zijn;
+- hoe je type guard de waarde stap voor stap controleert;
+- hoe TypeScript bij een discriminated union het juiste type herkent.
+
+Het doel is niet om types uit het hoofd te leren. Je moet kunnen aantonen dat je begrijpt welke fouten TypeScript voorkomt en dat je je code zelf kan aanpassen.

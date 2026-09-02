@@ -522,63 +522,9 @@ const isFilm = (waarde: unknown): waarde is Film => {
 
 Deze eenvoudige controle kijkt nog niet na of iedere property zelf het juiste type heeft. Voor uitgebreide validatie van externe data gebruiken we later eventueel een schema-library.
 
-## Oefeningen
+## Oefenen met TypeScript
 
-### Filmtype maken
-
-Maak een interface `Film` voor de volgende gegevens. `beschrijving` is optioneel en `status` mag alleen `"concept"`, `"actief"` of `"gearchiveerd"` zijn.
-
-```typescript
-const film = {
-  id: 1,
-  titel: "The Matrix",
-  speelduur: 136,
-  genres: ["actie", "sciencefiction"],
-  status: "actief"
-};
-```
-
-### Een functie typen
-
-Voeg de types voor de parameters en returnwaarde toe. De functie mag de oorspronkelijke array niet aanpassen.
-
-```typescript
-const getActieveFilms = (films) => {
-  return films.filter((film) => film.status === "actief");
-};
-```
-
-### API-resultaat met een generic
-
-Maak een generieke interface `ApiResponse<T>` met de properties `data`, `message` en `success`. Gebruik deze interface om `response` correct te typen.
-
-```typescript
-const response = {
-  data: [
-    { id: 1, titel: "The Matrix" },
-    { id: 2, titel: "Inception" }
-  ],
-  message: "Films opgehaald",
-  success: true
-};
-```
-
-### Types voor toevoegen en aanpassen
-
-Vertrek van de interface `Film` en maak met utility types:
-
-- `FilmPreview` met alleen `id` en `titel`;
-- `NieuweFilm` zonder `id`;
-- `FilmUpdate` waarin alle properties optioneel zijn;
-- `ReadonlyFilm` waarvan de properties niet opnieuw toegewezen mogen worden.
-
-### Laadresultaat afhandelen
-
-Maak een discriminated union voor een laadresultaat met `loading`, `success` en `error`. Schrijf daarna een functie die voor iedere toestand een duidelijke boodschap returnt.
-
-### Onbekende data controleren
-
-Schrijf een type guard `isFilm(waarde: unknown): waarde is Film`. Controleer minstens of `waarde` een niet-null object is en of `id`, `titel`, `speelduur` en `genres` aanwezig zijn met het juiste type.
+De grotere oefeningen bij dit hoofdstuk staan samen in het [TypeScript-labo](./typescript-oefening.mdx). Je werkt daar verder op filmgegevens uit de bioscoopwebapplicatie en levert alles in als één Classroom50-assignment.
 
 ## Controlevragen
 
