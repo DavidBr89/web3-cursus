@@ -24,777 +24,650 @@ import useBaseUrl from "@docusaurus/useBaseUrl";
 
 ## Doel
 
-Programmeren in JavaScript kan soms uitdagend zijn door het ontbreken van expliciete types. Dit kan leiden tot onduidelijkheden in de code en tot moeilijk op te sporen fouten, vooral in grotere projecten of wanneer meerdere ontwikkelaars aan dezelfde codebase werken. Daarom hebben we nood aan TypeScript.
+TypeScript is JavaScript met ondersteuning voor types. Hierdoor kan TypeScript veel fouten vinden voordat je de applicatie uitvoert. Dit maakt grotere React- en Node.js-projecten beter leesbaar en eenvoudiger om aan te passen.
 
-In dit onderdeel bouwen we een basiskennis op rond het gebruik van TypeScript. We vertrekken vanuit de JavaScript-kennis die jullie al hebben en leren hoe TypeScript kan helpen om code betrouwbaarder, leesbaarder en beter onderhoudbaar te maken. TypeScript wordt in deze cursus toegepast binnen zowel React-applicaties als Node.js-applicaties.
+Na dit hoofdstuk kan je:
 
-## Basisconcepten
-
-TypeScript (TS) is een uitbreiding (superset) van JavaScript (JS) die statische types introduceert. Het zorgt ervoor dat we **voorspelbare**, **veilige** en **goed onderhoudbare code** kunnen schrijven. 
-
-TypeScript bestaat uit 3 afzonderlijke onderdelen: **taal**, **compiler** en de **taaldienst**.
-
-![](/img/typescript/components.png)
-
-**Taal**: Bestaat uit de **syntax**, de **keywords** en de **type-annotaties**. De syntax lijkt op JS maar is niet volledig hetzelfde. Ontwikkelaars hebben het meeste contact met de taal zelf.
-
-**Compiler/Transpiler**: Verantwoordelijk voor het **verwijderen van de type-informatie** en het **uitvoeren van code-transformaties** (omzetten in uitvoerbare JS code). Wordt in deze context ook wel transpiling genoemd. Een extra onderdeel is ook de statische code-analyse die waarschuwingen of fouten genereerd.
-
-<aside className="courseCallout courseCallout--note">
-
-<strong className="courseCallout__title">Transpiling vs Compiling</strong>
-
-**Transpiling** is het **omzetten** van **leesbare bron code** naar **andere leesbare broncode** (in dit voorbeeld van TypeScript naar JavaScript). **Compiling** is het **omzetten** van **leesbare bron code** naar een **leesbaar formaat voor machines**.
-</aside>
-
-**De taaldienst**: **Verzamelt type-informatie uit de broncode**. Ontwikkeltools kunnen deze type-informatie gebruiken voor functies zoals **intellisense**, **typehints** en **mogelijke refactoring opties** (Bijvoorbeeld, Visual Studio Code suggesties worden gegeven aan de hand van de taaldienst).
-
-<aside className="courseCallout courseCallout--note">
-
-<strong className="courseCallout__title">Opmerking</strong>
-
-TypeScript wordt nog steeds omgezet naar gewone JavaScript (transpiling) omdat de browsers enkel JavaScript kunnen uitvoeren en geen TS.
-</aside>
-
-### Statische types
-
-TypeScript voegt types toe aan JavaScript. Hieronder zie je de verschillende types in TS en hoe deze onderling gerelateerd zijn aan elkaar.
-
-![](/img/typescript/tree.png)
+- uitleggen waarom we TypeScript gebruiken;
+- types laten afleiden of zelf toevoegen;
+- functies, arrays en objecten typen;
+- interfaces en type aliases gebruiken;
+- werken met union en literal types;
+- generics en belangrijke utility types toepassen;
+- een type veilig verkleinen met type guards;
+- vermijden dat `any` de typecontrole uitschakelt.
 
 <aside className="courseCallout courseCallout--warning">
 
-<strong className="courseCallout__title">Let op</strong>
+<strong className="courseCallout__title">Geen `any`</strong>
 
-We gebruiken zelf nooit **any** in onze code. Dit staat gelijk aan het terug uitschakelen van TS, wat niet de bedoeling is van deze cursus. **Dit kan punten kosten voor de evaluatie**.
+We gebruiken nergens zelf `any`. Met `any` schakel je de typecontrole voor die waarde uit. Onnodig gebruik kan punten kosten bij de evaluatie.
 </aside>
 
-TypeScript gebruikt standaard **_types by inference_**, wat er op neerkomt dat TS automatisch de meeste strikte type gaat proberen gebruiken bvb. wanneer je een waarde aan een variabele toekent.
+## Hoe werkt TypeScript?
+
+Browsers en Node.js voeren JavaScript uit, geen TypeScript. De TypeScriptcompiler controleert de types en verwijdert daarna alle type-informatie. Het resultaat is gewone JavaScript.
+
+TypeScript bestaat uit drie belangrijke onderdelen:
+
+- **de taal**: JavaScript met extra syntax om types te beschrijven;
+- **de compiler**: controleert de types en zet TypeScript om naar JavaScript;
+- **de taaldienst**: geeft onder andere type-informatie, autocomplete en refactoring in VS Code.
+
+![](/img/typescript/components.png)
+
+<aside className="courseCallout courseCallout--info">
+
+<strong className="courseCallout__title">TypeScript uitvoeren</strong>
+
+In deze cursus gebruiken we TypeScript binnen Vite- en Node.js-projecten. Je hoeft TypeScript niet apart globaal te installeren. Zorg wel dat [Node.js en Yarn](/ontwikkelomgeving/nodejs) correct geïnstalleerd zijn.
+</aside>
+
+## Type inference
+
+TypeScript kan het type van een waarde meestal zelf afleiden. Dit noemen we **type inference**.
 
 ```typescript
-const helloWorld = "Hello world";   // Automatisch van het type Hello world
-let anotherMsg: "test";             // Automatisch van het type string
-const aNumber = 5;                  // Automatisch van het type 5
-let anotherNumber = 10;             // Automatisch van het type number
-const numbersArr = [1, 2, 3, 4];    // Automatisch van het type [1, 2, 3, 4]
-let anotherArr = [5, 6, 7, 8];      // Automatisch van het type number[]       
+const titel = "The Matrix";       // string
+let speelduur = 136;              // number
+const actief = true;              // boolean
+const genres = ["actie", "sci-fi"]; // string[]
+```
+
+Bij een gewone `const`-variabele kan geen nieuwe waarde toegewezen worden. Voor het controleren van je code is `titel` hier bruikbaar als een `string`. Binnen een object worden properties standaard breder afgeleid, omdat hun waarde nog aangepast kan worden.
+
+```typescript
+const film = {
+  titel: "The Matrix",
+  speelduur: 136
+};
+
+film.titel = "Inception"; // Toegelaten: film.titel is van het type string.
 ```
 
 <aside className="courseCallout courseCallout--tip">
 
-<strong className="courseCallout__title">Tip</strong>
+<strong className="courseCallout__title">Bekijk het afgeleide type</strong>
 
-In VS Code kan je over een variabele / functie / object / array hoveren om zijn typing te bekijken in TS. Dit wordt gedaan door de taaldienst van TS.
+Hover in VS Code over een variabele of functie om te zien welk type TypeScript heeft afgeleid.
 </aside>
 
-![](/img/typescript/intellisensetype.png)
+## Basistypes
 
-Natuurlijk kan je ook expliciet de types declareren (a.h.v `: type`) en soms gaat dit ook nodig zijn. De meest voorkomende types die we zullen gebruiken zijn: 
+### Primitieve types
 
-**Primitieve types**: `string`, `number`, `boolean`, `null`, `undefined`
-**Arrays**: Gebruik `(primitief) type[]` of `Array<(primitief) type>` bvb. `string[]` of `Array<number>`
-**Tuples**: Array met vaste lengte en specifieke (primitieve) types
-**Enums**: Een set vooraf gedefinieerde waardes
-**any**: Laat elk type toe - **NIET GEBRUIKEN**
-**Union types**: Combineren van meerdere (Primitieve) types met `|`
-**Type alias**: Geeft een naam aan een (complex) type
+De meest gebruikte primitieve types zijn `string`, `number` en `boolean`.
 
 ```typescript
-// Primitive types
-const name: string = "React Developer";
-const age: number = 30;
-const isActive: boolean = true;
-
-const roles: string[] = ["admin", "editor"];        // Array
-const user: [number, string] = [1, "John Doe"];     // Tuple
-const input: string | number = "example";           // Union type
-
-type MyStr = string;                                // Type alias
-const nxtInput: MyStr = "Test";
+const titel: string = "The Matrix";
+const speelduur: number = 136;
+const actief: boolean = true;
 ```
 
-### Typen van functies
-
-Bij het beschrijven van een type van een functie moet je rekening houden met de **parameters** en de **return waarde** van deze functie. Kan op verschillende manieren beschreven worden; ofwel **inline** ofwel via een **type alias**. We bespreken beide opties:
-
-#### Inline typing
-
-<AnnotatedCodeBlock>
+Wanneer TypeScript het juiste type al kan afleiden, hoef je dit niet opnieuw te schrijven. De expliciete types hierboven zijn dus niet noodzakelijk.
 
 ```typescript
-const aFunc = (): void => {  // [!note Gebruik na de parameterlijst `(): void`]
-    console.log("Een functie dat niets retourneert.");
-};
-
-const anotherFunc = (msg: string) => {  // [!note Gebruik na de parameter `msg: string`]
-    console.log("Een functie die niets retourneert, en een msg binnenkrijgt.");
-}
+const titel = "The Matrix";
+const speelduur = 136;
+const actief = true;
 ```
 
-</AnnotatedCodeBlock>
+### Arrays
+
+Plaats `[]` achter het type van één element om een array te typen.
 
 ```typescript
-const sumFn = (a: number, b: number): number => a + b;
-
-const greeter = (): string => "Hello there!";
+const genres: string[] = ["actie", "sciencefiction"];
+const scores: number[] = [8, 9, 7];
 ```
 
-#### Type alias
+De langere vorm `Array<string>` is ook geldig, maar in deze cursus gebruiken we meestal `string[]`.
 
-Bij het beshrijven van een functie met een **type alias**, geef je het aangemaakte type aan de naam van de functie bij declaratie. Voordeel hiervan is dat deze types herbruikbaar zijn.
+### Tuples
+
+Een tuple is een array met een vaste lengte waarbij iedere positie een eigen type heeft.
 
 ```typescript
-type SumFunc = (a: number, b: number) => number;
-type GreeterFunc = () => void;
-
-const aSumFn: SumFunc = (a, b) => a + b;
-const aGreeter: GreeterFunc = () => console.log("Hi!");
+const vertoning: [string, number] = ["20:30", 42];
 ```
 
-TypeScript ondersteunt ook **optionele en standaardparameters**.
+Hier moet het eerste element een `string` zijn en het tweede een `number`.
 
-<AnnotatedCodeBlock>
+### Union types
+
+Met `|` geef je aan dat verschillende types of waarden toegelaten zijn.
 
 ```typescript
-const greet = (name: string = "Gast"): string => `Hallo, ${name}!`;  // [!note Standaardwaarden worden ingesteld met `=`]
+let geselecteerdeFilmId: number | null = null;
 
-const logMessage = (msg?: string): void => {  // [!note Optionele parameters worden aangegeven met een `?` achter de parameternaam]
-    console.log(msg ? msg : "Geen bericht meegegeven.");
+geselecteerdeFilmId = 2;
+```
+
+Een union met vaste waarden noemen we een **literal union**.
+
+```typescript
+type FilmStatus = "concept" | "actief" | "gearchiveerd";
+
+const status: FilmStatus = "actief";
+```
+
+Een waarde zoals `"verwijderd"` is niet toegelaten, omdat ze niet in `FilmStatus` staat.
+
+### `unknown` in plaats van `any`
+
+Wanneer je het type echt nog niet kent, gebruik je `unknown`. Je moet dan eerst controleren wat de waarde is voordat je ermee werkt.
+
+```typescript
+const toonWaarde = (waarde: unknown): void => {
+  if (typeof waarde === "string") {
+    console.log(waarde.toUpperCase());
+  }
 };
 ```
 
-</AnnotatedCodeBlock>
+Dit is veiliger dan `any`, omdat TypeScript je verplicht om de controle uit te voeren.
 
-### Interfaces en types
+## Functies typen
 
-Met **interfaces** en **type aliases** kun je de **structuur van objecten beschrijven**. Dit gaan we geregeld nodig hebben in React om onze props, state en context te beschrijven alsook in Node.js om objecten types te geven.
-
-Ook hier kan in veel TypeScript automatisch het type van een object afleiden. Dit noemen we type inference.
-
-#### Interfaces
-
-```typescript
-const user = {
-    id: 1,
-    name: "John",
-} // Het type wordt automatisch: { id: number; name: string;}
-```
-
-Hoewel TypeScript automatisch types kan afleiden, is het vaak **nuttig om expliciete types** te definiëren. Dit **verbetert** de **leesbaarheid** van de code en maakt het **type herbruikbaar**.
-
-```typescript
-interface User {
-    id: number;
-    name: string;
-}
-// Dit kan je dan gebruiken met de : syntax om ons eigen type te gebruiken
-const user: User = {
-    id: 1,
-    name: "John"
-}
-```
-
-Interfaces zijn **uitbreidbaar**, wat betekent dat je een **nieuwe interface** kunt maken die **eigenschappen** van een **andere interface overneemt**.
+Bij een functie kan je de parameters en de returnwaarde typen.
 
 <AnnotatedCodeBlock>
 
 ```typescript
-interface Address {
-    street: string;
-    city: string;
-}
-
-interface User {
-    id: number;
-    name: string;
-}
-
-interface UserWithAddress extends User, Address {  // [!note Met het `extends` keyword kun je meerdere interfaces combineren in één nieuw type]
-    phone?: string; // Optionele eigenschap
-}
-
-const userWithAddress: UserWithAddress = {
-    id: 1,
-    name: "John",
-    street: "Main Street",
-    city: "Metropolis",
-    phone: "123-456-7890",
+const berekenVrijePlaatsen = (capaciteit: number, verkocht: number): number => { // [!note Iedere parameter krijgt een type. Na de parameterlijst staat het type van de returnwaarde.]
+  return capaciteit - verkocht;
 };
 ```
 
 </AnnotatedCodeBlock>
 
-#### Type alias
+TypeScript kan de returnwaarde vaak zelf afleiden. Bij functies die deel uitmaken van de publieke werking van je applicatie kan een expliciet returntype wel extra duidelijkheid geven.
 
-Met een type alias kun je ook **objecten en andere constructies definiëren**. In tegenstelling tot interfaces, zijn types breder toepasbaar; je kunt ze gebruiken voor primitieve waarden, unies, en tuples.
+### `void`
 
-```typescript
-type User = {
-    id: number;
-    name: string;
-}
-// Dit kan je dan gebruiken met de : syntax om ons eigen type te gebruiken
-const user: User = {
-    id: 1,
-    name: "John"
-}
-```
-
-<aside className="courseCallout courseCallout--note">
-
-<strong className="courseCallout__title">Opmerking</strong>
-
-Het verschil in syntax om een object te typen met een interface of een type alias is het `=` teken en natuurlijk het `interface` of `type` keyword.
-</aside>
-
-Type aliases kunnen ook **complexe combinaties van types definiëren**, zoals unies. Met een type alias kun je **flexibele structuren definiëren** die verder gaan dan objecten.
+Gebruik `void` wanneer een functie geen bruikbare waarde returnt.
 
 ```typescript
-type ID = number | string;
-const userId1: ID = 123;
-const userId2: ID = "abc";
-
-type WindowStates = "open" | "closed" | "minimized";
-type LockStates = "locked" | "unlocked";
-type PositiveOddNumbersUnderTen = 1 | 3 | 5 | 7 | 9;
+const logFilm = (titel: string): void => {
+  console.log(titel);
+};
 ```
 
-<aside className="courseCallout courseCallout--note">
+### Optionele en standaardparameters
 
-<strong className="courseCallout__title">Belangrijkste verschillen</strong>
-
-Hoewel interfaces en types overlappen in functionaliteit, zijn er enkele belangrijke verschillen:
-
-- Interfaces ondersteunen **declaration merging**, wat betekent dat je **dezelfde interface meerdere keren kunt definiëren** en TypeScript deze **combineert**. Type aliases hebben deze mogelijkheid niet.
-
-- **Types** kunnen gebruikt worden om **unies** (|) en **intersecties** (&) te definiëren, terwijl interfaces zich beperken tot objectstructuren.
-
-- **Interfaces** worden meestal de voorkeur gegeven in **objectgeoriënteerde** **situaties**, vanwege hun uitbreidbaarheid.
-</aside>
-
-### Enums
-
-Enums zijn een handig hulpmiddel in TypeScript om een set van vooraf gedefinieerde constante
-waarden een naam te geven. Ze maken de code leesbaar en makkelijker te onderhouden, doordat je geen losse string- of nummerconstanten hoeft te gebruiken.
-
-#### Nummeriek
-
-**Standaard** zijn enums in TS **nummeriek** en **starten** ze net zoals bij de indexes van een array bij **0**. Handig als de exacte waarde niet van belang is.
-
-```typescript
-enum CompassDirection {
-    North,  // 0
-    East,   // 1
-    South,  // 2
-    West    // 3
-}
-
-const startingDirection = CompassDirection.East; // 1
-```
-
-Je kan zelf ook een startwaarde toewijzen. Alle volgende waarden worden dan automatisch verhoogd met 1:
-
-```typescript
-enum StatusCodes {
-    OK = 200,
-    BadRequest = 400,
-    Unauthorized,       // 401
-    PaymentRequired,    // 402
-    Forbidden,          // 403
-    NotFound            // 404
-}
-```
-
-Enums ondersteunen **bidirectionele toegang**, wat betekent dat je zowel een waarde als een key kan opvragen:
-
-```typescript
-const okNumber = StatusCodes.OK;            // 200
-const okNumberIndex = StatusCodes["OK"];    // 200
-const stringBadRequest = StatusCodes[400];  // Bad Request
-```
-
-#### Strings
-
-Soms is het nuttiger om enums op basis van strings te gebruiken. Dit maakt debugging eenvoudiger, omdat de waarden leesbaarder zijn in de console:
-
-```typescript
-enum GamePadInput {
-    Up = "UP",
-    Down = "DOWN",
-    Left = "LEFT",
-    Right = "RIGHT"
-}
-
-let input: GamePadInput;
-input = GamePadInput.Left; // "LEFT"
-```
-
-## Geavanceerde concepten
-
-### Generics
-
-**Generics** zijn een krachtig hulpmiddel in TypeScript waarmee je code kunt schrijven die **flexibel en herbruikbaar** is, **zonder** het **verlies van typeveiligheid**. In plaats van te werken met specifieke typen, laten generics je werken met typen die als parameter aan functies, klassen of interfaces worden doorgegeven.
-
-Bij het schrijven van functies of componenten wil je soms flexibiliteit bieden over welke typen worden gebruikt, zonder te vertrouwen op het minder specifieke any-type.
-
-<aside className="courseCallout courseCallout--danger">
-
-<strong className="courseCallout__title">Belangrijk</strong>
-
-Het gebruik van `any` schakelt de typecontrole uit, wat kan leiden tot fouten die pas tijdens runtime worden ontdekt.
-</aside>
-
-Generics lossen dit probleem op door je in staat te stellen een type als parameter door te geven, zodat je zowel flexibiliteit als typeveiligheid behoudt. Dit maakt je code:
-
-- **Herbruikbaar**: Eén functie of component kan met meerdere typen werken.
-- **Typeveilig**: TypeScript behoudt inzicht in de typen en biedt typecontrole.
-- **Leesbaar en onderhoudbaar**: De intentie van je code is duidelijker, omdat de types expliciet worden aangegeven.
-
-Laten we een eenvoudig voorbeeld bekijken van een functie zonder generics en hoe generics dit verbeteren:
+Een optionele parameter krijgt een `?`. Een standaardparameter krijgt een waarde met `=`.
 
 <AnnotatedCodeBlock>
 
 ```typescript
-function identity(arg: any): any {  // [!note Door `any` te gebruiken, is er geen type informatie beschikbaar]
-    return arg;
-}
-
-const result = identity("hello");   // Werkt, maar geen typecontrole
-console.log(result.toUpperCase());  // TypeScript weet niet dat dit een string is
+const beschrijfFilm = (
+  titel: string,
+  taal = "Nederlands", // [!note TypeScript leidt hier automatisch het type string af.]
+  ondertiteling?: string // [!note Door het vraagteken mag deze parameter ontbreken.]
+): string => {
+  return ondertiteling
+    ? `${titel}: ${taal}, ondertiteld in ${ondertiteling}`
+    : `${titel}: ${taal}`;
+};
 ```
 
 </AnnotatedCodeBlock>
+
+Een verplichte parameter mag niet na een optionele parameter komen.
+
+### Een functietype hergebruiken
+
+Met een type alias kan je de volledige vorm van een functie beschrijven.
+
+```typescript
+type FilmFilter = (minimumLeeftijd: number) => boolean;
+
+const geschiktVoorKinderen: FilmFilter = (minimumLeeftijd) => {
+  return minimumLeeftijd <= 12;
+};
+```
+
+## Objecten typen
+
+### Interfaces
+
+Een interface beschrijft de properties van een object.
+
+```typescript
+interface Film {
+  id: number;
+  titel: string;
+  speelduur: number;
+  genres: string[];
+  actief: boolean;
+}
+
+const film: Film = {
+  id: 1,
+  titel: "The Matrix",
+  speelduur: 136,
+  genres: ["actie", "sciencefiction"],
+  actief: true
+};
+```
+
+Een optionele property krijgt een `?`.
+
+```typescript
+interface Film {
+  beschrijving?: string;
+}
+```
+
+Interfaces met dezelfde naam worden door TypeScript samengevoegd. Dit noemen we **declaration merging**. Gebruik dit bewust; verspreid één eigen interface niet onnodig over verschillende plaatsen.
+
+### Interfaces uitbreiden
+
+Met `extends` maak je een nieuwe interface op basis van een bestaande interface.
 
 <AnnotatedCodeBlock>
 
 ```typescript
-function identity<T>(arg: T): T {  // [!note De `T` is een generieke typeparameter. Dit betekent dat we het specifieke type pas doorgeven wanneer we de functie gebruiken.]
-    return arg;
+interface FilmMetBeschikbaarheid extends Film { // [!note FilmMetBeschikbaarheid bevat alle properties van Film en voegt er één toe.]
+  vrijePlaatsen: number;
 }
-
-const result = identity<string>("hello");   // Type van T is nu een string
-console.log(result.toUpperCase());          // TypeScript weet dat dit een string is
 ```
 
 </AnnotatedCodeBlock>
 
-Hierdoor blijft de type-informatie behouden, en kan TypeScript je waarschuwen voor fouten.
+### Type aliases
 
-Generics kunnen ook worden gebruikt in interfaces. Dit is vooral handig in situaties zoals het bouwen van datastructuren (bijvoorbeeld lijsten, mappen) of React-componenten.
-
-
-<AnnotatedCodeBlock>
+Een type alias kan eveneens een object beschrijven.
 
 ```typescript
-interface Box<T> {  // [!note De interface Box accepteert een typeparameter `T` die bepaalt wat voor type content is. In dit voorbeeld string voor stringBox of number voor numberBox.]
-    content: T;
-}
-
-const stringBox: Box<string> = { content: "Hello" };    // Type van T is string
-const numberBox: Box<number> = { content: 42 };         //Type van T is number
+type Vertoning = {
+  id: number;
+  filmId: number;
+  tijdstip: string;
+  vrijePlaatsen: number;
+};
 ```
 
-</AnnotatedCodeBlock>
-
-### Utility types
-
-Naast de standaard types in TypeScript biedt TS een reeks **utility types** die je kunnen helpen om **bestaande types aan te passen en te manipuleren**. Deze utility types maken het eenvoudiger om herbruikbare en flexibele types te definiëren a.h.v. generics.
-
-#### `Partial<T>` - Maakt alle eigenschappen optionieel
-
-Met `Partial<T>` kun je een **bestaand type aanpassen** door **alle eigenschappen optioneel** te maken. Dit is handig bij updates waarbij niet alle velden verplicht zijn.
-
-<AnnotatedCodeBlock>
+Type aliases kunnen daarnaast ook gebruikt worden voor unions, tuples en primitieve types.
 
 ```typescript
-interface Sticker {
-    id: number;
-    name: string;
-    createdAt: string;
-    updatedAt: string;
-    submitter?: string;
-}
-
-type StickerUpdateParam = Partial<Sticker>  // [!note Alle eigenschappen van `Sticker` zijn nu optioneel]
-type StickerUpdateParamWithId = Partial<Sticker> & {id: number;}  // [!note Alle eigenschappen van `Sticker` zijn nu optioneel buiten de `id` property. Maakt gebruik van de intersection `&` type]
+type Id = number | string;
+type FilmStatus = "concept" | "actief" | "gearchiveerd";
+type TijdstipMetZaal = [string, number];
 ```
-
-</AnnotatedCodeBlock>
-
-#### `Readonly<T>` - Voorkomt wijzigingen aan eigenschappen
-
-`Readonly<T>` maakt **alle eigenschappen van een object immutable** (niet aanpasbaar). Hierdoor kan een object van dit type niet worden aangepast na creatie.
-
-```typescript
-type StickerFromAPI = Readonly<Sticker>
-```
-
-#### `Record<K, T>` - Objectstructuur met vaste keys
-
-Met `Record<K, T>` definieer je een **objecttype** waarbij de **keys een vooraf gedefinieerde set waarden zijn en de values een specifiek type hebben**.
-
-```typescript
-type NavigationPages = "home" | "stickers" | "about" | "contact";
-
-interface PageInfo {
-    title: string;
-    url: string;
-    axTitle?: string;
-}
-
-const navigationInfo: Record<NavigationPages, PageInfo> = {
-    home: { title: "Home", url: "/" },
-    about: { title: "About", url: "/about" },
-    contact: { title: "Contact", url: "/contact" },
-    stickers: { title: "Stickers", url: "/stickers" }
-}
-```
-
-#### `Pick<T, K>` - Selecteer specifieke eigenschappen
-
-Met `Pick<T, K>` kies je enkel **bepaalde eigenschappen van een type**.
-
-```typescript
-type StickerSortPreview = Pick<Sticker, "name" | "updatedAt">;
-```
-
-#### `Omit<T, K>` - Selecteer specifieke eigenschappen
-
-Het tegenovergestelde van `Pick<T, K>`. Hiermee **verwijder je bepaalde eigenschappen uit een type**.
-
-```typescript
-type StickerTimeMetadata = Omit<Sticker, "name">;
-```
-
-#### `ReturnType<T>` - Haal de return type van een functie op
-
-Met `ReturnType<T>` kun je de **return type van een functie afleiden en gebruiken**.
-
-```typescript
-type StickerLookupResult = Sticker | undefined | null;
-declare function getStickerById(id: number): Promise<StickerLookupResult>;
-type StickerResponse = ReturnType<typeof getStickerById>;
-```
-
-#### `Required<T>` - Maakt optionele eigenschappen verplicht
-
-Als je zeker wilt zijn dat **alle eigenschappen verplicht zijn**, kun je `Required<T>` gebruiken.
-
-```typescript
-type AccessiblePageInfo = Required<PageInfo>;
-```
-
-### Type guarding
-
-Type guarding is een techniek waarmee je het *type van een variabele in TS dynamisch kunt
-bepalen*. Dit helpt TS om de juiste type-inferentie toe te passen, waardoor je veiliger en voorspelbaarder met objecten kunt werken.
-
-#### Gebruik van de `in` operator
-
-Met de `in` operator kun je controleren of een bepaalde eigenschap bestaat in een object. Dit is handig om onderscheid te maken tussen verschillende typen in een union type.
-
-```typescript
-interface Order {
-    address: string;
-}
-
-interface TelephoneOrder extends Order {
-    callerNumber: string;
-}
-
-interface InternetOrder extends Order {
-    email: string;
-}
-
-type PossibleOrders = TelephoneOrder | InternetOrder | undefined;
-
-declare function getOrder(): PossibleOrders;
-const possibleOrder = getOrder();
-
-if("email" in possibleOrder) {
-    const mustBeInternetOrder = possibleOrder;
-    console.log("Order received via email: ", mustBeInternetOrder.email);
-}
-```
-
-#### Gebruik van `typeof`
-
-De `typeof` operator kan worden gebruikt om types van primitieve waarden zoals `string`, `number`, of `undefined` te controleren.
-
-```typescript
-if (typeof possibleOrder === "undefined") {
-    console.log("Geen order ontvangen.")
-}
-```
-
-### Type predicate functions
-Soms zijn bovenstaande methodes niet voldoende en wil je j**e eigen type-checkfunctie maken**. TS biedt hiervoor type predicate functions aan.
-
-```typescript
-function isAnInternetOrder(order: PossibleOrders): order is InternetOrder
-{
-    return order !== undefined && "email" in order;
-}
-
-function isATelephoneOrder(order: PossibleOrders): order is TelephoneOrder
-{
-    return order !== undefined && "callerNumber" in order;
-}
-
-if (isAnInternetOrder(possibleOrder)) {
-    console.log("Order ontvangen via email: ", possibleOrder.email);
-}
-
-if (isATelephoneOrder(possibleOrder)) {
-    console.log("Order ontvangen via telefoon: ", possibleOrder.callerNumber);
-}
-```
-
-## Installatie en configuratie
-
-TypeScript kan eenvoudig worden geïnstalleerd en geconfigureerd in jouw project. In dit gedeelte bespreken we hoe je TS installeert, de compiler configureert en een project opzet met een `tsconfig.json` bestand.
-
-### Installatie
-
-Om TypeScript te gebruiken, moet je het eerst installeren. Tijdens de lessen gebruiken we de globale installatie. Daarvoor moeten Node.js en Yarn al op je systeem staan.
-
-Heb je die nog niet geïnstalleerd? Volg dan eerst [Node.js en Yarn installeren](/ontwikkelomgeving/nodejs).
-
-Wanneer Node.js en Yarn correct geïnstalleerd zijn, kan je TypeScript globaal installeren:
 
 <aside className="courseCallout courseCallout--note">
 
-<strong className="courseCallout__title">Opmerking</strong>
+<strong className="courseCallout__title">Interface of type?</strong>
 
-**Voor windows gebruikers** is het **vanaf dit punt aan te raden** om **alle commando's** die in deze cursus gebruikt worden **uit te voeren in de opdrachtprompt (CMD)**. Powershell kan soms moeilijk doen om scripts uit te voeren van op het internet.
+Gebruik een interface wanneer je vooral de vorm van een object beschrijft en die eventueel wil uitbreiden. Gebruik een type alias voor unions, tuples en combinaties van types. Voor gewone objecten zijn beide mogelijkheden correct; wees vooral consistent.
 </aside>
 
-```batch
-# TypeScript globaal installeren
-yarn global add typescript
+## Enums en literal unions
 
-# Installatie controleren
-tsc
+Een enum geeft namen aan een vaste set waarden.
+
+```typescript
+enum GebruikersRol {
+  User = "USER",
+  Admin = "ADMIN"
+}
+
+const rol: GebruikersRol = GebruikersRol.Admin;
 ```
 
-![](/img/typescript/tsc.png)
+Voor eenvoudige vaste keuzes is een literal union vaak voldoende en levert deze minder extra JavaScript op.
 
-Als je een gelijkaardig scherm te zien krijgen zoals bovenstaande afbeelding dan betekent het dat typescript correct geïnstalleerd was op jouw systeem. We zullen hier momenteel niets verder mee doen.
+```typescript
+type GebruikersRol = "user" | "admin";
+```
 
-<aside className="courseCallout courseCallout--note">
+Gebruik een enum dus alleen wanneer je de enum ook echt als waarde tijdens de uitvoering nodig hebt.
 
-<strong className="courseCallout__title">Opmerking</strong>
+## Generics
 
-In dit OLOD zullen we vanaf het begin gebruik maken van TypeScript in onze React en Node.js projecten. We zullen dus ook verder stilstaan bij het configureren van TypeScript in de lessen.
+Met een generic schrijf je herbruikbare code zonder de type-informatie te verliezen. De concrete typeparameter wordt pas bepaald wanneer de functie, interface of het type gebruikt wordt.
+
+<AnnotatedCodeBlock>
+
+```typescript
+const eersteElement = <T,>(waarden: T[]): T | undefined => { // [!note T stelt het type van één element voor. De functie werkt daardoor met verschillende soorten arrays.]
+  return waarden[0];
+};
+
+const eersteTitel = eersteElement(["The Matrix", "Inception"]);
+const eersteScore = eersteElement([8, 9, 7]);
+```
+
+</AnnotatedCodeBlock>
+
+TypeScript leidt `T` hier automatisch af. Je hoeft dus meestal niet `eersteElement<string>(...)` te schrijven.
+
+### Generieke interfaces
+
+Generics zijn nuttig voor datastructuren waarvan de inhoud kan verschillen.
+
+```typescript
+interface ApiResponse<T> {
+  data: T;
+  message: string;
+}
+
+const response: ApiResponse<Film[]> = {
+  data: [],
+  message: "Films opgehaald"
+};
+```
+
+Dezelfde `ApiResponse` kan later ook een gebruiker, vertoning of ander type bevatten.
+
+## Utility types
+
+Utility types maken een nieuw type op basis van een bestaand type.
+
+### `Partial<T>`
+
+`Partial<T>` maakt alle properties optioneel. Dit is bijvoorbeeld bruikbaar voor een update waarbij niet elk veld gewijzigd wordt.
+
+```typescript
+type FilmUpdate = Partial<Film>;
+
+const wijziging: FilmUpdate = {
+  speelduur: 140
+};
+```
+
+### `Readonly<T>`
+
+`Readonly<T>` voorkomt dat properties via dit type opnieuw toegewezen worden.
+
+```typescript
+type ReadonlyFilm = Readonly<Film>;
+```
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Niet diep readonly</strong>
+
+`Readonly<T>` werkt alleen op het buitenste niveau. Een geneste array of een genest object wordt hierdoor niet automatisch volledig readonly.
 </aside>
+
+### `Pick<T, K>` en `Omit<T, K>`
+
+`Pick` behoudt alleen de gekozen properties. `Omit` laat de gekozen properties weg.
+
+```typescript
+type FilmPreview = Pick<Film, "id" | "titel">;
+type NieuweFilm = Omit<Film, "id">;
+```
+
+### `Record<K, T>`
+
+`Record` beschrijft een object met een vaste set keys en één type voor de values.
+
+```typescript
+type FilmStatus = "concept" | "actief" | "gearchiveerd";
+
+const statusLabels: Record<FilmStatus, string> = {
+  concept: "Concept",
+  actief: "Nu te zien",
+  gearchiveerd: "Niet meer beschikbaar"
+};
+```
+
+TypeScript controleert dat iedere status aanwezig is.
+
+### `Required<T>`
+
+`Required<T>` maakt alle optionele properties verplicht.
+
+```typescript
+type VolledigeFilm = Required<Film>;
+```
+
+### `ReturnType<T>` en `Awaited<T>`
+
+`ReturnType` haalt het returntype van een functie op. Bij een async functie is dit een `Promise`. Met `Awaited` haal je het type uit die Promise.
+
+```typescript
+const haalFilmOp = async (id: number): Promise<Film> => {
+  throw new Error(`Film ${id} nog niet geïmplementeerd`);
+};
+
+type HaalFilmOpResultaat = ReturnType<typeof haalFilmOp>; // Promise<Film>
+type OpgehaaldeFilm = Awaited<HaalFilmOpResultaat>;      // Film
+```
+
+## Type narrowing en type guards
+
+Wanneer een waarde verschillende types kan hebben, moet je eerst controleren met welk type je werkt. TypeScript verkleint daarna automatisch het mogelijke type. Dit noemen we **type narrowing**.
+
+### `typeof`
+
+Gebruik `typeof` voor primitieve types.
+
+```typescript
+const formatteerId = (id: number | string): string => {
+  if (typeof id === "number") {
+    return id.toString().padStart(4, "0");
+  }
+
+  return id.toUpperCase();
+};
+```
+
+### De `in`-operator
+
+Gebruik `in` om te controleren of een property in een object aanwezig is.
+
+```typescript
+interface OnlineBetaling {
+  bedrag: number;
+  paymentId: string;
+}
+
+interface Kassabetaling {
+  bedrag: number;
+  kassamedewerker: string;
+}
+
+type Betaling = OnlineBetaling | Kassabetaling;
+
+const beschrijfBetaling = (betaling: Betaling): string => {
+  if ("paymentId" in betaling) {
+    return `Online betaling: ${betaling.paymentId}`;
+  }
+
+  return `Kassabetaling door ${betaling.kassamedewerker}`;
+};
+```
+
+### Discriminated unions
+
+Een gedeelde property met een vaste waarde maakt unions eenvoudig en veilig te controleren.
+
+```typescript
+type LaadResultaat =
+  | { status: "loading" }
+  | { status: "success"; films: Film[] }
+  | { status: "error"; message: string };
+
+const toonResultaat = (resultaat: LaadResultaat): string => {
+  switch (resultaat.status) {
+    case "loading":
+      return "Films laden...";
+    case "success":
+      return `${resultaat.films.length} films gevonden`;
+    case "error":
+      return resultaat.message;
+  }
+};
+```
+
+TypeScript weet in iedere `case` welke properties beschikbaar zijn. Dit patroon zullen we later vaak gebruiken voor loading-, success- en errorstates.
+
+### Eigen type guard
+
+Met `waarde is Type` kan een functie aan TypeScript vertellen welk type na een controle overblijft.
+
+```typescript
+const isFilm = (waarde: unknown): waarde is Film => {
+  if (typeof waarde !== "object" || waarde === null) {
+    return false;
+  }
+
+  return "id" in waarde && "titel" in waarde;
+};
+```
+
+Deze eenvoudige controle kijkt nog niet na of iedere property zelf het juiste type heeft. Voor uitgebreide validatie van externe data gebruiken we later eventueel een schema-library.
 
 ## Oefeningen
 
-Hier vind je een aantal basis oefeningen.
+### Filmtype maken
 
-### Basis types
-
-Geef de juiste TypeScript-typen aan de onderstaande variabelen.
+Maak een interface `Film` voor de volgende gegevens. `beschrijving` is optioneel en `status` mag alleen `"concept"`, `"actief"` of `"gearchiveerd"` zijn.
 
 ```typescript
-let userName = "Alice";
-let userAge = 30;
-let isStudent = false;
-let hobbies = ["Reading", "Gaming", "Hiking"];
-let user = { name: "Alice", age: 30 };
+const film = {
+  id: 1,
+  titel: "The Matrix",
+  speelduur: 136,
+  genres: ["actie", "sciencefiction"],
+  status: "actief"
+};
 ```
 
-- Wat zijn de juiste types voor deze variabelen?
+### Een functie typen
 
-- Waarom wordt een objecttype expliciet gedefinieerd?
+Voeg de types voor de parameters en returnwaarde toe. De functie mag de oorspronkelijke array niet aanpassen.
+
+```typescript
+const getActieveFilms = (films) => {
+  return films.filter((film) => film.status === "actief");
+};
+```
+
+### API-resultaat met een generic
+
+Maak een generieke interface `ApiResponse<T>` met de properties `data`, `message` en `success`. Gebruik deze interface om `response` correct te typen.
+
+```typescript
+const response = {
+  data: [
+    { id: 1, titel: "The Matrix" },
+    { id: 2, titel: "Inception" }
+  ],
+  message: "Films opgehaald",
+  success: true
+};
+```
+
+### Types voor toevoegen en aanpassen
+
+Vertrek van de interface `Film` en maak met utility types:
+
+- `FilmPreview` met alleen `id` en `titel`;
+- `NieuweFilm` zonder `id`;
+- `FilmUpdate` waarin alle properties optioneel zijn;
+- `ReadonlyFilm` waarvan de properties niet opnieuw toegewezen mogen worden.
+
+### Laadresultaat afhandelen
+
+Maak een discriminated union voor een laadresultaat met `loading`, `success` en `error`. Schrijf daarna een functie die voor iedere toestand een duidelijke boodschap returnt.
+
+### Onbekende data controleren
+
+Schrijf een type guard `isFilm(waarde: unknown): waarde is Film`. Controleer minstens of `waarde` een niet-null object is en of `id`, `titel`, `speelduur` en `genres` aanwezig zijn met het juiste type.
+
+## Controlevragen
+
+### Waarom hoeft een type niet altijd expliciet vermeld te worden?
 
 <details>
-<summary>Oplossing</summary>
+<summary>Toon het antwoord</summary>
 
-- Wat zijn de juiste types voor deze variabelen?
-
-```typescript
-let userName: string = "Alice";
-let userAge: number = 30;
-let isStudent: boolean = false;
-let hobbies: string[] = ["Reading", "Gaming", "Hiking"];
-let user: { name: string; age: number } = { name: "Alice", age: 30 };
-```
-
-- Waarom wordt een objecttype expliciet gedefinieerd?
-
-_Herbruikbaarheid van het type voor andere objecten_
-
+TypeScript kan het type meestal zelf afleiden uit de toegekende waarde. `const speelduur = 136` wordt daardoor automatisch als een getal behandeld.
 
 </details>
 
-### Functietypes
-
-Schrijf een TypeScript-functie die twee getallen bij elkaar optelt en het resultaat retourneert.
-
-```typescript
-// Schrijf functie
-```
-
-- Voeg de juiste types toe aan de parameters en de returnwaarde.
+### Waarom gebruiken we geen `any`?
 
 <details>
-<summary>Oplossing</summary>
+<summary>Toon het antwoord</summary>
 
-```typescript
-const sum = (a: number, b: number): number => {
-    return a + b;
-}
-```
+`any` schakelt de typecontrole voor die waarde uit. Foute properties en bewerkingen worden dan mogelijk pas tijdens het uitvoeren ontdekt. Gebruik `unknown` wanneer het type nog niet gekend is en controleer het eerst.
 
 </details>
 
-
-### Interfaces en Type Aliases
-
-Definieer een interface voor een `Person` object (name, age, isStudent) en maak vervolgens een variabele aan die dit type volgt. 
-
-```typescript
-// Schrijf interface en nieuw object
-```
-
-- Voeg een optionele eigenschap email toe aan de interface.
-
-- Wat is het verschil tussen een interface en een type alias?
+### Wat is het verschil tussen een array en een tuple?
 
 <details>
-<summary>Oplossing</summary>
+<summary>Toon het antwoord</summary>
 
-- Interface en nieuw object
-```typescript
-interface Person {
-    name: string;
-    age: number;
-    isStudent: boolean;
-}
-
-const student: Person = {
-    name: "John Doe",
-    age: 36,
-    isStudent: false
-}
-```
-
-- Optioniele eigenschap email
-```typescript
-interface Person {
-    name: string;
-    age: number;
-    isStudent: boolean;
-    email?: string;
-}
-```
-
-- Wat is het verschil tussen een interface en een type alias?
-
-_Interface en type kunnen beide gebruikt worden om objecten te typen, maar type alias kan ook nog gebruikt worden voor een alias aan te maken van andere types._
+Een array bevat een aantal elementen van een bepaald type. Een tuple heeft een vaste lengte en kan per positie een ander type verwachten.
 
 </details>
 
-### Generics
-
-Schrijf een generieke functie `identity` die een waarde van een bepaald type accepteert en diezelfde waarde retourneert. 
-
-```typescript
-// Schrijf identity functie
-
-const outputString = identity<string>("Hello TypeScript");
-const outputNumber = identity<number>(42);
-```
-
-- Wat is het voordeel van het gebruik van generics?
+### Wat is het verschil tussen een optionele property en `string | undefined`?
 
 <details>
-<summary>Oplossing</summary>
+<summary>Toon het antwoord</summary>
 
-```typescript
-const identity<T> = (arg: T): T => {
-    return arg;
-}
-```
-
-- Wat is het voordeel van het gebruik van generics?
-
-_TypeScript behoudt zijn type informatie waardoor intellisense suggesties kan geven. Herbruikbare code._
-
+Een optionele property met `?` mag volledig ontbreken. Bij een verplichte property van het type `string | undefined` moet de property aanwezig zijn, maar haar waarde mag `undefined` zijn.
 
 </details>
 
-
-### Utility Types
-
-Gebruik TypeScript's utility types om objecten aan te passen.
-
-```typescript
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  description?: string;
-}
-
-// Maak een type waarbij alle eigenschappen optioneel zijn
-
-// Maak een type waarbij alle eigenschappen readonly zijn
-
-// Maak een type met alleen de id en name van Product
-
-// Maak een type zonder de price en description
-
-```
+### Wanneer kies je een interface en wanneer een type alias?
 
 <details>
-<summary>Oplossing</summary>
+<summary>Toon het antwoord</summary>
 
-```typescript
-
-type OptionalProduct = Partial<Product>;
-type ReadonlyProduct = Readonly<Product>;
-type IdNameProduct = Pick<Product, 'id', 'name'>
-type WithoutPriceDescriptionProduct = Omit<Product, 'price', 'description'>
-
-```
+Gebruik meestal een interface om de vorm van een uitbreidbaar object te beschrijven. Gebruik een type alias voor unions, tuples en combinaties van types. Voor een gewone objectstructuur zijn beide geldig.
 
 </details>
 
-
-### Type Guards
-
-Schrijf een functie `printDetails` die een User of een Admin object accepteert en de juiste eigenschappen logt op basis van het type.
-
-```typescript
-interface User {
-  name: string;
-  email: string;
-}
-
-interface Admin {
-  name: string;
-  permissions: string[];
-}
-
-// Schrijf functie
-
-```
+### Welk probleem lossen generics op?
 
 <details>
-<summary>Oplossing</summary>
+<summary>Toon het antwoord</summary>
 
-```typescript
+Met generics kan dezelfde functie of structuur met verschillende types werken terwijl TypeScript de concrete type-informatie behoudt. Je hebt daardoor geen `any` nodig.
 
-const printDetails = (entity: User | Admin): void => {
-  if ("email" in entity) {
-    console.log(`User: ${entity.name}, Email: ${entity.email}`);
-  } else {
-    console.log(`Admin: ${entity.name}, Permissions: ${entity.permissions.join(", ")}`);
-  }
-}
+</details>
 
-```
+### Wat is het verschil tussen `Pick` en `Omit`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+`Pick` maakt een type met alleen de gekozen properties. `Omit` maakt een type met alle properties behalve de gekozen properties.
+
+</details>
+
+### Maakt `Readonly<T>` ook geneste objecten en arrays readonly?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Nee. `Readonly<T>` werkt alleen op de properties van het buitenste niveau. Geneste objecten en arrays moet je afzonderlijk readonly maken wanneer dat nodig is.
+
+</details>
+
+### Wat doet type narrowing?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Type narrowing verkleint de mogelijke types na een controle. Na `typeof waarde === "string"` weet TypeScript bijvoorbeeld dat `waarde` binnen dat blok een string is.
+
+</details>
+
+### Waarom is een discriminated union handig voor loading-, success- en errorstates?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+De gedeelde `status`-property bepaalt welke andere properties beschikbaar zijn. Bij `success` kan je veilig de data gebruiken en bij `error` de foutmelding, zonder properties te gebruiken die in die toestand niet bestaan.
 
 </details>
