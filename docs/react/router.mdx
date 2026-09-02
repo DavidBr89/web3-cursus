@@ -3,8 +3,11 @@ title: "React Router in Data Mode"
 sidebar_position: 5
 ---
 
+## Waar staan we in het verhaal?
 
-Een React-applicatie bestaat vaak uit verschillende pagina's. In een klassieke website vraagt de browser voor iedere pagina een nieuw HTML-document aan de server. Bij een React-applicatie willen we meestal navigeren zonder de volledige applicatie opnieuw te laden.
+Onze bioscoopapplicatie kan nu een interactief filmaanbod tonen. Alles leeft voorlopig op één pagina. Zodra we een overzicht, een detailpagina per film en een reservatiepagina toevoegen, volstaat conditioneel een andere component tonen niet meer. Een bezoeker verwacht een deelbare URL, werkende bookmarks en correcte terug- en vooruitknoppen.
+
+In een klassieke website vraagt de browser voor iedere pagina een nieuw HTML-document aan de server. Bij onze React-applicatie willen we tussen deze schermen navigeren zonder de volledige applicatie opnieuw te laden, terwijl de URL wel de huidige plaats blijft beschrijven.
 
 React Router koppelt de URL in de browser aan de juiste React-component. De URL wordt zo een deel van de state van onze applicatie.
 

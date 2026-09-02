@@ -3,8 +3,11 @@ title: "REST API-calls met Axios"
 sidebar_position: 7
 ---
 
+## Waar staan we in het verhaal?
 
-Een frontendapplicatie heeft vaak gegevens nodig van een backend of externe REST API. Die communicatie gebeurt via HTTP-requests. In dit hoofdstuk bouwen we een duidelijke API-laag met Axios.
+Tot nu toe kon onze bioscoopapplicatie films uit een lokale array tonen en een reservatieformulier beheren. Echte films, vertoningen en reservaties leven echter op de backend. De frontend moet die gegevens ophalen en wijzigingen terugsturen zonder in iedere component opnieuw requestcode te schrijven.
+
+Die communicatie gebeurt via HTTP-requests. In dit hoofdstuk bouwen we een duidelijke API-laag met Axios, zodat components niet hoeven te weten waar de server staat of hoe ieder request technisch opgebouwd wordt.
 
 ## Eerst het probleem begrijpen
 

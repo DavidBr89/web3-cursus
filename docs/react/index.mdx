@@ -23,9 +23,57 @@ import useBaseUrl from "@docusaurus/useBaseUrl";
 
 ## Doel
 
-In dit gedeelte leren we hoe we moeten werken met React. We beginnen met components aan te maken en bekijken verder hoe deze state kunnen bijhouden en wanneer deze gerenderd worden op het scherm. Het doel van dit gedeelte is uiteraard dat je een volledige React applicatie kan bouwen van A tot Z.
+In dit gedeelte bouwen we stap voor stap een bioscoopwebapplicatie. We starten niet onmiddellijk met hooks en packages. Bij iedere stap vertrekken we van een probleem dat ontstaat wanneer de applicatie groeit. Daarna bekijken we welk React-concept ons helpt om dat probleem op te lossen.
 
-React is een library voor het bouwen van gebruikersinterfaces (UI) voor webapplicaties. Met React bouw je applicaties op uit herbruikbare componenten die elk hun eigen logica en weergave bevatten. React maakt het eenvoudiger om dynamische en interactieve interfaces te ontwikkelen door efficiënt om te gaan met veranderingen in data en deze automatisch in de UI te verwerken.
+Het doel is dat je niet alleen weet **hoe** je iets met React schrijft, maar ook **waarom** je bijvoorbeeld components, state, routing of een externe package gebruikt.
+
+## Van een klassieke website naar React
+
+De eerste websites bestonden vooral uit HTML-documenten. Wanneer een bezoeker op een link klikte, vroeg de browser een volledig nieuwe pagina aan de server. De server bouwde de HTML op en de browser toonde die pagina. Voor een website met hoofdzakelijk tekst en enkele formulieren werkt dat nog steeds prima.
+
+Onze bioscoopapplicatie vraagt meer. Een bezoeker wil films filteren, details openen, een vertoning kiezen en een reservatie invullen. Bij iedere kleine actie een volledige pagina opnieuw laden voelt traag en zorgt ervoor dat tijdelijke informatie op het scherm gemakkelijk verloren gaat.
+
+Met gewone JavaScript kunnen we de bestaande pagina aanpassen:
+
+```javascript
+const lijst = document.querySelector("#films");
+
+films.forEach((film) => {
+  const item = document.createElement("li");
+  item.textContent = film.titel;
+  lijst.appendChild(item);
+});
+```
+
+Dit werkt voor een klein voorbeeld. Zodra meerdere stukken van de pagina afhangen van dezelfde gegevens, moeten we echter zelf bijhouden wat veranderd is en welke DOM-elementen opnieuw aangepast moeten worden. Filmkaartjes, filters, een teller en een detailpaneel raken dan snel met elkaar verweven.
+
+React laat ons de omgekeerde redenering gebruiken: we beschrijven hoe de interface eruitziet voor de **huidige gegevens en toestand**. Wanneer die toestand verandert, zorgt React ervoor dat de interface opnieuw overeenkomt met onze beschrijving.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">React is niet altijd nodig</strong>
+
+Voor een eenvoudige, grotendeels statische website kan gewone HTML, CSS en JavaScript voldoende zijn. React wordt interessant wanneer een interface uit veel herbruikbare onderdelen bestaat en regelmatig moet reageren op veranderende data en gebruikersinteracties.
+</aside>
+
+## De rode draad: onze bioscoopapplicatie
+
+We bouwen de applicatie niet in één keer. Elk hoofdstuk voegt iets toe omdat de vorige versie tegen een nieuw probleem botst:
+
+1. **Components:** dezelfde filmkaart en knop komen op meerdere plaatsen terug. We splitsen de interface op in herbruikbare bouwblokken.
+2. **State:** een gekozen genre en aantal tickets moeten op het scherm kunnen veranderen zonder de pagina opnieuw te laden.
+3. **Interactiviteit:** knoppen, invoervelden en events verbinden het gedrag van de bezoeker met onze state.
+4. **Hooks:** componenten krijgen meer gedrag en moeten soms samenwerken met iets buiten React.
+5. **Routing:** het filmaanbod, een filmdetail en de reservatie moeten elk een eigen URL krijgen en bruikbaar blijven met de terugknop.
+6. **Formulieren:** een reservatie bevat meerdere velden, validatie en foutmeldingen die samen beheerd moeten worden.
+7. **Axios:** de filmgegevens komen uiteindelijk niet meer uit een lokale array maar uit de backend.
+8. **TanStack Query:** serverdata kan laden, mislukken en verouderd raken. We willen requests en caching niet in iedere pagina opnieuw bouwen.
+
+Aan het einde hebben we niet zomaar losse React-technieken gezien. We hebben gezien hoe de architectuur van een frontend meegroeit met de problemen van een echte applicatie.
+
+## Wat is React dan precies?
+
+React is een library voor het bouwen van gebruikersinterfaces. We bouwen een interface op uit herbruikbare components die hun weergave baseren op properties en state. React neemt niet de volledige applicatiearchitectuur over: voor onder meer routing, formulieren en serverdata kiezen we later gerichte oplossingen wanneer onze applicatie die nodig heeft.
 
 ## Het opzetten van een nieuw project
 
@@ -117,7 +165,6 @@ Het is ideaal om Prettier automatisch te kunnen laten uitvoeren bij het opslaan 
 ### Snippets
 
 Snippets zijn vooraf gedefinieerde stukjes code die je snel kan invoegen via een korte afkorting, zodat je sneller en efficiënter kan programmeren. Een handige extensie die we kunnen installeren om gebruik te maken van snippets om onze React components vlug aan te maken is [ES7+ React/Redux/React-Native snippets](https://marketplace.visualstudio.com/items?itemName=dsznajder.es7-react-js-snippets).
-
 
 
 

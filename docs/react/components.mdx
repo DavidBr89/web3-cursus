@@ -5,6 +5,11 @@ sidebar_position: 2
 
 import AnnotatedCodeBlock from "@site/src/components/AnnotatedCodeBlock";
 
+## Waar staan we in het verhaal?
+
+Onze eerste bioscooppagina kan volledig in `App.tsx` geschreven worden. Zodra meerdere films dezelfde titel, afbeelding, genres en knop tonen, herhalen we echter dezelfde markup. Een wijziging aan het uitzicht van een filmkaart moet dan op verschillende plaatsen gebeuren.
+
+Daarom beginnen we de applicatie op te delen. Een filmkaart wordt een `FilmCard`, de navigatie wordt een `Navigation` en een volledige lijst wordt een `FilmList`. Zo krijgt ieder herkenbaar deel van de interface één duidelijke plaats.
 
 ## Components
 
@@ -783,4 +788,3 @@ const List = () => {
 
 **Gebruik zo weinig mogelijk of zelfs niet de index van een element in de array als `key`. Dit is niet aan te raden omdat de volgorde van elementen kan wijzigen wanneer items toegevoegd worden, verwijderd of herschikt**. Het gebruiken van een index als `key` kan hierdoor leiden tot moeilijk te vinden bugs. **Genereer ook geen dynamische `keys`** met bijvoorbeeld `Math.random()`, in dit geval zullen de keys steeds veranderen bij elke render waardoor React alle componenten en DOM-elementen telkens opnieuw moet aanmaken, dit zorgt voor een tragere applicatie. Gebruik daarom altijd een **stabiele en unieke identifier uit je data als `key`**.
 </aside>
-

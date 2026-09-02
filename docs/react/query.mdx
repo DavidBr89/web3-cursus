@@ -3,8 +3,11 @@ title: "Server state met TanStack Query"
 sidebar_position: 8
 ---
 
+## Waar staan we in het verhaal?
 
-In het vorige hoofdstuk bouwden we een HTTP-laag met Axios. Axios weet hoe een request verstuurd wordt, maar niet hoe lang de ontvangen data bruikbaar blijft of welke componenten dezelfde data nodig hebben.
+Onze bioscoopapplicatie praat via Axios met de backend. Daarmee kunnen we films ophalen, maar iedere pagina moet voorlopig zelf loading state, fouten en de ontvangen data bewaren. Wanneer we terugkeren naar het filmaanbod wordt dezelfde lijst misschien opnieuw opgehaald, terwijl een andere component ze net al ontvangen heeft.
+
+In het vorige hoofdstuk bouwden we een HTTP-laag met Axios. Axios weet hoe een request verstuurd wordt, maar niet hoe lang de ontvangen data bruikbaar blijft, wanneer ze opnieuw opgehaald moet worden of welke components dezelfde data nodig hebben.
 
 TanStack Query, vaak nog React Query genoemd, beheert asynchrone server state in React.
 

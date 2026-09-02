@@ -5,8 +5,11 @@ sidebar_position: 3
 
 import AnnotatedCodeBlock from "@site/src/components/AnnotatedCodeBlock";
 
+## Waar staan we in het verhaal?
 
-Components moeten vaak aanpassen wat er op het scherm getoond wordt als gevolg van een interactie. Tot nu toe was onze applicatie steeds statisch: na de eerste render bleef alles onveranderd. In een echte applicatie is dat natuurlijk niet voldoende. Wat als we bijvoorbeeld een counter willen aanmaken waarvan zijn waarde moet verhogen telkens we op een knop klikken. 
+Onze bioscooppagina bestaat nu uit herbruikbare components. Ze kunnen filmgegevens tonen, maar de interface verandert nog niet. Wanneer een bezoeker een genre kiest, een film als favoriet markeert of het aantal tickets verhoogt, moet React die keuze onthouden en de juiste components opnieuw tonen.
+
+Components moeten vaak aanpassen wat er op het scherm getoond wordt als gevolg van een interactie. Tot nu toe was onze applicatie steeds statisch: na de eerste render bleef alles onveranderd. In een echte applicatie is dat natuurlijk niet voldoende. Wat als we bijvoorbeeld het aantal tickets willen verhogen telkens we op een knop klikken?
 
 Een eerste poging zou kunnen zijn om hiervoor een gewone variabele te gebruiken en die binnen de `onClick` event listener te verhogen.
 
@@ -385,7 +388,6 @@ State die diep genest is, is lastig om immutable aan te passen (denk aan alle sp
 
 Een goede vuistregel: kan je een stukje state **afleiden** uit andere state of props? Zet het dan niet in state. Hoe minder state een component heeft, hoe minder er kan misgaan.
 </aside>
-
 
 
 
