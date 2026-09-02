@@ -1,0 +1,72 @@
+---
+title: "Week 11: Authenticatie"
+sidebar_position: 11
+---
+
+
+## Wat bouwen we deze week?
+
+We koppelen de registratie- en loginformulieren uit week 8 aan de backend en voegen een beveiligd profiel toe.
+
+## Leerdoelen
+
+Na deze week kun je authenticatie en autorisatie onderscheiden, wachtwoorden veilig verwerken, JWT's verifiëren en cookies en CORS verklaren.
+
+## Wachtwoorden bewaren
+
+Een server bewaart geen leesbaar wachtwoord. Bij registratie hash je het wachtwoord; bij login vergelijk je de invoer met de bestaande hash.
+
+```typescript
+const passwordHash = await bcrypt.hash(password, 12);
+const isValid = await bcrypt.compare(password, user.password);
+```
+
+Encryptie moet omkeerbaar zijn; hashing is bewust eenrichtingsverkeer en daarom geschikt voor wachtwoordcontrole.
+
+## Token en cookie
+
+Een JWT bevat claims en een handtekening. De inhoud is leesbaar en dus geen plaats voor geheimen. De handtekening laat de server controleren of het token gewijzigd werd.
+
+```typescript
+res.cookie("token", token, {
+  httpOnly: true,
+  sameSite: "lax",
+  secure: process.env.NODE_ENV === "production",
+});
+```
+
+`httpOnly` voorkomt dat frontend-JavaScript de cookie leest. De browser kan de cookie wel automatisch meesturen. Bij verschillende origins moeten CORS en credentials op beide kanten correct staan.
+
+## Volledige loginflow
+
+1. De gebruiker verstuurt e-mail en wachtwoord.
+1. De server zoekt de gebruiker.
+1. Bcrypt vergelijkt het wachtwoord met de hash.
+1. De server maakt een token en plaatst het in een cookie.
+1. Een volgend request stuurt de cookie mee.
+1. Authmiddleware verifieert het token en voegt gebruikersinformatie aan het request toe.
+1. De controller stuurt veilige profieldata terug.
+
+## Begeleide opdracht
+
+1. Neem de login- en registratiepagina's die je in week 8 zelf bouwde.
+1. Implementeer registratie met hashing.
+1. Implementeer login met generieke foutmelding.
+1. Maak token en cookie aan.
+1. Configureer CORS en credentials.
+1. Bouw authmiddleware en een `/profile`-route.
+1. Test eerst met een API-client en daarna vanuit React Bios.
+
+### Checkpoint
+
+Test fout wachtwoord, onbekende gebruiker, ontbrekende cookie en geldig token. Vermeld bij elk geval statuscode en response zonder gevoelige informatie te lekken.
+
+## Begripscontrole
+
+Volg in je eigen applicatie een loginrequest van formulier tot databank en terug naar de profielpagina. Noteer bij iedere stap welke data aanwezig is en welke gevoelige data niet in de response mag verschijnen.
+
+## Zelfstandige oefening
+
+Voeg logout toe door de cookie met dezelfde opties te verwijderen. Bewijs met een request naar `/profile` dat de sessie daarna ongeldig is.
+
+[Volgende: full-stackintegratie](/semesterproject/week-12).

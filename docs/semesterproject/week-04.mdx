@@ -1,0 +1,73 @@
+---
+title: "Week 4: Props, events en state"
+sidebar_position: 4
+---
+
+
+## Wat bouwen we deze week?
+
+We maken de Reactinterface interactief met buttons, counters, toggles en favorieten.
+
+## Leerdoelen
+
+Na deze week kun je event handlers doorgeven, state met `useState` modelleren, functionele updates gebruiken, state liften en arrays immutabel aanpassen.
+
+## Events doorgeven
+
+```tsx
+const MyButton = ({ onClick }: { onClick: () => void }) => (
+  <button onClick={onClick}>Klik</button>
+);
+```
+
+`onClick` krijgt de functie zelf door. Wanneer je de functie daar met ronde haakjes oproept, wordt ze al tijdens het renderen uitgevoerd.
+
+## State is een snapshot
+
+```tsx
+const [count, setCount] = useState(0);
+
+setCount((current) => current + 1);
+```
+
+Een setter wijzigt de huidige render niet. Ze vraagt React om een nieuwe render met nieuwe state. Gebruik de functionele vorm als de volgende waarde afhangt van de vorige.
+
+## Arrays in state
+
+```tsx
+setMovies((currentMovies) =>
+  currentMovies.map((movie) =>
+    movie.id === id ? { ...movie, favorite: !movie.favorite } : movie,
+  ),
+);
+```
+
+Gebruik geen `push` en muteer geen bestaand filmobject. Bereken `favoriteCount` uit de filmlijst in plaats van dezelfde informatie in tweede state te bewaren.
+
+## Begeleide opdracht
+
+1. Bouw `Counter.tsx` en voorspel het resultaat van opeenvolgende setters.
+1. Bouw `ToggleCounter.tsx` om de teller te tonen of verbergen.
+1. Voeg aan iedere film een favorietenknop toe.
+1. Bewaar de filmlijst in de dichtstbijzijnde gemeenschappelijke ouder.
+1. Geef callbacks en data via props door.
+1. Bereken het aantal favorieten uit de bestaande state.
+
+### Checkpoint
+
+Leg met tijdelijke logging uit welke componenten rerenderen. Toon dat de oorspronkelijke array niet rechtstreeks gemuteerd wordt.
+
+## Begripscontrole
+
+Maak voor `MyButton`, `Counter`, `ToggleCounter`, `Header` en `App` een tabel met props, state en verantwoordelijkheid. Leg uit waarom de favorietenstate op één specifieke plaats hoort.
+
+## Zelfstandige oefening
+
+Voeg “alle favorieten wissen” toe. De knop staat in de ouder, terwijl filmkaarten individuele favorieten omschakelen. Voeg geen tweede favorietenarray toe.
+
+## Bronnen
+
+- [State](/react/state)
+- [Interactiviteit](/react/interactivity)
+
+[Volgende: hooks en API-data](/semesterproject/week-05).

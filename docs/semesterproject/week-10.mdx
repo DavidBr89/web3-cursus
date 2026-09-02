@@ -1,0 +1,76 @@
+---
+title: "Week 10: Middleware en databanken"
+sidebar_position: 10
+---
+
+
+## Wat bouwen we deze week?
+
+We voegen herbruikbare requestlogica en persistente gebruikersdata toe.
+
+## Leerdoelen
+
+Na deze week kun je de middlewareketen verklaren, middleware plaatsen, een relationeel model lezen, Prisma configureren en migraties en CRUD-operaties uitvoeren.
+
+## Middleware als keten
+
+```typescript
+const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ message: "Geen toegang" });
+  }
+
+  next();
+};
+```
+
+Middleware stuurt een response of roept `next()` aan. Doe je geen van beide, dan blijft het request hangen. De volgorde van registratie bepaalt de uitvoervolgorde.
+
+## Van tijdelijk geheugen naar databank
+
+Data in een array verdwijnt wanneer de server herstart. Een relationele databank bewaart data duurzaam en bewaakt relaties en constraints.
+
+```prisma
+model User {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+  role     String @default("user")
+}
+```
+
+Een Prisma-schema is niet hetzelfde als de databank. Een migratie legt de concrete schemawijziging vast en maakt ze reproduceerbaar.
+
+## CRUD met Prisma
+
+```typescript
+const user = await prisma.user.create({
+  data: { email, password },
+});
+```
+
+Selecteer alleen data die de client nodig heeft. Stuur een wachtwoordhash nooit mee in een response.
+
+## Begeleide opdracht
+
+1. Volg een request door bestaande middleware en noteer de volgorde.
+1. Voeg tijdelijke loggingmiddleware toe.
+1. Schrijf eenvoudige admin- en authmiddleware en voorspel de uitvoervolgorde.
+1. Schrijf het Prisma-schema uit dit hoofdstuk en voorspel de SQL-structuur.
+1. Configureer Prisma en voer de migratie uit.
+1. Maak gebruikers aan en zoek ze op via de Prisma client.
+1. Herstart de server en toon dat de data bewaard blijft.
+
+### Checkpoint
+
+Leg het verschil uit tussen schema, migratie, gegenereerde client en databank. Toon ook wat er gebeurt bij een dubbel uniek e-mailadres.
+
+## Begripscontrole
+
+Leg voor de mappen `middlewares`, `prisma`, `config`, `routes` en `controllers` uit welke verantwoordelijkheid ze in je eigen backend hebben. Volg daarna één create-request tot in de databank.
+
+## Zelfstandige oefening
+
+Voeg een profielnaam toe aan het datamodel via een nieuwe migratie. Pas create en read aan zonder de bestaande migratie te herschrijven.
+
+[Volgende: authenticatie](/semesterproject/week-11).

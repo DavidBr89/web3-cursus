@@ -1,0 +1,693 @@
+---
+title: "React Router in Data Mode"
+sidebar_position: 5
+---
+
+
+Een React-applicatie bestaat vaak uit verschillende pagina's. In een klassieke website vraagt de browser voor iedere pagina een nieuw HTML-document aan de server. Bij een React-applicatie willen we meestal navigeren zonder de volledige applicatie opnieuw te laden.
+
+React Router koppelt de URL in de browser aan de juiste React-component. De URL wordt zo een deel van de state van onze applicatie.
+
+In dit hoofdstuk gebruiken we **Data Mode**. In deze mode definiëren we onze routes vooraf met `createBrowserRouter`. Naast gewone navigatie krijgen we hierdoor ook ondersteuning voor loaders, actions, pending UI en routegebonden foutafhandeling.
+
+## Welk probleem lost React Router op?
+
+Zonder router zouden we zelf de URL moeten uitlezen, browsergeschiedenis beheren en bepalen welke component zichtbaar is.
+
+```tsx
+const App = () => {
+    const path = window.location.pathname;
+
+    if (path === '/contact') {
+        return <ContactPage />;
+    }
+
+    if (path.startsWith('/movies/')) {
+        return <MovieDetailsPage />;
+    }
+
+    return <MoviesPage />;
+}
+```
+
+Deze eerste versie lijkt eenvoudig, maar we moeten al snel zelf:
+
+- links onderscheppen om een volledige paginaherlading te voorkomen;
+- `pushState` en het `popstate`-event beheren;
+- dynamische en geneste paden herkennen;
+- back- en forwardnavigatie correct verwerken;
+- layouts en niet-gevonden routes tonen;
+- loading-, fout- en submittoestanden aan een route koppelen.
+
+React Router bundelt die infrastructuur in een gedeeld en getest routingmodel. De package bepaalt niet hoe onze pagina eruitziet; ze zorgt ervoor dat URL, browsergeschiedenis, data en actieve route met elkaar gesynchroniseerd blijven.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+We gebruiken een package niet alleen om minder regels code te schrijven. We gebruiken ze omdat routing veel randgevallen bevat die in een handmatige oplossing gemakkelijk vergeten worden.
+</aside>
+
+## Installatie
+
+Open een terminal in de root van jouw Reactproject en installeer React Router.
+
+```shell
+yarn add react-router
+```
+
+Wanneer je npm gebruikt:
+
+```shell
+npm install react-router
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+In recente versies installeren we het package `react-router`. In oudere projecten en voorbeelden zal je vaak nog `react-router-dom` tegenkomen.
+</aside>
+
+## Onze eerste router
+
+In Data Mode maken we eerst een routerobject. Daarna geven we dat object via `RouterProvider` aan de applicatie.
+
+Pas `main.tsx` aan:
+
+```tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
+import App from './App.tsx';
+import './index.css';
+
+const router = createBrowserRouter([
+    {
+        path: '/',
+        element: <App />,
+    },
+]);
+
+createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+        <RouterProvider router={router} />
+    </StrictMode>,
+);
+```
+
+`createBrowserRouter` krijgt een array van routeobjecten. Elk routeobject beschrijft minstens:
+
+- bij welk `path` de route hoort;
+- welk `element` React Router moet tonen.
+
+`RouterProvider` maakt de router beschikbaar voor de volledige componentboom. We renderen dus niet langer rechtstreeks `<App />` in `main.tsx`.
+
+## Pagina's aanmaken
+
+Een pagina is technisch gezien ook een React-component. Om het onderscheid met kleinere onderdelen duidelijk te houden, plaatsen we volledige pagina's in `src/pages`.
+
+Maak `src/pages/MoviesPage.tsx`:
+
+```tsx
+const MoviesPage = () => {
+    return (
+        <main>
+            <h1>Films</h1>
+            <p>Op deze pagina komt ons overzicht van films.</p>
+        </main>
+    );
+}
+
+export default MoviesPage;
+```
+
+Maak ook `src/pages/ContactPage.tsx`:
+
+```tsx
+const ContactPage = () => {
+    return (
+        <main>
+            <h1>Contact</h1>
+            <p>Je kan ons contacteren via info@example.com.</p>
+        </main>
+    );
+}
+
+export default ContactPage;
+```
+
+Vervolgens registreren we beide pagina's in `main.tsx`.
+
+```tsx
+import { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
+import MoviesPage from './pages/MoviesPage.tsx';
+import ContactPage from './pages/ContactPage.tsx';
+
+const router = createBrowserRouter([
+    {
+        path: '/',
+        element: <MoviesPage />,
+    },
+    {
+        path: '/contact',
+        element: <ContactPage />,
+    },
+]);
+```
+
+Wanneer de URL `/` is, toont React Router de `MoviesPage`. Bij `/contact` wordt de `ContactPage` getoond.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+De volgorde waarin deze eenvoudige routes staan, bepaalt niet welke route gekozen wordt. React Router vergelijkt de URL met het routepatroon en kiest de beste overeenkomst.
+</aside>
+
+## Navigeren met Link
+
+We zouden een gewone anchor kunnen gebruiken:
+
+```tsx
+<a href="/contact">Contact</a>
+```
+
+Een gewone anchor vraagt echter opnieuw een volledig document aan. Daardoor wordt de React-applicatie opnieuw gestart en gaat lokale state verloren.
+
+Voor interne navigatie gebruiken we `Link`.
+
+```tsx
+import { Link } from 'react-router';
+
+const Header = () => {
+    return (
+        <header>
+            <nav>
+                <Link to="/">Films</Link>
+                <Link to="/contact">Contact</Link>
+            </nav>
+        </header>
+    );
+}
+
+export default Header;
+```
+
+`Link` past de URL aan en laat React Router de nieuwe pagina renderen zonder een volledige paginaherlading.
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Gebruik `Link` voor interne routes binnen de React-applicatie. Gebruik een gewone anchor voor externe websites, downloads of andere bestemmingen die React Router niet beheert.
+</aside>
+
+## Actieve navigatie met NavLink
+
+Soms willen we in het navigatiemenu tonen op welke pagina de gebruiker zich bevindt. Daarvoor gebruiken we `NavLink`.
+
+```tsx
+import { NavLink } from 'react-router';
+
+const Header = () => {
+    return (
+        <header>
+            <nav>
+                <NavLink
+                    to="/"
+                    className={({ isActive }) => isActive ? 'active' : ''}
+                >
+                    Films
+                </NavLink>
+                <NavLink
+                    to="/contact"
+                    className={({ isActive }) => isActive ? 'active' : ''}
+                >
+                    Contact
+                </NavLink>
+            </nav>
+        </header>
+    );
+}
+```
+
+Bij `NavLink` mag `className` een functie zijn. React Router geeft onder meer `isActive` mee. Op basis daarvan kiezen we de juiste CSS-klasse.
+
+```css
+nav a.active {
+    font-weight: bold;
+    text-decoration: underline;
+}
+```
+
+## Gedeelde layout en geneste routes
+
+De header en footer moeten op verschillende pagina's terugkomen. We willen die componenten niet in iedere pagina apart importeren. Daarom maken we een layout.
+
+Maak `src/layouts/RootLayout.tsx`:
+
+```tsx
+import { Outlet } from 'react-router';
+import Header from '../components/Header.tsx';
+import Footer from '../components/Footer.tsx';
+
+const RootLayout = () => {
+    return (
+        <>
+            <Header />
+            <main>
+                <Outlet />
+            </main>
+            <Footer />
+        </>
+    );
+}
+
+export default RootLayout;
+```
+
+`Outlet` is een plaatsaanduiding. React Router toont daar het element van de actieve childroute.
+
+We nesten de pagina's onder de layout:
+
+```tsx
+const router = createBrowserRouter([
+    {
+        path: '/',
+        element: <RootLayout />,
+        children: [
+            {
+                index: true,
+                element: <MoviesPage />,
+            },
+            {
+                path: 'contact',
+                element: <ContactPage />,
+            },
+        ],
+    },
+]);
+```
+
+De route met `index: true` is de standaard childroute. Ze wordt getoond wanneer de URL exact overeenkomt met de parentroute.
+
+Merk op dat het childpad `contact` geen slash vooraan heeft. Daardoor is het relatief ten opzichte van de parent en wordt de volledige URL `/contact`.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+Vergeet je `<Outlet />`, dan verandert de URL wel maar verschijnt de actieve childpagina nergens in de layout.
+</aside>
+
+## Dynamische routes en parameters
+
+Voor een detailpagina kunnen we niet voor iedere film een route uitschrijven. We maken daarom een dynamisch segment.
+
+```tsx
+{
+    path: 'movies/:movieId',
+    element: <MovieDetailsPage />,
+}
+```
+
+Het deel dat met `:` begint, is een routeparameter. De URL `/movies/42` geeft de waarde `42` aan de parameter `movieId`.
+
+In de pagina lezen we de parameter uit met `useParams`.
+
+```tsx
+import { useParams } from 'react-router';
+
+const MovieDetailsPage = () => {
+    const { movieId } = useParams();
+
+    return (
+        <section>
+            <h1>Filmdetails</h1>
+            <p>Gekozen film: {movieId}</p>
+        </section>
+    );
+}
+
+export default MovieDetailsPage;
+```
+
+Routeparameters komen uit de URL en zijn daarom strings. Een parameter kan ook ontbreken. TypeScript geeft dus geen `number`, ook niet wanneer de URL er numeriek uitziet.
+
+```tsx
+const id = Number(movieId);
+
+if (!movieId || Number.isNaN(id)) {
+    return <p>Ongeldig filmnummer.</p>;
+}
+```
+
+Maak vanuit een filmkaart een link naar de juiste detailpagina:
+
+```tsx
+<Link to={`/movies/${movie.id}`}>Bekijk details</Link>
+```
+
+## Relatieve links
+
+Binnen een geneste route kan een link relatief zijn.
+
+```tsx
+<Link to="reviews">Reviews</Link>
+```
+
+Wanneer de huidige route `/movies/42` is, navigeert deze link naar `/movies/42/reviews`. Een pad dat met `/` begint, vertrekt altijd vanaf de root van de applicatie.
+
+## Een pagina voor onbekende routes
+
+Een gebruiker kan een URL bezoeken waarvoor geen route bestaat. Voeg onder de root een catch-all route toe.
+
+```tsx
+{
+    path: '*',
+    element: <NotFoundPage />,
+}
+```
+
+De `*` komt overeen met routes die niet door een specifiekere route werden opgevangen.
+
+## Data laden met een loader
+
+Tot nu toe laadden we data in een component met `useEffect`. In Data Mode kan een route zijn data laden voordat het route-element wordt gerenderd. Daarvoor gebruiken we een `loader`.
+
+```tsx
+import type { LoaderFunctionArgs } from 'react-router';
+
+export const movieLoader = async ({ params }: LoaderFunctionArgs) => {
+    const response = await fetch(`/api/movies/${params.movieId}`);
+
+    if (!response.ok) {
+        throw new Response('Film niet gevonden', { status: response.status });
+    }
+
+    return response.json();
+}
+```
+
+Koppel de loader aan de route:
+
+```tsx
+{
+    path: 'movies/:movieId',
+    element: <MovieDetailsPage />,
+    loader: movieLoader,
+}
+```
+
+Lees de geladen data in de pagina met `useLoaderData`.
+
+```tsx
+import { useLoaderData } from 'react-router';
+import type { Movie } from '../types';
+
+const MovieDetailsPage = () => {
+    const movie = useLoaderData() as Movie;
+
+    return (
+        <section>
+            <h1>{movie.title}</h1>
+            <p>{movie.overview}</p>
+        </section>
+    );
+}
+```
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Houd API-code bij voorkeur in een apart bestand. De loader kan die functie oproepen, zodat requestlogica niet verspreid raakt over routeconfiguratie en pagina's.
+</aside>
+
+## Fouten per route afhandelen
+
+Wanneer een loader, action of render een fout veroorzaakt, kan React Router het dichtstbijzijnde `errorElement` tonen.
+
+```tsx
+{
+    path: 'movies/:movieId',
+    element: <MovieDetailsPage />,
+    loader: movieLoader,
+    errorElement: <MovieErrorPage />,
+}
+```
+
+In de foutpagina lezen we de fout uit.
+
+```tsx
+import { isRouteErrorResponse, useRouteError } from 'react-router';
+
+const MovieErrorPage = () => {
+    const error = useRouteError();
+
+    if (isRouteErrorResponse(error)) {
+        return <h1>{error.status}: {error.statusText}</h1>;
+    }
+
+    return <h1>Er ging iets onverwacht fout.</h1>;
+}
+
+export default MovieErrorPage;
+```
+
+Door foutafhandeling aan een route te koppelen, kan een deel van de applicatie een gepaste fout tonen zonder dat de volledige applicatie verdwijnt.
+
+## Data wijzigen met een action
+
+Een `loader` leest data. Een `action` verwerkt een datamutatie, meestal vanuit een formulier.
+
+```tsx
+import { Form, redirect } from 'react-router';
+
+const NewMoviePage = () => {
+    return (
+        <Form method="post">
+            <label htmlFor="title">Titel</label>
+            <input id="title" name="title" />
+            <button type="submit">Film toevoegen</button>
+        </Form>
+    );
+}
+
+export default NewMoviePage;
+```
+
+`Form` lijkt op een gewoon HTML-formulier, maar React Router onderschept de verzending en roept de action van de passende route op.
+
+```tsx
+import type { ActionFunctionArgs } from 'react-router';
+import { redirect } from 'react-router';
+
+export const createMovieAction = async ({ request }: ActionFunctionArgs) => {
+    const formData = await request.formData();
+    const title = formData.get('title');
+
+    if (typeof title !== 'string' || title.trim() === '') {
+        return { error: 'Titel is verplicht.' };
+    }
+
+    await fetch('/api/movies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+    });
+
+    return redirect('/');
+}
+```
+
+Koppel de action aan de route:
+
+```tsx
+{
+    path: 'movies/new',
+    element: <NewMoviePage />,
+    action: createMovieAction,
+}
+```
+
+Na een action herlaadt React Router automatisch de betrokken loaderdata. Daardoor blijft de UI afgestemd op de data op de server.
+
+## Pending UI met useNavigation
+
+Tijdens een navigatie of formulierverzending wil je feedback tonen. `useNavigation` geeft de toestand van de huidige navigatie.
+
+```tsx
+import { Outlet, useNavigation } from 'react-router';
+
+const RootLayout = () => {
+    const navigation = useNavigation();
+    const isLoading = navigation.state === 'loading';
+
+    return (
+        <>
+            <Header />
+            {isLoading && <p>Pagina laden...</p>}
+            <main>
+                <Outlet />
+            </main>
+            <Footer />
+        </>
+    );
+}
+```
+
+De mogelijke toestanden zijn `idle`, `submitting` en `loading`.
+
+- `idle`: er is geen actieve navigatie;
+- `submitting`: formulierdata wordt naar een action gestuurd;
+- `loading`: React Router laadt data voor de volgende pagina.
+
+## Navigeren vanuit code
+
+Gebruik bij voorkeur `Link`, `NavLink`, `Form` of `redirect`. Soms moet navigatie het gevolg zijn van andere programmatische logica. Dan gebruiken we `useNavigate`.
+
+```tsx
+import { useNavigate } from 'react-router';
+
+const CancelButton = () => {
+    const navigate = useNavigate();
+
+    return (
+        <button type="button" onClick={() => navigate(-1)}>
+            Annuleren
+        </button>
+    );
+}
+```
+
+`navigate(-1)` gaat één item terug in de browsergeschiedenis. Met `navigate('/profile')` navigeer je naar een specifiek pad.
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Gebruik na een succesvolle action meestal `redirect` in de action. Gebruik `useNavigate` voor interacties waarvoor geen gewone link of route-action past.
+</aside>
+
+## Zoekparameters
+
+Zoek- en filterwaarden passen vaak goed in de URL. Zo kan een gebruiker een zoekresultaat herladen, bewaren of delen.
+
+```tsx
+import { useSearchParams } from 'react-router';
+
+const MoviesPage = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const query = searchParams.get('q') ?? '';
+
+    const handleSearch = (value: string) => {
+        setSearchParams(value ? { q: value } : {});
+    };
+
+    // ...
+}
+```
+
+Bij de URL `/movies?q=alien` is de waarde van `q` gelijk aan `alien`.
+
+## Volledige routestructuur
+
+Na dit hoofdstuk kan de router er als volgt uitzien:
+
+```tsx
+const router = createBrowserRouter([
+    {
+        path: '/',
+        element: <RootLayout />,
+        errorElement: <RootErrorPage />,
+        children: [
+            {
+                index: true,
+                element: <MoviesPage />,
+                loader: moviesLoader,
+            },
+            {
+                path: 'movies/new',
+                element: <NewMoviePage />,
+                action: createMovieAction,
+            },
+            {
+                path: 'movies/:movieId',
+                element: <MovieDetailsPage />,
+                loader: movieLoader,
+            },
+            {
+                path: 'contact',
+                element: <ContactPage />,
+            },
+            {
+                path: '*',
+                element: <NotFoundPage />,
+            },
+        ],
+    },
+]);
+```
+
+Lees deze structuur als een boom. De rootlayout blijft staan, terwijl React Router in zijn `Outlet` de passende childroute toont.
+
+## Veelgemaakte fouten
+
+**`RouterProvider` vergeten**: De hooks en routercomponenten hebben dan geen routercontext.
+
+**`Outlet` vergeten**: De childroute wordt herkend, maar heeft geen plaats om te renderen.
+
+**Een gewone anchor voor interne navigatie gebruiken**: De browser laadt het volledige document opnieuw.
+
+**Een relatief pad met `/` laten beginnen**: Het pad vertrekt dan vanaf de root in plaats van de parentroute.
+
+**Een routeparameter als number behandelen**: Parameters komen uit de URL en zijn strings.
+
+**Alle navigatie met `useNavigate` uitvoeren**: Een `Link` of `Form` is meestal duidelijker en toegankelijker.
+
+**Data opnieuw met `useEffect` laden terwijl er een loader is**: Kies één duidelijke eigenaar voor de requestlogica.
+
+## Oefeningen
+
+### Basisroutes
+
+Maak routes voor een startpagina, filmlijst en contactpagina. Voeg een layout met header en footer toe. De actieve link krijgt een andere stijl.
+
+### Dynamische detailpagina
+
+Maak een route `/movies/:movieId`. Iedere filmkaart bevat een link naar zijn detailpagina. Handel een ontbrekend of ongeldig id af.
+
+### Loader en foutafhandeling
+
+Verplaats het ophalen van de detaildata naar een loader. Laat de loader bij een onbekende film een response met status `404` gooien en toon een routegebonden foutpagina.
+
+### Action en pending UI
+
+Maak een formulier om een film toe te voegen. Verwerk het met een action, toon feedback tijdens `submitting` en navigeer na succes terug naar de filmlijst.
+
+### Wijzigingsvraag
+
+Voeg een zoekterm als search parameter toe. Na herladen moet dezelfde zoekterm en hetzelfde resultaat zichtbaar blijven.
+
+## Controlevragen
+
+- Wat is het verschil tussen `Link` en een gewone anchor?
+- Waarom heeft een layout een `Outlet` nodig?
+- Wat is het verschil tussen een indexroute en een route met een leeg pad?
+- Waarom is een routeparameter altijd een string?
+- Wanneer gebruik je een loader in plaats van `useEffect`?
+- Welke verantwoordelijkheid heeft een action?
+- Wanneer kies je `redirect` en wanneer `useNavigate`?
+- Wat is het verschil tussen `404` in een loader en een catch-all route?
+
+## Officiële documentatie
+
+- [React Router: Data Mode installeren](https://reactrouter.com/start/data/installation)
+- [React Router: routes configureren](https://reactrouter.com/start/data/routing)
+- [React Router: navigeren](https://reactrouter.com/start/data/navigating)
+- [React Router: data laden](https://reactrouter.com/start/data/data-loading)
+- [React Router: actions](https://reactrouter.com/start/data/actions)

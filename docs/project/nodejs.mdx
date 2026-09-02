@@ -1,0 +1,83 @@
+---
+title: "Project Web 3 met Node.js-backend"
+sidebar_label: "Web 3 zonder Cloudontwikkeling"
+sidebar_position: 3
+---
+
+## Inleiding
+
+Neem je Web 3 op zonder Cloudontwikkeling in hetzelfde semester, dan bouw je een volwaardige frontend in React met een beperkte backend in Node.js. Je werkt volledig in TypeScript en kiest zelf een geschikt onderwerp.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Kies een eigen onderwerp</strong>
+
+Herbruik geen projecten die tijdens de lessen al uitgebreid besproken of uitgewerkt werden. Een bioscoopapplicatie en een applicatie rond parkings in Gent zijn daarom niet toegelaten.
+</aside>
+
+## Doelstellingen
+
+Met dit project toon je aan dat je:
+
+- een volwaardige React-frontend kan bouwen die communiceert met een beperkte Node.js-backend;
+- kan werken met context, state, routing en formulieren;
+- zoeken, filteren en pagineren op serverniveau kan verwerken in de frontend;
+- een gesimuleerde betalingsflow kan integreren;
+- frontend en backend afzonderlijk kan deployen met een correcte CORS-configuratie;
+- een duidelijke commitgeschiedenis kan opbouwen in Classroom50;
+- zowel frontend als backend kan verdedigen en toelichten.
+
+## Functionele vereisten
+
+### Data en CRUD
+
+- Gebruik meerdere entiteiten met minstens één 1-N- of N-N-relatie.
+- Gebruik een MySQL-databank in combinatie met Prisma.
+- Voorzie per relevante entiteit een volledige CRUD-flow: lijst, detail, toevoegen, bewerken en verwijderen.
+- Gebruik formulieren met duidelijke validatie en foutmeldingen.
+
+### Authenticatie en rollen
+
+- Implementeer registratie en inloggen.
+- Je kan hiervoor JWT gebruiken of een geschikte externe authenticatieoplossing kiezen.
+- Gebruik minstens twee rollen, bijvoorbeeld `user` en `admin`.
+- Pas de gebruikersinterface en toegelaten acties aan volgens de rol van de gebruiker.
+
+### Zoeken en betalingen
+
+- Voorzie zoeken, filteren en pagineren op serverniveau en toon de resultaten correct in de frontend.
+- Implementeer een volledige gesimuleerde betaalflow met Mollie of Stripe.
+- Verwerk de bijhorende webhook in de Node.js-backend.
+
+### Gebruikerservaring
+
+- Gebruik minstens één niet-triviale React context, bijvoorbeeld voor authenticatie, een winkelmandje of permissions.
+- Voorzie duidelijke toestanden voor `loading`, `error`, `empty` en `success`.
+- Zorg voor een consistente layout en verzorgde styling.
+- Voorzie minstens één exportfunctie, bijvoorbeeld naar CSV of PDF.
+
+## Technische vereisten
+
+- React met TypeScript en Vite;
+- geen gebruik van `any`;
+- React Router;
+- React Hook Form of Formik;
+- Fetch API of Axios met foutafhandeling;
+- een Node.js-backend met correcte HTTP-statuscodes en aandacht voor security;
+- MySQL met Prisma;
+- frontend en backend afzonderlijk deployen;
+- CORS correct configureren;
+- Classroom50 voor de repository en opvolging;
+- een duidelijke en regelmatige commitgeschiedenis.
+
+## Onderwerp indienen
+
+Je dient eerst een voldoende uitgewerkt voorstel in. Alleen “ik maak een webshop” is niet voldoende. Beschrijf minstens het doel, de doelgroep, de belangrijkste entiteiten, de relaties, de belangrijkste functionaliteiten en de geplande externe diensten.
+
+[Dien je projectonderwerp in](./onderwerp)
+
+## Verdediging
+
+Aan het einde volgt een individuele verdediging van ongeveer **20 tot 30 minuten**. Je verdedigt zowel de frontend als de backend, licht de architectuur toe, legt geselecteerde code uit en voert mogelijk een live aanpassing uit.
+
+Wie de eigen code niet kan uitleggen, kan niet slagen voor Web 3. Wanneer het resultaat van de eerste kans onvoldoende is, vindt de tweede examenkans plaats in **augustus**. De concrete opdracht en afspraken worden door de lector meegedeeld.

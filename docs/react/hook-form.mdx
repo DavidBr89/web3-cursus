@@ -1,0 +1,918 @@
+---
+title: "Formulieren met React Hook Form"
+sidebar_position: 6
+---
+
+
+Formulieren lijken eenvoudig: enkele invoervelden en een verzendknop. In een echte applicatie moeten we echter ook waarden verzamelen, invoer valideren, fouten tonen, verzending opvolgen en het formulier opnieuw instellen.
+
+Je kan dit allemaal zelf met `useState` schrijven. Bij grotere formulieren ontstaat dan snel veel herhaalde code. React Hook Form helpt ons om formulieren te beheren met zo weinig mogelijk onnodige rerenders en blijft dicht bij het gedrag van gewone HTML-formulieren.
+
+## Welk probleem lost React Hook Form op?
+
+Zonder formulierbibliotheek bewaren we iedere waarde en fout vaak afzonderlijk in state.
+
+```tsx
+const [email, setEmail] = useState('');
+const [password, setPassword] = useState('');
+const [emailError, setEmailError] = useState('');
+const [passwordError, setPasswordError] = useState('');
+const [isSubmitting, setIsSubmitting] = useState(false);
+```
+
+Daarnaast schrijven we voor elk veld `onChange`, `onBlur`, validatie en foutweergave. Bij registratie, afhankelijke velden en serverfouten neemt de hoeveelheid synchronisatiecode snel toe.
+
+Een volledig manuele oplossing moet onder meer zelf bijhouden:
+
+- welke waarden bij het formulier horen;
+- welke velden gewijzigd of bezocht werden;
+- wanneer validatie moet lopen;
+- welke fout bij welk veld hoort;
+- of het formulier geldig of bezig met verzenden is;
+- wanneer beginwaarden of serverdata veranderen;
+- hoe gecontroleerde componenten gekoppeld worden.
+
+React Hook Form centraliseert dit formulierproces. Zod centraliseert de vorm en validatie van de invoer. Onze code blijft verantwoordelijk voor de gebruikerservaring en wat er na een geldige submit gebeurt.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Voor een formulier met één eenvoudig veld kan een native formulier voldoende zijn. De package wordt vooral waardevol wanneer validatie, hergebruik, asynchrone verzending en meerdere toestanden samenkomen.
+</aside>
+
+## Installatie
+
+Open een terminal in de root van jouw Reactproject.
+
+```shell
+yarn add react-hook-form
+```
+
+Wanneer je npm gebruikt:
+
+```shell
+npm install react-hook-form
+```
+
+Daarna kunnen we de hook `useForm` importeren.
+
+```tsx
+import { useForm } from 'react-hook-form';
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+React Hook Form vervangt het HTML-formulier niet. We blijven werken met `<form>`, `<label>`, `<input>` en een submitknop.
+</aside>
+
+## Ons eerste formulier
+
+We bouwen een eenvoudig loginformulier. Maak eerst een type voor alle waarden die het formulier bevat.
+
+```tsx
+interface LoginFormValues {
+    email: string;
+    password: string;
+}
+```
+
+Vervolgens roepen we `useForm` aan met dit type.
+
+```tsx
+import { useForm, type SubmitHandler } from 'react-hook-form';
+
+interface LoginFormValues {
+    email: string;
+    password: string;
+}
+
+const LoginForm = () => {
+    const { register, handleSubmit } = useForm<LoginFormValues>();
+
+    const onSubmit: SubmitHandler<LoginFormValues> = (data) => {
+        console.log(data);
+    }
+
+    return (
+        <form onSubmit={handleSubmit(onSubmit)}>
+            <label htmlFor="email">E-mailadres</label>
+            <input id="email" type="email" {...register('email')} />
+
+            <label htmlFor="password">Wachtwoord</label>
+            <input id="password" type="password" {...register('password')} />
+
+            <button type="submit">Aanmelden</button>
+        </form>
+    );
+}
+
+export default LoginForm;
+```
+
+Er gebeuren hier drie belangrijke dingen:
+
+**`useForm<LoginFormValues>()`**: Maakt het formulier aan en koppelt de veldnamen aan ons TypeScripttype.
+
+**`register('email')`**: Registreert het invoerveld onder de naam `email`.
+
+**`handleSubmit(onSubmit)`**: Leest en valideert de waarden voordat `onSubmit` wordt uitgevoerd.
+
+## Wat doet register?
+
+`register` geeft de eigenschappen terug die React Hook Form nodig heeft om een native invoerveld te volgen. Met de spreadoperator geven we die eigenschappen aan het inputelement.
+
+```tsx
+<input {...register('email')} />
+```
+
+Dit komt conceptueel overeen met het doorgeven van onder meer een `name`, `onChange`, `onBlur` en `ref`. We schrijven deze eigenschappen niet afzonderlijk omdat `register` ze voor ons verzamelt.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+De naam in `register` moet overeenkomen met een property in `LoginFormValues`. TypeScript waarschuwt wanneer je bijvoorbeeld `register('username')` gebruikt terwijl `username` niet in het type bestaat.
+</aside>
+
+## Default values
+
+Beginwaarden geef je door via `defaultValues`.
+
+```tsx
+const { register, handleSubmit } = useForm<LoginFormValues>({
+    defaultValues: {
+        email: '',
+        password: '',
+    },
+});
+```
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Geef bij voorkeur alle velden een beginwaarde. Daardoor kan React Hook Form betrouwbaar bepalen of een waarde gewijzigd werd.
+</aside>
+
+Gebruik niet tegelijk `defaultValue` op elk inputveld wanneer je de beginwaarden al centraal via `useForm` beheert.
+
+## Validatie toevoegen
+
+Het tweede argument van `register` bevat validatieregels.
+
+```tsx
+<input
+    id="email"
+    type="email"
+    {...register('email', {
+        required: 'E-mailadres is verplicht.',
+        pattern: {
+            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            message: 'Geef een geldig e-mailadres in.',
+        },
+    })}
+/>
+```
+
+Voor het wachtwoord kunnen we onder meer een minimumlengte gebruiken.
+
+```tsx
+<input
+    id="password"
+    type="password"
+    {...register('password', {
+        required: 'Wachtwoord is verplicht.',
+        minLength: {
+            value: 8,
+            message: 'Een wachtwoord bevat minstens 8 tekens.',
+        },
+    })}
+/>
+```
+
+Veelgebruikte ingebouwde regels zijn:
+
+- `required`;
+- `min` en `max`;
+- `minLength` en `maxLength`;
+- `pattern`;
+- `validate` voor een eigen validatiefunctie.
+
+## Foutmeldingen tonen
+
+Fouten bevinden zich in `formState.errors`.
+
+```tsx
+const {
+    register,
+    handleSubmit,
+    formState: { errors },
+} = useForm<LoginFormValues>();
+```
+
+Toon een fout bij het juiste veld.
+
+```tsx
+<label htmlFor="email">E-mailadres</label>
+<input
+    id="email"
+    type="email"
+    aria-invalid={errors.email ? 'true' : 'false'}
+    aria-describedby={errors.email ? 'email-error' : undefined}
+    {...register('email', {
+        required: 'E-mailadres is verplicht.',
+    })}
+/>
+
+{errors.email && (
+    <p id="email-error" role="alert">
+        {errors.email.message}
+    </p>
+)}
+```
+
+`aria-invalid` maakt de ongeldige toestand beschikbaar voor ondersteunende technologie. Met `aria-describedby` koppelen we het veld aan zijn foutmelding.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Clientvalidatie helpt de gebruiker, maar beveiligt de applicatie niet. De backend moet alle ontvangen gegevens opnieuw valideren.
+</aside>
+
+## handleSubmit
+
+`handleSubmit` controleert eerst alle geregistreerde velden. Wanneer alles geldig is, roept React Hook Form de succesfunctie op. Optioneel kunnen we ook een functie voor ongeldige invoer doorgeven.
+
+```tsx
+import type {
+    SubmitErrorHandler,
+    SubmitHandler,
+} from 'react-hook-form';
+
+const onValid: SubmitHandler<LoginFormValues> = async (data) => {
+    await login(data);
+}
+
+const onInvalid: SubmitErrorHandler<LoginFormValues> = (errors) => {
+    console.log('Ongeldig formulier', errors);
+}
+
+<form onSubmit={handleSubmit(onValid, onInvalid)}>
+```
+
+Je submitfunctie mag asynchroon zijn. Vang fouten van een API-call zelf af wanneer je ze in de interface wilt tonen.
+
+```tsx
+const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
+    try {
+        await login(data);
+    } catch {
+        setError('root', {
+            message: 'Aanmelden is mislukt. Controleer je gegevens.',
+        });
+    }
+}
+```
+
+## Formulierstatus
+
+`formState` bevat informatie over de toestand van het formulier.
+
+```tsx
+const {
+    register,
+    handleSubmit,
+    formState: {
+        errors,
+        isDirty,
+        isValid,
+        isSubmitting,
+        isSubmitSuccessful,
+    },
+} = useForm<LoginFormValues>({
+    mode: 'onBlur',
+    defaultValues: {
+        email: '',
+        password: '',
+    },
+});
+```
+
+**`errors`**: Bevat de validatiefouten per veld.
+
+**`isDirty`**: Is `true` zodra minstens één waarde verschilt van zijn beginwaarde.
+
+**`isValid`**: Geeft aan of het formulier volgens de ingestelde regels geldig is.
+
+**`isSubmitting`**: Is `true` zolang de submitfunctie bezig is.
+
+**`isSubmitSuccessful`**: Wordt `true` nadat een verzending zonder runtimefout voltooid werd.
+
+Gebruik `isSubmitting` om dubbel verzenden te voorkomen.
+
+```tsx
+<button type="submit" disabled={isSubmitting}>
+    {isSubmitting ? 'Aanmelden...' : 'Aanmelden'}
+</button>
+```
+
+## Wanneer valideren?
+
+Met `mode` bepalen we wanneer de eerste validatie plaatsvindt.
+
+```tsx
+useForm<LoginFormValues>({
+    mode: 'onBlur',
+});
+```
+
+Veelgebruikte mogelijkheden zijn:
+
+**`onSubmit`**: Valideert bij verzenden. Dit is de standaard.
+
+**`onBlur`**: Valideert wanneer de gebruiker een veld verlaat.
+
+**`onChange`**: Valideert bij iedere wijziging en kan meer rerenders veroorzaken.
+
+**`onTouched`**: Valideert eerst bij blur en daarna bij wijzigingen.
+
+**`all`**: Valideert bij blur en bij wijzigingen.
+
+Kies niet automatisch de strengste optie. Een fout tonen terwijl de gebruiker nog het eerste teken typt, geeft vaak een onrustige gebruikerservaring.
+
+## Getallen en andere HTML-waarden
+
+De waarde van een HTML-input is standaard een string. Voor een numeriek veld kan React Hook Form de waarde converteren.
+
+```tsx
+interface MovieFormValues {
+    title: string;
+    releaseYear: number;
+}
+
+<input
+    type="number"
+    {...register('releaseYear', {
+        valueAsNumber: true,
+        required: 'Jaar is verplicht.',
+        min: {
+            value: 1888,
+            message: 'Kies een geldig filmjaar.',
+        },
+    })}
+/>
+```
+
+Zonder `valueAsNumber` ontvangt je submitfunctie een string, ook al heeft het veld `type="number"`.
+
+## Eigen validatiefuncties
+
+Gebruik `validate` voor een regel die niet door een ingebouwde validator wordt gedekt.
+
+```tsx
+<input
+    {...register('title', {
+        validate: (value) =>
+            value.trim().length > 0 || 'De titel mag niet alleen uit spaties bestaan.',
+    })}
+/>
+```
+
+Een validator geeft `true` terug wanneer de waarde geldig is. Bij een ongeldige waarde geeft ze `false` of een foutmelding terug.
+
+## Velden die van elkaar afhangen
+
+Voor een wachtwoordbevestiging hebben we de actuele waarde van het eerste wachtwoord nodig. Met `watch` kunnen we een veld volgen.
+
+```tsx
+interface RegisterFormValues {
+    email: string;
+    password: string;
+    passwordConfirmation: string;
+}
+
+const { register, handleSubmit, watch } = useForm<RegisterFormValues>();
+const password = watch('password');
+
+<input
+    type="password"
+    {...register('passwordConfirmation', {
+        required: 'Bevestig je wachtwoord.',
+        validate: (value) =>
+            value === password || 'De wachtwoorden zijn niet gelijk.',
+    })}
+/>
+```
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+`watch` kan een rerender veroorzaken wanneer de gevolgde waarde verandert. Volg alleen waarden die je werkelijk nodig hebt om UI of validatie te berekenen.
+</aside>
+
+## Waarden lezen en aanpassen
+
+`getValues` leest waarden zonder er een renderabonnement voor te maken.
+
+```tsx
+const email = getValues('email');
+```
+
+`setValue` past een waarde programmatisch aan.
+
+```tsx
+setValue('email', 'student@hogent.be', {
+    shouldDirty: true,
+    shouldValidate: true,
+});
+```
+
+Gebruik deze functies doelgericht. Gewone gebruikersinvoer laat je nog steeds door de geregistreerde input afhandelen.
+
+## Het formulier resetten
+
+Met `reset` brengen we het volledige formulier terug naar beginwaarden.
+
+```tsx
+const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitSuccessful },
+} = useForm<MovieFormValues>({
+    defaultValues: {
+        title: '',
+        releaseYear: new Date().getFullYear(),
+    },
+});
+```
+
+Na een succesvolle verzending kunnen we resetten. Doe dit bijvoorbeeld nadat de API-call werkelijk geslaagd is.
+
+```tsx
+const onSubmit: SubmitHandler<MovieFormValues> = async (data) => {
+    await createMovie(data);
+    reset();
+}
+```
+
+Je kan ook nieuwe beginwaarden instellen.
+
+```tsx
+reset({
+    title: movie.title,
+    releaseYear: movie.releaseYear,
+});
+```
+
+## Serverfouten met setError
+
+Niet elke fout ontstaat door een ongeldig veld. De server kan bijvoorbeeld melden dat een e-mailadres al gebruikt wordt.
+
+```tsx
+setError('email', {
+    type: 'server',
+    message: 'Dit e-mailadres is al geregistreerd.',
+});
+```
+
+Voor een algemene fout gebruiken we `root`.
+
+```tsx
+setError('root.serverError', {
+    message: 'De server is tijdelijk niet bereikbaar.',
+});
+```
+
+De algemene fout kan als volgt getoond worden:
+
+```tsx
+{errors.root?.serverError && (
+    <p role="alert">{errors.root.serverError.message}</p>
+)}
+```
+
+## Gecontroleerde componenten met Controller
+
+Native inputs werken rechtstreeks met `register`. Sommige UI-bibliotheken leveren volledig gecontroleerde componenten die een eigen `value` en `onChange` verwachten. Daarvoor bestaat `Controller`.
+
+```tsx
+import { Controller, useForm } from 'react-hook-form';
+
+const { control } = useForm<MovieFormValues>();
+
+<Controller
+    name="rating"
+    control={control}
+    rules={{ required: 'Kies een rating.' }}
+    render={({ field, fieldState }) => (
+        <RatingPicker
+            value={field.value}
+            onChange={field.onChange}
+            error={fieldState.error?.message}
+        />
+    )}
+/>
+```
+
+`Controller` vormt een brug tussen React Hook Form en een gecontroleerd component.
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Gebruik voor gewone HTML-inputs `register`. Gebruik `Controller` alleen wanneer het component niet rechtstreeks geregistreerd kan worden.
+</aside>
+
+## Een formulier opsplitsen met FormProvider
+
+Bij grote formulieren wil je invoervelden over verschillende componenten verdelen zonder `register` en `errors` door vele lagen props te sturen.
+
+```tsx
+import { FormProvider, useForm } from 'react-hook-form';
+
+const methods = useForm<RegisterFormValues>();
+
+return (
+    <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(onSubmit)}>
+            <AccountFields />
+            <button type="submit">Registreren</button>
+        </form>
+    </FormProvider>
+);
+```
+
+Een onderliggend component leest de formulierfuncties met `useFormContext`.
+
+```tsx
+import { useFormContext } from 'react-hook-form';
+
+const AccountFields = () => {
+    const {
+        register,
+        formState: { errors },
+    } = useFormContext<RegisterFormValues>();
+
+    return (
+        <>
+            <input {...register('email', { required: 'E-mail is verplicht.' })} />
+            {errors.email && <p>{errors.email.message}</p>}
+        </>
+    );
+}
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Gebruik maar één `FormProvider` rond hetzelfde formulier. Nest geen tweede provider voor ieder deelcomponent.
+</aside>
+
+## Validatie met Zod
+
+Bij grotere formulieren willen we de validatieregels en het TypeScripttype niet afzonderlijk onderhouden. Daarom gebruiken we in deze cursus Zod. Zod is TypeScript-first: we beschrijven de geldige invoer één keer in een schema en leiden het TypeScripttype daaruit af.
+
+Installeer Zod en de officiële resolverintegratie voor React Hook Form:
+
+```shell
+yarn add zod @hookform/resolvers
+```
+
+Maak het schema en geef de Zod-resolver door.
+
+```tsx
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const loginSchema = z.object({
+    email: z.email('Geef een geldig e-mailadres in.'),
+    password: z
+        .string()
+        .min(8, 'Een wachtwoord bevat minstens 8 tekens.'),
+});
+
+type LoginInput = z.infer<typeof loginSchema>;
+
+const {
+    register,
+    handleSubmit,
+    formState: { errors },
+} = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+});
+```
+
+Het schema wordt nu de centrale bron voor validatie en het TypeScripttype wordt ervan afgeleid.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+In Zod 4 kan `z.email()` rechtstreeks gebruikt worden. In oudere voorbeelden zie je vaak `z.string().email()`; die vorm kom je dus nog regelmatig tegen.
+</aside>
+
+### Velden vergelijken met refine
+
+Bij registratie moet de wachtwoordbevestiging gelijk zijn aan het wachtwoord. Deze regel gaat over meerdere velden en hoort daarom op het volledige object.
+
+```tsx
+const registerSchema = z
+    .object({
+        email: z.email('Geef een geldig e-mailadres in.'),
+        password: z
+            .string()
+            .min(8, 'Gebruik minstens 8 tekens.'),
+        passwordConfirmation: z.string(),
+    })
+    .refine(
+        (data) => data.password === data.passwordConfirmation,
+        {
+            message: 'De wachtwoorden zijn niet gelijk.',
+            path: ['passwordConfirmation'],
+        },
+    );
+
+type RegisterInput = z.infer<typeof registerSchema>;
+```
+
+Met `path` koppelen we de fout aan `passwordConfirmation`. Daardoor verschijnt de melding bij het veld waar de gebruiker de correctie verwacht.
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+Een schema maakt servervalidatie nog steeds niet overbodig. De clientcode kan aangepast of volledig omzeild worden.
+</aside>
+
+## Projectstructuur voor een echte feature
+
+De voorgaande voorbeelden stonden bewust samen om één API uit te leggen. In een groeiende applicatie plaatsen we niet alle schema's, requests en UI in een pagina. We organiseren code per feature.
+
+```text
+src/
+├── app/
+│   ├── router.tsx
+│   └── provider.tsx
+├── components/
+│   └── ui/
+│       ├── Button.tsx
+│       └── Input.tsx
+├── features/
+│   └── auth/
+│       ├── api/
+│       │   └── login.ts
+│       ├── components/
+│       │   └── LoginForm.tsx
+│       ├── schemas/
+│       │   └── loginSchema.ts
+│       └── index.ts
+├── pages/
+│   └── LoginPage.tsx
+└── types/
+```
+
+**`app`**: Applicatiebrede configuratie zoals router en providers.
+
+**`components/ui`**: Generieke UI-componenten die niets over authenticatie weten.
+
+**`features/auth`**: Alles wat specifiek bij de authenticatiefeature hoort.
+
+**`pages`**: Routecomponenten die features samenstellen. Een pagina blijft zo dun mogelijk.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Maak niet vooraf voor elk denkbaar concept een map. Voeg een laag toe wanneer er werkelijk code met die verantwoordelijkheid bestaat. De featuregrens is belangrijker dan een rigide mappenboom.
+</aside>
+
+### Stap 1: schema en type
+
+Maak `src/features/auth/schemas/loginSchema.ts`.
+
+```typescript
+import { z } from 'zod';
+
+export const loginSchema = z.object({
+    email: z.email('Geef een geldig e-mailadres in.'),
+    password: z
+        .string()
+        .min(8, 'Gebruik minstens 8 tekens.'),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+```
+
+Het inputtype staat naast het schema omdat beide dezelfde featuregrens en dezelfde betekenis hebben. Maak niet nog een handgeschreven `LoginInput` in een globale typemap.
+
+### Stap 2: API-functie
+
+Maak `src/features/auth/api/login.ts`.
+
+```typescript
+import type { LoginInput } from '../schemas/loginSchema';
+
+export interface AuthenticatedUser {
+    id: number;
+    email: string;
+}
+
+export const login = async (
+    input: LoginInput,
+): Promise<AuthenticatedUser> => {
+    const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(input),
+    });
+
+    if (!response.ok) {
+        throw new Error('Aanmelden is mislukt.');
+    }
+
+    return response.json();
+}
+```
+
+De API-functie weet hoe het request verstuurd wordt. Ze bevat geen JSX en kent de formulierbibliotheek niet.
+
+### Stap 3: formuliercomponent
+
+Maak `src/features/auth/components/LoginForm.tsx`.
+
+```tsx
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { login } from '../api/login';
+import { loginSchema, type LoginInput } from '../schemas/loginSchema';
+
+const LoginForm = () => {
+    const {
+        register,
+        handleSubmit,
+        setError,
+        formState: { errors, isSubmitting },
+    } = useForm<LoginInput>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: '',
+            password: '',
+        },
+        mode: 'onBlur',
+    });
+
+    const onSubmit: SubmitHandler<LoginInput> = async (data) => {
+        try {
+            await login(data);
+        } catch {
+            setError('root.server', {
+                message: 'Aanmelden is mislukt.',
+            });
+        }
+    }
+
+    return (
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                <label htmlFor="email">E-mailadres</label>
+                <input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    aria-invalid={errors.email ? 'true' : 'false'}
+                    {...register('email')}
+                />
+                {errors.email && <p role="alert">{errors.email.message}</p>}
+
+                <label htmlFor="password">Wachtwoord</label>
+                <input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    aria-invalid={errors.password ? 'true' : 'false'}
+                    {...register('password')}
+                />
+                {errors.password && <p role="alert">{errors.password.message}</p>}
+
+                {errors.root?.server && (
+                    <p role="alert">{errors.root.server.message}</p>
+                )}
+
+                <button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Bezig...' : 'Aanmelden'}
+                </button>
+        </form>
+    );
+}
+
+export default LoginForm;
+```
+
+`noValidate` schakelt de standaard browsermeldingen uit. Daardoor kunnen we onze eigen consistente foutmeldingen tonen. De validatie zelf wordt uitgevoerd door React Hook Form.
+
+### Stap 4: publieke feature-API
+
+Maak `src/features/auth/index.ts`.
+
+```typescript
+export { default as LoginForm } from './components/LoginForm';
+```
+
+Andere delen van de applicatie importeren uit deze publieke ingang en hoeven de interne mappenstructuur van de feature niet te kennen.
+
+### Stap 5: dunne routepagina
+
+Maak `src/pages/LoginPage.tsx`.
+
+```tsx
+import { LoginForm } from '../features/auth';
+
+const LoginPage = () => {
+    return (
+        <main>
+            <h1>Aanmelden</h1>
+            <LoginForm />
+        </main>
+    );
+}
+
+export default LoginPage;
+```
+
+De pagina bepaalt de paginastructuur. Het formulier beheert formuliergedrag, het schema valideert invoer en de API-functie communiceert met de server. Iedere laag heeft zo één duidelijke reden om te veranderen.
+
+## Veelgemaakte fouten
+
+**`handleSubmit` niet gebruiken**: De submitfunctie ontvangt dan niet automatisch gevalideerde formulierdata.
+
+**Een veld niet registreren**: React Hook Form kent de waarde niet en neemt ze niet op in het resultaat.
+
+**Dezelfde naam voor verschillende velden gebruiken**: Beide inputs schrijven dan naar dezelfde formulierwaarde.
+
+**Alle waarden daarnaast ook in `useState` bewaren**: Je creëert twee bronnen van waarheid en onnodige rerenders.
+
+**Geen `defaultValues` voorzien**: Formulierstatus zoals `isDirty` kan dan moeilijker correct vergeleken worden.
+
+**`Controller` voor ieder native input gebruiken**: Gewone inputs kunnen eenvoudiger met `register` werken.
+
+**API-fouten niet opvangen**: `handleSubmit` verbergt fouten uit je eigen asynchrone submitfunctie niet.
+
+**Alleen clientvalidatie uitvoeren**: Een kwaadwillige client kan deze validatie omzeilen.
+
+## Oefeningen
+
+### Loginformulier
+
+Maak een getypeerd loginformulier met e-mailadres en wachtwoord. Beide velden zijn verplicht en het wachtwoord bevat minstens acht tekens. Toon toegankelijke foutmeldingen en voorkom dubbel verzenden.
+
+### Registratieformulier
+
+Voeg naam, e-mailadres, wachtwoord, wachtwoordbevestiging en een akkoord-checkbox toe. Controleer dat beide wachtwoorden gelijk zijn en dat de gebruiker akkoord ging.
+
+### Filmformulier
+
+Maak een formulier met titel, beschrijving, releasejaar, genre en rating. Converteer jaar en rating naar numbers en geef alle velden zinvolle beginwaarden.
+
+### Serverfouten
+
+Simuleer dat een e-mailadres al bestaat. Koppel die fout met `setError` aan het e-mailveld. Simuleer daarnaast een algemene netwerkfout onderaan het formulier.
+
+### Wijzigingsvraag
+
+Gebruik hetzelfde filmformulier om een bestaande film te bewerken. Vul de bestaande data als beginwaarden in en reset het formulier wanneer een andere film gekozen wordt.
+
+## Controlevragen
+
+- Welke eigenschappen geeft `register` conceptueel aan een input?
+- Waarom plaatsen we `handleSubmit` rond onze eigen submitfunctie?
+- Wat is het verschil tussen `isDirty` en `isSubmitting`?
+- Wanneer gebruik je `watch` en wanneer `getValues`?
+- Waarom is `valueAsNumber` nodig bij een numerieke input?
+- Wanneer gebruik je `Controller` in plaats van `register`?
+- Welk probleem lossen `FormProvider` en `useFormContext` op?
+- Waarom moet de backend de invoer opnieuw valideren?
+
+## Officiële documentatie
+
+- [React Hook Form: Get Started](https://react-hook-form.com/get-started)
+- [React Hook Form: useForm](https://react-hook-form.com/docs/useform)
+- [React Hook Form: register](https://react-hook-form.com/docs/useform/register)
+- [React Hook Form: handleSubmit](https://react-hook-form.com/docs/useform/handlesubmit)
+- [React Hook Form: formState](https://react-hook-form.com/docs/useform/formstate)
+- [React Hook Form: Controller](https://react-hook-form.com/docs/usecontroller/controller)
+- [React Hook Form: FormProvider](https://react-hook-form.com/docs/formprovider)
+- [React Hook Form Resolvers](https://github.com/react-hook-form/resolvers)
+- [Zod-documentatie](https://zod.dev/)
+
+## Architectuurreferentie
+
+- [Bulletproof React](https://github.com/alan2207/bulletproof-react)

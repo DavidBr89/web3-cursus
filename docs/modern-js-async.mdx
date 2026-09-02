@@ -1,0 +1,243 @@
+---
+title: "Classroom50-oefening: Film Data Lab"
+sidebar_label: "Oefening"
+sidebar_position: 4
+---
+
+import useBaseUrl from "@docusaurus/useBaseUrl";
+
+## Waarom deze oefening?
+
+In [Verdiepende concepten](./es6-plus.mdx) heb je de JavaScript-concepten gezien die we later nodig hebben in React. In deze Classroom50-oefening pas je deze leerstof toe op gegevens uit een bioscoopwebapplicatie.
+
+Dit is **één Classroom50-assignment** met twee onderdelen:
+
+1. filmdata transformeren zonder de oorspronkelijke data onverwacht aan te passen;
+2. filmgegevens en vertoningen asynchroon ophalen en fouten correct afhandelen.
+
+<aside className="courseCallout courseCallout--info">
+
+<strong className="courseCallout__title">Classroom50</strong>
+
+Accepteer de assignment met je GitHub account. Classroom50 maakt daarna je persoonlijke repository aan, die je lokaal kan clonen.
+
+<a
+  className="assignmentAcceptLink"
+  href="https://classroom50.org/HoGent-web3/web-3/assignments/film-data-lab/accept"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span>
+  <span>Assignment accepteren</span>
+  <span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Zelf oefenen</strong>
+
+De oefeningen worden niet standaard automatisch op de juistheid van alle code gecontroleerd. Je blijft zelf verantwoordelijk voor het testen en begrijpen van je oplossing. Er wordt voor de punten wel nagegaan of je aan de oefeningen gewerkt hebt.
+</aside>
+
+## Starterscode
+
+Download de starterscode wanneer je de opdrachten lokaal wil voorbereiden. Dezelfde code kan als basis gebruikt worden voor de Classroom50-repository.
+
+<a
+  className="downloadLink"
+  href={useBaseUrl("/files/javascript-verdieping-starter.js")}
+  download
+>
+  <span className="downloadLink__icon" aria-hidden="true">↓</span>
+  <span>Starterscode downloaden</span>
+  <span className="downloadLink__meta">JS</span>
+</a>
+
+## Werkwijze
+
+1. Accepteer de assignment in Classroom50.
+2. Clone je persoonlijke repository.
+3. Installeer de dependencies wanneer dit in de `README` gevraagd wordt.
+4. Lees eerst de volledige opdracht en voorspel waar gevraagd de uitvoer.
+5. Implementeer en test iedere functie afzonderlijk.
+6. Commit en push regelmatig naar je repository.
+
+## Deel 1: Film Data
+
+### Situatie
+
+De bioscoop ontvangt een lijst met films. Je schrijft functies om deze gegevens te zoeken, filteren en om te zetten. Je maakt in dit deel nog geen gebruikersinterface. De focus ligt volledig op gewone JavaScript.
+
+### Startgegevens
+
+De repository bevat gelijkaardige startdata:
+
+```javascript
+const films = [
+  {
+    id: 1,
+    titel: "The Matrix",
+    genres: ["actie", "sciencefiction"],
+    speelduur: 136,
+    minimumLeeftijd: 16,
+    actief: true
+  },
+  {
+    id: 2,
+    titel: "Inception",
+    genres: ["actie", "sciencefiction"],
+    speelduur: 148,
+    minimumLeeftijd: 12,
+    actief: true
+  },
+  {
+    id: 3,
+    titel: "Interstellar",
+    genres: ["drama", "sciencefiction"],
+    speelduur: 169,
+    minimumLeeftijd: 12,
+    actief: false
+  }
+];
+```
+
+### Opdrachten
+
+Implementeer de volgende functies zonder een manuele `for`-lus en zonder de oorspronkelijke filmdata te muteren:
+
+- `getActieveFilms(films)`: returnt alle actieve films;
+- `findFilmById(films, id)`: returnt de film met het gevraagde id of `undefined`;
+- `getFilmsKorterDan(films, minuten)`: returnt de films die maximaal het opgegeven aantal minuten duren;
+- `getFilmTitels(films)`: returnt alleen de titels;
+- `getUniekeGenres(films)`: returnt ieder genre exact één keer;
+- `getTotaleSpeelduur(films)`: returnt de totale speelduur;
+- `heeftFilmVoorLeeftijd(films, leeftijd)`: controleert of minstens één actieve film toegelaten is voor die leeftijd.
+
+### Mutatiebug onderzoeken
+
+Onderstaande functie voegt een genre toe aan een film. De functie lijkt te werken, maar veroorzaakt een mutatiebug doordat ze de bestaande gegevens rechtstreeks aanpast.
+
+```javascript
+const voegGenreToe = (films, filmId, genre) => {
+  const film = films.find((film) => film.id === filmId);
+
+  if (!film) {
+    return films;
+  }
+
+  film.genres.push(genre);
+  return films;
+};
+```
+
+Gebruik bijvoorbeeld de volgende code om te onderzoeken wat er gebeurt:
+
+```javascript
+const aangepasteFilms = voegGenreToe(films, 1, "klassieker");
+
+console.log(films[0].genres);
+console.log(aangepasteFilms === films);
+console.log(aangepasteFilms[0] === films[0]);
+```
+
+Voorspel eerst de drie resultaten. Voer de code daarna uit en leg uit waarom de oorspronkelijke filmdata gewijzigd werd.
+
+Herschrijf vervolgens `voegGenreToe()` zodat:
+
+- een nieuwe array wordt gereturnd;
+- alleen de gewijzigde film een nieuw object wordt;
+- ook de geneste array met genres correct gekopieerd wordt;
+- de overige filmobjecten behouden blijven.
+
+### Beschikbare plaatsen per film
+
+Een film kan meerdere vertoningen hebben. Implementeer `addTotaalVrijePlaatsen(films, vertoningen)`. Deze functie returnt een nieuwe array waarin iedere film een extra property `vrijePlaatsen` krijgt. Dit is de som van de vrije plaatsen van alle vertoningen voor die film.
+
+Hou rekening met een film waarvoor nog geen vertoningen bestaan. Deze film krijgt `vrijePlaatsen: 0`. De oorspronkelijke films en vertoningen mogen niet aangepast worden.
+
+## Deel 2: Cinema Loader
+
+### Situatie
+
+De bioscoopgegevens worden nu opgehaald via een gesimuleerde API. Deze API reageert soms traag, kan een fout geven en verwerkt requests niet altijd in dezelfde volgorde.
+
+De startrepository bevat de API en de nodige testdata. Je wijzigt de API zelf niet, maar gebruikt ze om de volgende functies te implementeren.
+
+### Uitvoervolgorde voorspellen
+
+Voorspel eerst de uitvoer van een codefragment met synchrone `console.log()`-instructies, `setTimeout(..., 0)` en één of meerdere Promise-callbacks.
+
+Duid bij iedere regel aan of deze rechtstreeks, via de microtask queue of via de task queue uitgevoerd wordt. Voer de code pas daarna uit en vergelijk het resultaat met je voorspelling.
+
+### Filmgegevens laden
+
+Implementeer de volgende functies:
+
+- `loadFilms()`: haalt alle films op;
+- `loadFilm(id)`: haalt één film op en houdt rekening met een onbekend id;
+- `loadFilmDetails(id)`: haalt een film en zijn vertoningen samen op met `Promise.all()` en returnt `{ film, vertoningen }`;
+- `loadFilmTitles(ids)`: haalt meerdere onafhankelijke films samen op en returnt hun titels;
+- `loadFilmSafely(id)`: returnt bij succes `{ status: "success", data }` en bij een fout `{ status: "error", message }`.
+
+Gebruik waar nodig `async`, `await`, `try`, `catch` en `finally`. Leg bij iedere functie kort uit:
+
+- wat de functie onmiddellijk returnt;
+- waar er een fout kan ontstaan;
+- of de bewerkingen na elkaar of samen uitgevoerd moeten worden;
+- waar de fout het best afgehandeld wordt.
+
+### Foutieve code verbeteren
+
+De repository bevat enkele foutieve implementaties. Onderzoek en verbeter onder andere:
+
+- een functie die de Promise niet returnt;
+- een `try/catch` waarin de Promise niet met `await` wordt afgewacht;
+- twee onafhankelijke requests die onnodig na elkaar uitgevoerd worden;
+- een fout die opgevangen maar volledig genegeerd wordt.
+
+### Race condition
+
+Wanneer een bezoeker snel verschillende films selecteert, kan een trage oude request eindigen na een nieuwere request. Toon dit probleem aan met de gesimuleerde API en zorg ervoor dat alleen de meest recente selectie verwerkt wordt.
+
+Leg ook uit waarom de fout niet altijd zichtbaar is, waarom je oplossing werkt en welke beperking je oplossing nog heeft. Annuleren met `AbortController` kan later een alternatief zijn.
+
+### Film tonen wanneer vertoningen mislukken
+
+Implementeer ook `loadFilmDetailsMetFallback(id)`. De film moet nog steeds gereturnd worden wanneer het laden van de vertoningen mislukt. Return een object met de volgende vorm:
+
+```javascript
+{
+  film,
+  vertoningen,
+  vertoningenGeladen
+}
+```
+
+Bij een fout tijdens het laden van de vertoningen is `vertoningen` een lege array en `vertoningenGeladen` gelijk aan `false`. Een fout bij het laden van de film zelf mag niet verborgen worden.
+
+Bepaal eerst waarom `Promise.all()` hiervoor niet het gewenste gedrag heeft. Implementeer daarna de functie en test zowel het succesvolle als het foutieve scenario.
+
+## Oplevering
+
+Push minstens het volgende naar je persoonlijke Classroom50-repository:
+
+- de werkende functies uit beide delen;
+- je voorspellingen van de uitvoervolgorde;
+- eigen controles voor succesvolle en foutieve situaties;
+- een demonstratie van de mutatiebug en de race condition;
+- een korte uitleg bij minstens één technische keuze;
+- één voorbeeld van AI-code die je verbeterde of verwierp, wanneer je AI gebruikte.
+
+## Wat moet je kunnen uitleggen?
+
+De lector kan je vragen om een fragment uit je eigen oplossing toe te lichten of aan te passen. Je moet onder andere kunnen uitleggen:
+
+- waarom je een bepaalde arraymethode gekozen hebt;
+- welke arrays en objecten een nieuwe referentie krijgen;
+- waarom spread geen volledige kopie van geneste data maakt;
+- in welke volgorde asynchrone code uitgevoerd wordt;
+- waarom je voor opeenvolgende `await`-expressies of `Promise.all()` gekozen hebt;
+- hoe je fouten en verouderde resultaten afhandelt.
+
+Het doel is niet om code uit het hoofd te leren. Je moet kunnen aantonen dat je de ingediende code begrijpt en zelf kan aanpassen.

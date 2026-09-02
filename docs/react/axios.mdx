@@ -1,0 +1,392 @@
+---
+title: "REST API-calls met Axios"
+sidebar_position: 7
+---
+
+
+Een frontendapplicatie heeft vaak gegevens nodig van een backend of externe REST API. Die communicatie gebeurt via HTTP-requests. In dit hoofdstuk bouwen we een duidelijke API-laag met Axios.
+
+## Eerst het probleem begrijpen
+
+De browser bevat al `fetch`. Daarmee kunnen we zonder package een request versturen.
+
+```typescript
+const response = await fetch('/api/movies');
+
+if (!response.ok) {
+    throw new Error(`HTTP-fout ${response.status}`);
+}
+
+const movies = await response.json();
+```
+
+Deze code is geldig. Naarmate de applicatie groeit, herhalen we echter vaak dezelfde infrastructuur:
+
+- basis-URL en headers toevoegen;
+- JSON-data omzetten;
+- bij iedere call HTTP-statussen controleren;
+- cookies of tokens meesturen;
+- fouten naar één bruikbaar formaat vertalen;
+- requests annuleren of time-outs instellen;
+- gedeeld gedrag voor ieder request toepassen.
+
+Axios is een HTTP-client die deze requestlaag consistenter maakt. Axios lost niet automatisch caching, loading UI of server state op. Dat is later de verantwoordelijkheid van TanStack Query.
+
+## Waarom Axios?
+
+Axios biedt onder meer:
+
+- één API voor `GET`, `POST`, `PATCH`, `PUT` en `DELETE`;
+- automatische verwerking van JSON-responses;
+- een fout bij responses buiten het succesvolle statusbereik;
+- instances met gedeelde configuratie;
+- interceptors voor gedrag dat bij meerdere requests terugkomt;
+- ondersteuning voor time-outs, annulering en requestconfiguratie.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+`fetch` is geen slechte keuze. We kiezen Axios in deze cursus omdat we één expliciete, herbruikbare HTTP-laag willen bouwen en die later combineren met TanStack Query.
+</aside>
+
+## Installatie
+
+```shell
+yarn add axios
+```
+
+Of met npm:
+
+```shell
+npm install axios
+```
+
+## Een eerste GET-request
+
+```typescript
+import axios from 'axios';
+
+interface Movie {
+    id: number;
+    title: string;
+}
+
+const loadMovies = async (): Promise<Movie[]> => {
+    const response = await axios.get<Movie[]>('/api/movies');
+    return response.data;
+}
+```
+
+Axios geeft een responseobject terug. De body van de serverresponse staat in `response.data`.
+
+Het generieke type bij `get` beschrijft wat wij van de server verwachten. Het valideert de werkelijke response niet tijdens runtime.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+Een TypeScripttype maakt onbetrouwbare externe data niet automatisch geldig. Gebruik bij kritieke data eventueel een runtime-schema zoals Zod om de response te controleren.
+</aside>
+
+## De belangrijkste HTTP-methodes
+
+```typescript
+const movies = await axios.get<Movie[]>('/api/movies');
+
+const movie = await axios.get<Movie>('/api/movies/42');
+
+const createdMovie = await axios.post<Movie>('/api/movies', {
+    title: 'Alien',
+});
+
+const updatedMovie = await axios.patch<Movie>('/api/movies/42', {
+    title: 'Alien: Director’s Cut',
+});
+
+await axios.delete('/api/movies/42');
+```
+
+Bij `post`, `put` en `patch` is het tweede argument de requestbody. Requestconfiguratie komt daarna als volgend argument.
+
+## Queryparameters
+
+Plak queryparameters niet handmatig met strings aan elkaar. Gebruik `params`.
+
+```typescript
+const response = await axios.get<Movie[]>('/api/movies', {
+    params: {
+        query: 'alien',
+        page: 2,
+    },
+});
+```
+
+Axios zet deze waarden om naar een URL zoals `/api/movies?query=alien&page=2` en verzorgt de nodige URL-encoding.
+
+## Een gedeelde Axios-instance
+
+Wanneer iedere API-functie dezelfde basis-URL en configuratie gebruikt, maken we een instance.
+
+Maak `src/lib/apiClient.ts`.
+
+```typescript
+import axios from 'axios';
+
+export const apiClient = axios.create({
+    baseURL: import.meta.env.VITE_API_URL,
+    timeout: 10_000,
+    withCredentials: true,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+```
+
+**`baseURL`**: Wordt voor ieder relatief endpoint geplaatst.
+
+**`timeout`**: Breekt een request af wanneer het te lang duurt.
+
+**`withCredentials`**: Laat de browser credentials zoals cookies meesturen wanneer de serverconfiguratie dit toestaat.
+
+`VITE_API_URL` plaatsen we in een omgevingsbestand:
+
+```text
+VITE_API_URL=http://localhost:3000/api
+```
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+Variabelen met `VITE_` worden in de frontendbundle opgenomen. Plaats er dus nooit wachtwoorden, geheime API-keys of andere secrets in.
+</aside>
+
+## API-code per feature
+
+In een toekomstgerichte structuur woont filmspecifieke API-code bij de filmsfeature.
+
+```text
+src/
+├── lib/
+│   └── apiClient.ts
+└── features/
+    └── movies/
+        ├── api/
+        │   ├── getMovies.ts
+        │   ├── getMovie.ts
+        │   └── createMovie.ts
+        ├── components/
+        ├── schemas/
+        └── index.ts
+```
+
+De gedeelde client bevat alleen algemene HTTP-configuratie. Endpoints, requesttypes en responsetypes blijven bij de feature die ze gebruikt.
+
+Maak `src/features/movies/api/getMovies.ts`.
+
+```typescript
+import { apiClient } from '../../../lib/apiClient';
+
+export interface Movie {
+    id: number;
+    title: string;
+    rating: number;
+}
+
+export interface GetMoviesParams {
+    query?: string;
+    page?: number;
+}
+
+export const getMovies = async (
+    params: GetMoviesParams = {},
+): Promise<Movie[]> => {
+    const response = await apiClient.get<Movie[]>('/movies', { params });
+    return response.data;
+}
+```
+
+Een component hoeft nu niet te weten wat de basis-URL is of hoe Axios-responses opgebouwd zijn.
+
+## POST-data typeren
+
+Het type voor nieuwe invoer is niet altijd gelijk aan het volledige servermodel. Een nieuwe film heeft bijvoorbeeld nog geen database-id.
+
+```typescript
+export interface CreateMovieInput {
+    title: string;
+    rating: number;
+}
+
+export const createMovie = async (
+    input: CreateMovieInput,
+): Promise<Movie> => {
+    const response = await apiClient.post<Movie>('/movies', input);
+    return response.data;
+}
+```
+
+Gebruik dus niet blind één `Movie`-type voor API-input, response, formulier en componentprops. Die vormen kunnen toevallig gelijk zijn, maar hebben een andere verantwoordelijkheid.
+
+## Fouten afhandelen
+
+Een fout kan een serverresponse bevatten, ontstaan zonder response of al optreden tijdens het voorbereiden van het request.
+
+```typescript
+import axios from 'axios';
+
+try {
+    await createMovie(input);
+} catch (error) {
+    if (axios.isAxiosError(error)) {
+        if (error.response) {
+            console.error(error.response.status, error.response.data);
+        } else if (error.request) {
+            console.error('Geen response ontvangen.');
+        } else {
+            console.error(error.message);
+        }
+    }
+}
+```
+
+`axios.isAxiosError` is een type guard. Daardoor kan TypeScript de Axios-specifieke eigenschappen veilig beschikbaar maken.
+
+## Een eigen applicatiefout
+
+UI-componenten hoeven niet alle Axios-details te kennen. We kunnen externe fouten aan de grens vertalen.
+
+```typescript
+export class ApiError extends Error {
+    constructor(
+        message: string,
+        public status?: number,
+    ) {
+        super(message);
+    }
+}
+```
+
+Een API-functie kan daarna een `ApiError` gooien met een gebruikersvriendelijke boodschap en relevante statuscode. Zo blijft Axios een implementatiedetail van de API-laag.
+
+## Interceptors
+
+Een interceptor voert gedeeld gedrag uit voor requests of responses.
+
+```typescript
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            console.warn('De sessie is niet meer geldig.');
+        }
+
+        return Promise.reject(error);
+    },
+);
+```
+
+Gebruik interceptors voor werkelijk gedeeld transportgedrag, bijvoorbeeld consistente foutnormalisatie. Plaats er geen featurelogica of Reactnavigatie in zonder duidelijke reden: een globale interceptor is moeilijker te volgen en te testen.
+
+## Requests annuleren
+
+Axios ondersteunt de standaard `AbortController`.
+
+```typescript
+const controller = new AbortController();
+
+apiClient.get('/movies', {
+    signal: controller.signal,
+});
+
+controller.abort();
+```
+
+Dit is nuttig wanneer een request niet langer relevant is, bijvoorbeeld omdat de gebruiker snel een nieuwe zoekopdracht uitvoert.
+
+## Axios in een component: de manuele aanpak
+
+```tsx
+const [movies, setMovies] = useState<Movie[]>([]);
+const [isLoading, setIsLoading] = useState(true);
+const [error, setError] = useState<Error | null>(null);
+
+useEffect(() => {
+    const load = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            setMovies(await getMovies());
+        } catch (error) {
+            setError(error instanceof Error ? error : new Error('Onbekende fout'));
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    void load();
+}, []);
+```
+
+Dit werkt, maar beantwoordt nog niet de volgende vragen:
+
+- Hoe lang blijft data geldig?
+- Wat als twee componenten dezelfde films nodig hebben?
+- Voeren we dan twee identieke requests uit?
+- Wanneer laden we opnieuw na een wijziging?
+- Hoe bewaren we vorige data tijdens een nieuwe request?
+- Hoe behandelen we retries en caching?
+
+Axios verstuurt het HTTP-request. Voor deze server-stateproblemen introduceren we in het volgende hoofdstuk TanStack Query.
+
+## Veelgemaakte fouten
+
+**Axios rechtstreeks in ieder component gebruiken**: Requestconfiguratie en endpointlogica raken verspreid.
+
+**`response.data` vergeten**: Je bewaart dan het volledige Axios-responseobject in plaats van de body.
+
+**Een TypeScripttype als runtimevalidatie zien**: De server kan nog steeds een andere vorm terugsturen.
+
+**Alle fouten als `500` behandelen**: Een `400`, `401`, `403` en netwerkfout vragen een andere reactie.
+
+**Secrets in een Vite-variabele plaatsen**: Frontendvariabelen zijn zichtbaar voor de gebruiker.
+
+**Interceptors met featurelogica vullen**: Globaal gedrag krijgt dan verborgen afhankelijkheden.
+
+## Oefeningen
+
+### API-client
+
+Maak een Axios-instance met basis-URL, time-out en credentials. Plaats de URL in een Vite-omgevingsvariabele.
+
+### Movies API
+
+Schrijf afzonderlijke API-functies voor lijst, detail, aanmaken, wijzigen en verwijderen. Typeer input en response eerlijk.
+
+### Foutscenario's
+
+Test een succesvolle response, `404`, `401`, serverfout, time-out en afgebroken request. Vertaal ze naar begrijpelijke applicatiefouten.
+
+### Wijzigingsvraag
+
+Voeg paginering en een zoekterm toe als queryparameters zonder handmatig een querystring samen te stellen.
+
+## Controlevragen
+
+- Welk probleem lost Axios op en welk probleem niet?
+- Waarom maken we een Axios-instance?
+- Waar hoort endpoint-specifieke code?
+- Waarom zijn request- en responsetypes soms verschillend?
+- Wat is het verschil tussen `error.response` en `error.request`?
+- Waarom is een TypeScripttype geen runtimevalidatie?
+- Wanneer is een interceptor geschikt?
+
+## Officiële documentatie
+
+- [Axios: introductie](https://axios-http.com/docs/intro)
+- [Axios API](https://axios-http.com/docs/api_intro)
+- [Axios: fouten afhandelen](https://axios-http.com/docs/handling_errors)
+- [Axios: interceptors](https://axios-http.com/docs/interceptors)
+
+[Volgende: server state beheren met TanStack Query](/react/query).

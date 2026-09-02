@@ -1,0 +1,77 @@
+---
+title: "Week 3: Reactintroductie"
+sidebar_position: 3
+---
+
+
+## Wat bouwen we deze week?
+
+We starten een Reactproject en bouwen een statische interface uit herbruikbare componenten.
+
+## Leerdoelen
+
+Na deze week kun je JSX schrijven, componenten samenstellen, props typeren, lijsten conditioneel renderen en zinvolle componentgrenzen kiezen.
+
+## Componenten en props
+
+```tsx
+type MovieCardProps = {
+  title: string;
+  rating?: number;
+};
+
+const MovieCard = ({ title, rating }: MovieCardProps) => (
+  <article>
+    <h2>{title}</h2>
+    {rating === undefined ? <p>Nog niet beoordeeld</p> : <p>{rating}/10</p>}
+  </article>
+);
+```
+
+Props zijn invoer. Het childcomponent verandert ze niet. JSX gebruikt accolades voor JavaScript-expressies en vereist één overkoepelend resultaat.
+
+## Lijsten en keys
+
+```tsx
+{movies.map((movie) => (
+  <MovieCard key={movie.id} title={movie.title} rating={movie.rating} />
+))}
+```
+
+Een `key` geeft elk item een stabiele identiteit. Gebruik een echte id in plaats van de array-index wanneer de lijst kan wijzigen.
+
+## Wanneer splits je een component?
+
+Een deel verdient een component wanneer het een eigen verantwoordelijkheid heeft, herhaald wordt, zelfstandig verandert of de ouder onleesbaar maakt. Een component voor iedere `div` voegt geen betekenis toe.
+
+## Begeleide opdracht
+
+1. Maak met Vite een nieuw React- en TypeScriptproject en verwijder ongebruikte template-inhoud.
+1. Maak `Header`, `MovieList` en `MovieCard`.
+1. Typeer alle props.
+1. Render minstens vier films met een stabiele key.
+1. Toon conditioneel een rating of “Nog niet beoordeeld”.
+1. Voeg styling toe zonder de componentstructuur te veranderen.
+
+### Checkpoint
+
+Teken de componentboom. Schrijf bij iedere verbinding welke props erdoor lopen en wijs aan welk component verantwoordelijk is voor elke HTML-sectie.
+
+## Begripscontrole
+
+Neem één groot component en splits het in `Header`, `MovieList` en `MovieCard`. Beschrijf na de aanpassing waarom iedere componentgrens bestaat en welke data via props stroomt.
+
+## Zelfstandige oefening
+
+Maak een `Panel` dat via `children` verschillende inhoud kan tonen. Gebruik het rond de filmlijst en rond een uitlegblok. Voeg een lege toestand toe wanneer er geen films zijn.
+
+## Oplevering
+
+Lever de statische interface, je componentboom en een korte motivatie voor twee componentgrenzen in.
+
+## Bronnen
+
+- [React](/react/)
+- [Componenten en JSX](/react/components)
+
+[Volgende: props, events en state](/semesterproject/week-04).

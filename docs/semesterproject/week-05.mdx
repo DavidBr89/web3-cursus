@@ -1,0 +1,82 @@
+---
+title: "Week 5: Hooks en API-data"
+sidebar_position: 5
+---
+
+
+## Wat bouwen we deze week?
+
+We starten de eigenlijke filmapplicatie en laden films uit een externe API.
+
+## Leerdoelen
+
+Na deze week kun je de Rules of Hooks toepassen, een effect en dependency array verklaren, data met Axios ophalen en loading-, succes-, lege en fouttoestanden tonen.
+
+## Een effect synchroniseert
+
+Rendercode berekent UI. Een effect synchroniseert het component met iets buiten React, zoals een API, timer of browser-API.
+
+```tsx
+useEffect(() => {
+  document.title = `Films: ${movies.length}`;
+}, [movies.length]);
+```
+
+De dependency array bevat elke reactieve waarde die het effect leest. `[]` betekent niet “voer willekeurige code één keer uit”; het betekent dat het effect geen veranderende waarde gebruikt.
+
+## Data ophalen
+
+```tsx
+const [movies, setMovies] = useState<Movie[]>([]);
+const [isLoading, setIsLoading] = useState(true);
+const [error, setError] = useState<string | null>(null);
+
+useEffect(() => {
+  const loadMovies = async () => {
+    try {
+      const { data } = await axios.get<MovieResponse>(url);
+      setMovies(data.results);
+    } catch {
+      setError("De films konden niet geladen worden.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  void loadMovies();
+}, []);
+```
+
+Loading, fout, lege data en succes zijn vier verschillende UI-toestanden. Toon ze bewust; een lege lijst is niet automatisch een fout.
+
+## Begeleide opdracht
+
+1. Maak een klein effectencomponent en voorspel wanneer ieder effect loopt.
+1. Maak `MoviesPage.tsx` met getypeerde state.
+1. Haal films op met Axios.
+1. Toon een laadboodschap tijdens het request.
+1. Toon een begrijpelijke foutmelding bij mislukking.
+1. Render het resultaat via `MovieItem.tsx`.
+1. Voeg een lege toestand toe.
+
+### Checkpoint
+
+Test bewust met een ongeldige URL, een trage verbinding en een leeg resultaat. Kun je voor elke situatie aanwijzen welke state de interface aanstuurt?
+
+## Begripscontrole
+
+Volg de gegevensstroom van `MoviesPage` naar `MovieItem`. Noteer waar de API-call start, waar het resultaat bewaard wordt en welke data via props gaat. Doe dit uitsluitend voor de code die je zelf hebt opgebouwd.
+
+## Zelfstandige oefening
+
+Voeg een herlaadknop toe na een fout. Zorg dat een nieuwe poging de oude fout wist, loading opnieuw toont en geen dubbele requestlogica bevat.
+
+## Theorie
+
+Lees [REST API-calls met Axios](/react/axios) voor de HTTP-client en [Server state met TanStack Query](/react/query) voor caching en requeststatus.
+
+## Bronnen
+
+- [Hooks, effecten en data ophalen](/react/hooks)
+
+[Volgende: routing en layouts](/semesterproject/week-06).

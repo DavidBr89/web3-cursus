@@ -1,0 +1,87 @@
+---
+title: "Week 7: Gedeelde state en server state"
+sidebar_position: 7
+---
+
+
+## Wat bouwen we deze week?
+
+We voegen favorieten toe en verbeteren het beheer van API-data.
+
+## Leerdoelen
+
+Na deze week kun je prop drilling herkennen, Context en custom hooks gebruiken en lokale, globale en server state onderscheiden.
+
+## Context lost bereik op
+
+Context maakt een waarde beschikbaar voor een onderliggende componentboom zonder elke tussenlaag props te laten doorgeven.
+
+```tsx
+type FavoritesContextValue = {
+  favorites: Movie[];
+  toggleFavorite: (movie: Movie) => void;
+};
+
+const FavoritesContext = createContext<FavoritesContextValue | null>(null);
+```
+
+Gebruik Context niet automatisch voor alle state. State die maar één component nodig heeft, blijft lokaal.
+
+## Een veilige custom hook
+
+```tsx
+export const useFavorites = () => {
+  const context = useContext(FavoritesContext);
+  if (!context) {
+    throw new Error("useFavorites moet binnen FavoritesProvider gebruikt worden");
+  }
+  return context;
+};
+```
+
+De hook centraliseert de controle en geeft componenten een duidelijke API.
+
+## Server state
+
+Films van een API zijn geen eigendom van de interface. TanStack Query bewaart querystatus, cache en vernieuwing. Een query key identificeert de data.
+
+```tsx
+const moviesQuery = useQuery({
+  queryKey: ["movies", searchTerm],
+  queryFn: () => getMovies(searchTerm),
+});
+```
+
+Alle waarden waarvan het request afhangt, horen in de query key.
+
+## Begeleide opdracht
+
+1. Verplaats de API-functies naar `src/api/movieApi.ts`.
+1. Configureer de queryclient in `main.tsx`.
+1. Vervang handmatige requeststate door een query.
+1. Maak `FavoritesContext` en zijn provider.
+1. Maak `useFavorites` met een fout buiten de provider.
+1. Voeg toggleknoppen en `FavoritesPage` toe.
+1. Toon het aantal favorieten in `Header`.
+
+### Checkpoint
+
+Classificeer elke waarde als lokale UI-state, URL-state, gedeelde clientstate of server state. Leg uit waarom de filmresultaten niet in FavoritesContext horen.
+
+## Begripscontrole
+
+Volg in je eigen code één klik op de favorietenknop door `MovieItem`, `useFavorites`, `FavoritesContext` en `FavoritesPage`. Noteer bij iedere stap welke data of functie wordt doorgegeven.
+
+## Zelfstandige oefening
+
+Bewaar alleen film-id's als favoriet en leid de volledige filmobjecten af uit beschikbare data. Bespreek wat er gebeurt wanneer een film niet meer in de querycache zit.
+
+## Theorie
+
+Herlees [Server state met TanStack Query](/react/query) en leg uit waarom favorieten en API-resultaten niet noodzakelijk dezelfde eigenaar hebben.
+
+## Bronnen
+
+- [Context en custom hooks](/react/hooks)
+
+[Volgende: formulieren en validatie](/semesterproject/week-08).

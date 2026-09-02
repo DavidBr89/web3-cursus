@@ -1,0 +1,98 @@
+---
+title: "Week 2: Moderne en asynchrone JavaScript"
+sidebar_position: 2
+---
+
+
+## Wat bouwen we deze week?
+
+We maken een datapipeline voor films en simuleren een API die later antwoordt.
+
+## Leerdoelen
+
+Na deze week kun je:
+
+- destructuring, spread en rest onderscheiden;
+- een geschikte arraymethode kiezen;
+- data aanpassen zonder de bron te muteren;
+- promises met chaining en `async/await` consumeren;
+- fouten en parallelle uitvoering afhandelen.
+
+## Arraymethodes kiezen
+
+| Gewenst resultaat | Methode |
+| --- | --- |
+| Voor ieder element een nieuwe waarde | `map` |
+| Alle passende elementen | `filter` |
+| Het eerste passende element | `find` |
+| Minstens één of alle elementen controleren | `some` / `every` |
+| Eén resultaat opbouwen | `reduce` |
+
+
+```javascript
+const labels = movies
+  .filter((movie) => movie.rating >= 7)
+  .map(({ title, rating }) => `${title} (${rating})`);
+```
+
+Schrijf dezelfde selectie eerst met een klassieke lus en daarna met `filter`. Vergelijk beide oplossingen: niet alleen op lengte, maar vooral op wat de code over haar bedoeling vertelt.
+
+## Spread, rest en referenties
+
+```javascript
+const updatedMovies = movies.map((movie) =>
+  movie.id === selectedId ? { ...movie, favorite: true } : movie,
+);
+```
+
+De spread maakt een oppervlakkige kopie. Geneste objecten blijven dezelfde referentie houden tenzij je ook die expliciet kopieert.
+
+## Van callbacks naar promises
+
+Simuleer het bereiden van een pizza eerst met geneste `setTimeout`-callbacks en daarna met promises. Een promise kan pending, fulfilled of rejected zijn.
+
+```javascript
+const loadMovies = async () => {
+  try {
+    const response = await fetch("/api/movies");
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Films laden is mislukt", error);
+    throw error;
+  }
+};
+```
+
+`await` pauzeert alleen deze `async` functie. De browser kan ondertussen andere taken uitvoeren.
+
+## Begeleide opdracht
+
+1. Neem minstens zes films als startdata.
+1. Filter op rating en transformeer het resultaat naar labels.
+1. Bereken de gemiddelde rating met `reduce`.
+1. Voeg een favoriet toe via een immutabele update.
+1. Maak een `fakeFetchMovies` die vertraagd slaagt of faalt.
+1. Verwerk succes en fout met `async/await` en `try/catch`.
+1. Laad twee onafhankelijke datasets met `Promise.all`.
+
+### Checkpoint
+
+Toon dat de oorspronkelijke array ongewijzigd bleef. Voorspel daarna de volgorde van de logs rond je promise voordat je uitvoert.
+
+## Begripscontrole
+
+1. Leg het verschil tussen rest en spread uit met eigen code.
+1. Herschrijf één klassieke lus met een passende arraymethode.
+1. Bouw dezelfde asynchrone keten eenmaal met `.then()` en eenmaal met `async/await`.
+1. Leg uit wanneer `Promise.all` wel en niet geschikt is.
+
+## Zelfstandige oefening
+
+Simuleer twee onafhankelijke requests voor films en genres. Meet het verschil tussen sequentieel wachten en `Promise.all`. Zorg dat een fout zichtbaar wordt en niet stil verdwijnt.
+
+## Bronnen
+
+- [Moderne en asynchrone JavaScript](/modern-js-async)
+
+[Volgende: Reactintroductie](/semesterproject/week-03).

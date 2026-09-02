@@ -1,0 +1,166 @@
+---
+title: Hooks
+sidebar_position: 2
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+In het hoofdstuk over [state](./state) maakten we al kennis met onze eerste hook: `useState`. React biedt echter nog heel wat meer hooks aan, elk met hun eigen doel. In dit hoofdstuk bekijken we de belangrijkste hooks en wanneer je ze gebruikt.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+**Een hook is een speciale functie in React, die je toelaat om extra functionaliteit toe te voegen aan een component.** Hooks herken je steeds aan hun naam: ze beginnen altijd met `use` (bvb. `useState`, `useRef`, `useEffect`, ...).
+</aside>
+
+## Rules of Hooks
+
+Hooks zijn krachtig, maar je moet ze volgens enkele **strikte regels** gebruiken. React rekent er namelijk op dat hooks bij **elke render in exact dezelfde volgorde en hetzelfde aantal** worden opgeroepen. Houd je je niet aan deze regels, dan kan React de state niet correct aan de juiste hook koppelen.
+
+### Roep hooks enkel op het hoogste niveau op
+
+Roep hooks **nooit** op binnen een `if`, een lus, of na een vroege `return`. Ze moeten steeds bovenaan je component staan, op het hoogste niveau.
+
+<Tabs>
+  <TabItem value="fout" label="❌ Fout">
+
+```tsx
+const Component = () => {
+  // Fout: hook in een conditie
+  if (ingelogd) {
+    const [naam, setNaam] = useState("");
+  }
+
+  // Fout: hook in een lus
+  for (let i = 0; i < 3; i++) {
+    const [teller, setTeller] = useState(0);
+  }
+
+  // ...
+};
+```
+
+  </TabItem>
+  <TabItem value="correct" label="✅ Correct">
+
+```tsx
+const Component = () => {
+  // Correct: hooks bovenaan, op het hoogste niveau
+  const [naam, setNaam] = useState("");
+  const [teller, setTeller] = useState(0);
+
+  // Vanaf hier mag je conditioneel werken
+  if (ingelogd) {
+    // ...
+  }
+
+  // ...
+};
+```
+
+  </TabItem>
+</Tabs>
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+Omdat hooks bij elke render in dezelfde volgorde moeten staan, zou een conditie of lus die volgorde kunnen veranderen tussen twee renders. Daardoor zou React de verkeerde state aan de verkeerde hook koppelen.
+</aside>
+
+### Roep hooks enkel op vanuit React-functies
+
+Je mag hooks enkel oproepen vanuit:
+
+- een **function component** (een React-component), of
+- een **custom hook** (een eigen functie die zelf met `use` begint).
+
+Roep hooks dus **niet** op vanuit een gewone JavaScript-functie.
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+De React-extensie voor je editor (ESLint plugin `eslint-plugin-react-hooks`) waarschuwt je automatisch wanneer je een van deze regels overtreedt. Negeer die waarschuwingen niet!
+</aside>
+
+## State hooks: useState en useReducer
+
+`useState` ken je al uit het [state-hoofdstuk](./state): het geeft een component een geheugen dat bewaard blijft tussen renders.
+
+Voor complexere state-logica bestaat er ook `useReducer`. Daarmee bundel je alle manieren waarop state kan veranderen in één functie (de **reducer**).
+
+```tsx
+import { useReducer } from "react";
+
+interface State {
+  // highlight-line
+  count: number;
+}
+
+type Action = { type: "verhoog" } | { type: "verlaag" } | { type: "reset" };
+
+const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case "verhoog":
+      return { count: state.count + 1 };
+    case "verlaag":
+      return { count: state.count - 1 };
+    case "reset":
+      return { count: 0 };
+  }
+};
+
+const Counter = () => {
+  const [state, dispatch] = useReducer(reducer, { count: 0 });
+
+  return (
+    <>
+      <p>{state.count}</p>
+      <button onClick={() => dispatch({ type: "verhoog" })}>+</button>
+      <button onClick={() => dispatch({ type: "verlaag" })}>-</button>
+      <button onClick={() => dispatch({ type: "reset" })}>Reset</button>
+    </>
+  );
+};
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Wanneer gebruik je `useReducer` in plaats van `useState`? Gebruik `useState` voor eenvoudige state. Stap over op `useReducer` zodra de state complexer wordt of op veel verschillende manieren kan veranderen — dan houdt de reducer alles overzichtelijk op één plaats.
+</aside>
+
+## Ref hook: useRef
+
+Soms wil een component iets **onthouden** zonder dat een wijziging een rerender veroorzaakt. Daarvoor gebruiken we `useRef`. Een ref is een soort "doosje" met een `.current`-eigenschap waarin je een waarde kan bewaren die **behouden blijft tussen renders**, maar die — in tegenstelling tot state — **geen rerender triggert wanneer je ze aanpast**.
+
+```tsx
+import { useRef } from "react";
+
+const Stopwatch = () => {
+  const intervalId = useRef<number | null>(null);
+
+  const start = () => {
+    intervalId.current = setInterval(() => {
+      console.log("tik");
+    }, 1000);
+  };
+
+  const stop = () => {
+    if (intervalId.current !== null) {
+      clearInterval(intervalId.current);
+    }
+  };
+
+  return (
+    <>
+      <button onClick={start}>Start</button>
+      <button onClick={stop}>Stop</button>
+    </>
+  );
+};
+```

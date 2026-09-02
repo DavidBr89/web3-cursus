@@ -1,0 +1,87 @@
+---
+title: "Week 8: Formulieren en validatie"
+sidebar_position: 8
+---
+
+
+## Wat bouwen we deze week?
+
+We bouwen login- en registratieformulieren met duidelijke validatie. De formulieren werken deze week nog met een gesimuleerde submit; de echte backend volgt later.
+
+## Leerdoelen
+
+Na deze week kun je formulierwaarden, touched state, fouten en submitstatus onderscheiden, React Hook Form gebruiken en validatieregels schrijven.
+
+## Waarom formulierstate meer is dan waarden
+
+Een formulier moet naast de invoer ook weten welke velden bezocht zijn, welke fouten bestaan en of verzending bezig is. Toon een fout meestal pas nadat een veld werd aangeraakt of nadat verzenden geprobeerd werd.
+
+```tsx
+const loginSchema = z.object({
+  email: z.email("Geef een geldig e-mailadres in"),
+  password: z.string().min(8, "Minstens 8 tekens"),
+});
+
+type LoginInput = z.infer<typeof loginSchema>;
+```
+
+Clientvalidatie helpt de gebruiker, maar beveiligt de server niet. Een request kan buiten je formulier om verstuurd worden.
+
+## React Hook Form gebruiken
+
+```tsx
+const {
+  register,
+  handleSubmit,
+  formState: { errors, isSubmitting },
+} = useForm<LoginInput>({
+  resolver: zodResolver(loginSchema),
+});
+
+return (
+  <form onSubmit={handleSubmit(handleLogin)}>
+    <input
+      type="email"
+      {...register('email', { required: 'E-mail is verplicht' })}
+    />
+    {errors.email && <p>{errors.email.message}</p>}
+
+    <input
+      type="password"
+      {...register('password', { required: 'Wachtwoord is verplicht' })}
+    />
+    {errors.password && <p>{errors.password.message}</p>}
+
+    <button disabled={isSubmitting}>Aanmelden</button>
+  </form>
+);
+```
+
+## Begeleide opdracht
+
+1. Bouw eerst één controlled input zonder bibliotheek.
+1. Noteer welke state en handlers je zelf beheert.
+1. Maak binnen `features/auth` een schema, API-functie en formuliercomponent.
+1. Bouw het loginformulier met React Hook Form en de Zod-resolver.
+1. Voeg toegankelijke foutmeldingen toe.
+1. Bouw het registratieformulier met wachtwoordbevestiging via Zod `refine`.
+1. Maak submitfeedback zichtbaar en voorkom dubbel verzenden.
+1. Simuleer een serverfout die niet aan één veld gekoppeld is.
+
+### Checkpoint
+
+Test leeg verzenden, een ongeldig e-mailadres, te kort wachtwoord, ongelijke wachtwoorden en een mislukte serverresponse. De gebruiker moet telkens begrijpen wat er gebeurt.
+
+## Begripscontrole
+
+Maak een tabel met alle velden van login en registratie. Noteer per veld de beginwaarde, validatieregels, mogelijke foutmelding en het moment waarop die fout zichtbaar wordt. Duid aan welke controles de backend later opnieuw moet uitvoeren.
+
+## Theorie
+
+Lees [Formulieren met React Hook Form](/react/hook-form) voor de volledige uitleg over registratie, validatie, formulierstatus en gecontroleerde componenten.
+
+## Zelfstandige oefening
+
+Voeg een voorwaarde “ik ga akkoord” toe en maak registratie onmogelijk zonder akkoord. Zorg dat toetsenbordgebruik en foutmeldingen correct blijven.
+
+[Volgende: Node en Express](/semesterproject/week-09).

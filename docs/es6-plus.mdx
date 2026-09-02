@@ -1,0 +1,1122 @@
+---
+title: "Verdiepende concepten"
+sidebar_position: 2
+---
+
+import AnnotatedCodeBlock from "@site/src/components/AnnotatedCodeBlock";
+import JavaScriptPlayground from "@site/src/components/JavaScriptPlayground";
+
+## Doel
+
+In Web 2 hebben jullie allemaal de basisconcepten in JavaScript gezien. In dit onderdeel gaan we deze kennis verdiepen ter voorbereiding op het werken met React. Je krijgt ook inzicht in belangrijke concepten en moderne programmeerpraktijken in JS en leert waarom we oudere concepten, zoals het gebruik van het var-keyword, niet meer toepassen.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+We gebruiken nergens tijdens de lessen en ook niet voor het project het `var` keyword. Dit leidt tot puntenverlies.
+</aside>
+
+## Scope
+
+De scope wordt gebruikt om aan te duiden waar een variabele gebruikt kan worden. In JS hangt dit af van hoe de variabele gedeclareerd wordt. Het is belangrijk om het verschil tussen `var`, `let` en `const` te begrijpen op vlak van scoping.
+
+### `var`- function scope
+
+Variabelen gedeclareerd met `var` hebben **function scope**. Dit betekent dat ze beschikbaar zijn binnen de volledige functie waarin ze gedeclareerd worden, ongeacht het blok (if, for, …) waarin ze staan. Dit kan leiden tot onverwacht gedrag.
+
+<AnnotatedCodeBlock>
+
+```javascript
+function voorbeeld() {
+  if (true) {
+    var naam = "John";
+  }
+
+  console.log(naam); // [!note naam blijft beschikbaar omdat var function scope heeft.]
+}
+
+voorbeeld();
+```
+
+</AnnotatedCodeBlock>
+
+### `let` en `const`- block scope
+
+Variabelen gedeclareerd met `let` en `const` hebben **block scope**. Ze zijn enkel toegankelijk binnen het blok `{}` waarin ze gedeclareerd worden. Dit maakt code beter voorspelbaar en voorkomt fouten. Dit gedrag is meer hoe jullie het kennen vanuit andere programmeertalen zoals C#.
+
+<AnnotatedCodeBlock>
+
+```javascript
+
+function voorbeeld() {
+  if (true) {
+    const leeftijd = 30;
+  }
+
+  console.log(leeftijd);  // [!note Dit zal niet werken omdat de leeftijd variabele in de if block gescoped is. Dit geeft dus een reference error.]
+}
+
+voorbeeld();
+
+```
+
+</AnnotatedCodeBlock>
+
+Het verschil tussen `let` en `const` gaat niet over scope, maar over het aanpassen van de waarde van de variabele:
+
+- gebruik `const` wanneer de variabele geen nieuwe waarde krijgt;
+- gebruik `let` wanneer de variabele later wel een andere waarde krijgt.
+
+Bij een object of array zorgt `const` er enkel voor dat je geen volledig nieuw object of nieuwe array kan toekennen. De inhoud zelf kan wel nog aangepast worden.
+
+```javascript
+const student = { naam: "Jane" };
+student.naam = "John"; // Toegelaten: de inhoud van het object wordt aangepast.
+
+student = { naam: "Alex" }; // ReferenceError: opnieuw toewijzen is niet toegelaten.
+```
+
+<aside className="courseCallout courseCallout--info">
+
+<strong className="courseCallout__title">Ter info</strong>
+
+**Alleen al voor dit principe, werken we hedendaags niet meer met het `var` keyword voor het declareren van een variabele**. Block scope is veiliger en beter te verstaan als ontwikkelaar.
+</aside>
+
+## Hoisting
+
+Bij **hoisting** verwerkt JavaScript eerst de declaraties voordat de code uitgevoerd wordt. De code wordt dus niet echt verplaatst, maar het lijkt alsof bepaalde declaraties al bovenaan hun scope staan.
+
+Een variabele met `var` krijgt daarbij al de waarde `undefined`. Een variabele met `let` of `const` is vóór de declaratie nog niet toegankelijk. Dit gedeelte noemen we de **temporal dead zone** (TDZ).
+
+Voorbeeld van wat je schrijft als ontwikkelaar
+```javascript
+
+console.log(naam);  // undefined
+
+var naam = "John";
+
+console.log(naam);  // John
+
+```
+
+Je kan dit vereenvoudigd als volgt voorstellen:
+
+<AnnotatedCodeBlock>
+
+```javascript
+var naam; // De variabele bestaat al en heeft de waarde undefined.
+
+console.log(naam);  // undefined
+
+naam = "John";  // [!note Initialisatie van de variabele blijft wel op de plaats staan]
+
+console.log(naam);  // John
+
+```
+
+</AnnotatedCodeBlock>
+
+<aside className="courseCallout courseCallout--info">
+
+<strong className="courseCallout__title">Ter info</strong>
+
+Ook `let` en `const` worden vooraf verwerkt, maar je kan ze vóór hun declaratie nog niet gebruiken. Dit geeft een `ReferenceError`.
+</aside>
+
+```javascript
+console.log(leeftijd); // ReferenceError
+const leeftijd = 21;
+```
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Gebruik standaard `const`. Kies alleen `let` wanneer je weet dat de variabele later opnieuw toegewezen moet worden.
+</aside>
+
+
+## Callbacks
+
+Een **callback is een functie die als argument wordt doorgegeven aan een andere functie**. Die andere functie voert de callback uit. Dit kan onmiddellijk gebeuren, zoals in het volgende voorbeeld, of later bij een asynchrone operatie zoals een timer of event.
+
+```javascript
+const bereken = (a, b, callback) => {
+  return callback(a, b);
+}
+
+const resultaat = bereken(5, 3, (x, y) => {
+  return x + y;
+});
+
+console.log(resultaat); // 8
+```
+
+**Callbacks bij asynchrone operaties**
+
+Bij `setTimeout` wordt de timer gestart. Wanneer de timer klaar is, wordt de callback in de event queue geplaatst. De callback kan uitgevoerd worden zodra de call stack leeg is.
+
+```javascript
+console.log("Start");
+
+setTimeout(() => {
+  console.log("Timer klaar");
+}, 1000);
+
+console.log("Einde");
+```
+
+### Callback hell
+
+**Wanneer meerdere callbacks genest worden in elkaar, kan de code moeilijk leesbaar en onderhoudbaar worden**. Dit noemen we callback hell of de pyramid of doom.
+Het probleem ontstaat vooral bij opeenvolgende asynchrone operaties die afhankelijk zijn van elkaar. 
+
+```javascript
+console.log("Start");
+
+setTimeout(() => {
+  console.log("Stap 1 klaar");
+
+  setTimeout(() => {
+    console.log("Stap 2 klaar");
+
+    setTimeout(() => {
+      console.log("Stap 3 klaar");
+
+      setTimeout(() => {
+        console.log("Stap 4 klaar");
+      }, 1000);
+
+    }, 1000);
+
+  }, 1000);
+
+}, 1000);
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+In moderne JavaScript vermijden we de callback hell door gebruik te maken van Promises en `async/await`, die asynchrone code leesbaarder en beter onderhoudbaar maken.
+</aside>
+
+## Call stack, Event queue, Event loop
+
+JavaScript gebruikt de **call stack**, de **event queue** en de **event loop** om code uit te voeren. JavaScript voert zelf één taak tegelijk uit. De browser of Node.js kan ondertussen bijvoorbeeld timers, events en netwerkrequests opvolgen.
+
+![](/img/es6+/eventqueue.png)
+
+### Call stack
+
+De **call stack is de plaats waar JavaScript bijhoudt welke code momenteel uitgevoerd wordt**. Elke functie die wordt aangeroepen, komt bovenaan de stack terecht en wordt uitgevoerd. Wanneer de functie klaar is, wordt ze weer verwijderd. De **call stack werkt volgens het LIFO** (Last In First Out) **principe**.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Een ingeplande callback kan pas uitgevoerd worden wanneer de huidige synchrone code klaar is en de call stack leeg is.
+</aside>
+
+### Event queue
+
+De **event queue** bevat callbacks die klaar zijn om later uitgevoerd te worden, bijvoorbeeld callbacks van:
+
+- setTimeout
+- user events (klik, input)
+- netwerkrequests en andere browser- of Node.js-API's
+
+Wanneer een asynchrone operatie klaar is, wordt de bijhorende callback in een wachtrij geplaatst. De callback wacht daar tot de call stack leeg is. De wachtrij zelf voert geen code uit.
+
+<aside className="courseCallout courseCallout--info">
+
+<strong className="courseCallout__title">Ter info</strong>
+
+Eigenlijk bestaan er meerdere wachtrijen. Timers en events gebruiken de **task queue**. Promises (`.then`, `.catch` en `.finally`) en `queueMicrotask` gebruiken de **microtask queue**. Wanneer de huidige code klaar is, wordt eerst de microtask queue leeggemaakt. Daarna wordt de volgende taak uit de task queue uitgevoerd.
+</aside>
+
+### Event loop
+
+De **event loop** controleert wanneer callbacks uitgevoerd mogen worden. Zodra de huidige code klaar is en de call stack leeg is, worden eerst de microtasks uitgevoerd. Daarna kan een volgende taak uit de task queue uitgevoerd worden.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Een uitgebreidere visuele animatie van wat er gebeurt met asynchrone code kan je bekijken met de [JavaScript Visualizer](https://www.jsv9000.app).
+</aside>
+
+Probeer deze volgende code eens uit in de JS Visualizer en bekijk de stappen zelf eens, en bekijk de uitvoer aandachtig.
+
+```javascript
+function log(msg) {
+  console.log(msg);
+}
+
+log("1) Start");
+
+setTimeout(function timer0() {
+  log("6) Timer (0ms)");
+}, 0);
+
+log("2) Sync bezig...");
+
+for (let i = 0; i < 3; i++) {
+  log("3) Loop stap " + i);
+}
+
+log("5) Einde sync");
+```
+
+De timer heeft een wachttijd van `0` milliseconden, maar de callback onderbreekt de huidige code niet. De verwachte uitvoer is:
+
+```text
+1) Start
+2) Sync bezig...
+3) Loop stap 0
+3) Loop stap 1
+3) Loop stap 2
+5) Einde sync
+6) Timer (0ms)
+```
+
+## Array methodes
+
+In React zullen we verschillende array methodes moeten gebruiken die je nog niet gezien hebt in Web 2. Daarom hieronder eventjes de belangrijkste array methodes die je nodig zult hebben voor deze cursus.
+
+### forEach
+
+Met **`forEach()` voer je een functie uit voor elk element in een array**. Gebruik deze methode wanneer je voor elk element iets wil uitvoeren, maar geen nieuwe array nodig hebt. **Deze methode returnt altijd `undefined`.**
+
+```javascript
+const arr = [0, 1, 2, 3];
+
+arr.forEach((value, idx) => {
+    // Body waarin value gebruikt kan worden en eventueel ook de idx
+})
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Je kunt een `forEach()` niet vroegtijdig stoppen met `break`. Gebruik een gewone `for`-lus wanneer je echt moet stoppen, of kies afhankelijk van je doel voor `some()`, `every()` of `find()`.
+</aside>
+
+### map
+
+Met **`map()` maak je een nieuwe array door elk element van de oorspronkelijke array te transformeren**. Deze methode gaan we heel gebruiken in React om lijsten te transformeren naar UI elementen. **Deze methode returnt steeds een nieuwe array met getransformeerde waardes**.
+
+**Gebruik `map()` wanneer je elk element wil omzetten naar een nieuwe waarde of een UI-element.**
+
+```javascript
+const arr = [0, 1, 2, 3];
+
+const mappedArr = arr.map((value, idx) => {
+    // Body waarin value gebruikt kan worden en eventueel ook de idx
+    // Vb. Nieuwe array waarin elk element uit de oorspronkelijke array verhoogd is met 5
+    return value + 5;
+})
+
+console.log(mappedArr); // [5, 6, 7, 8]
+```
+
+Later zullen we `map()` in React gebruiken om gegevens op het scherm te tonen. Eerst bekijken we hetzelfde principe met gewone JavaScript:
+
+```javascript
+const films = ["The Matrix", "Inception"];
+
+const filmtitels = films.map((titel) => `Film: ${titel}`);
+
+console.log(filmtitels);
+// ["Film: The Matrix", "Film: Inception"]
+```
+
+### reduce
+
+Met **`reduce()` kan je alle waarden van een array samenbrengen tot één resultaat**, zoals een som of een totaal. **Bij elke iteratie wordt het resultaat opgebouwd in een accumulator**. **Deze methode returnt één waarde**.
+
+**Gebruik `reduce()` wanneer je alle elementen wil samenbrengen tot één resultaat.** Dat resultaat kan een getal, object of array zijn.
+
+<AnnotatedCodeBlock>
+
+```javascript
+const arr = [0, 1, 2, 3];
+
+const som = arr.reduce((acc, value, idx) => {  // [!note `acc` (accumulator) bevat het tussentijdse resultaat van de vorige iteratie. value is het huidige element uit de array en idx is de index van dat element.]
+    // Body waarin acc en value gebruikt kan worden en eventueel ook de idx
+    // Met de acc wordt het resultaat steeds opgebouwd
+    return acc + value;
+}, 0)  // [!note 0 is hier de startwaarde (initiële waarde) van de accumulator bij de eerste iteratie.]
+
+console.log(som);   // 6
+```
+
+</AnnotatedCodeBlock>
+
+### filter
+
+Met **`filter()` maak je een nieuwe array met enkel de elementen die voldoen aan een bepaalde voorwaarde**. Deze methode gaan we in React verschillende keren gebruiken ook om elementen te verwijderen uit een array op een makkelijke manier. **Deze methode returnt een nieuwe array geselecteerd op basis van een voorwaarde**.
+
+**Gebruik `filter()` wanneer je nul, één of meerdere elementen wilt behouden op basis van een voorwaarde.**
+
+```javascript
+const arr = [0, 1, 2, 3];
+
+const filteredArr = arr.filter((value, idx) => {
+    // Body waarin value gebruikt kan worden en eventueel ook de idx
+    // Vb. Array filteren met enkel maar de even elementen
+    return value % 2 === 0;
+})
+
+console.log(filteredArr);   // [0, 2]
+```
+
+### find
+
+Met **`find()` zoek je het eerste element dat aan een voorwaarde voldoet**. Deze methode returnt het gevonden element. Wanneer er geen element gevonden wordt, returnt `find()` `undefined`.
+
+**Gebruik `find()` wanneer je één element zoekt.** Gebruik `filter()` wanneer je meerdere elementen in een nieuwe array wil krijgen.
+
+```javascript
+const films = [
+  { id: 1, titel: "The Matrix" },
+  { id: 2, titel: "Inception" }
+];
+
+const film = films.find((film) => film.id === 2);
+
+console.log(film); // { id: 2, titel: "Inception" }
+```
+
+Hou er rekening mee dat het resultaat `undefined` kan zijn:
+
+```javascript
+const film = films.find((film) => film.id === 99);
+
+if (film) {
+  console.log(film.titel);
+}
+```
+
+### some
+
+Met **`some()` controleer je of minstens één element voldoet aan een voorwaarde**. **Deze methode returnt `true` of `false`**.
+
+**Gebruik `some()` wanneer je wil controleren of minstens één element aan de voorwaarde voldoet.**
+
+```javascript
+const arr = [0, 1, 2, 3];
+
+const isElementEqualToOne = arr.some((value, idx) => {
+    // Body waarin value gebruikt kan worden en eventueel ook de idx
+    // Vb. Checken of minstens één element gelijk is aan 1
+    return value === 1;
+})
+
+console.log(isElementEqualToOne);   // true
+```
+
+### every
+
+Met **`every()` controleer je of alle elementen voldoen aan een voorwaarde**. **Deze methode returnt `true` of `false`**.
+
+**Gebruik `every()` voor een ja/nee-vraag waarbij elk element aan de voorwaarde moet voldoen.**
+
+```javascript
+const arr = [0, 1, 2, 3];
+
+const areAllElementsEqualToOne = arr.every((value, idx) => {
+    // Body waarin value gebruikt kan worden en eventueel ook de idx
+    // Vb. Checken of alle elementen gelijk zijn aan 1
+    return value === 1;
+})
+
+console.log(areAllElementsEqualToOne);   // false
+```
+
+## Muterende en niet-muterende methodes
+
+Sommige arraymethodes passen de bestaande array rechtstreeks aan. Dit noemen we **muteren**. Andere methodes laten de oorspronkelijke array staan en returnen een nieuwe array.
+
+| Wijzigt de bestaande array | Returnt een nieuwe array |
+| --- | --- |
+| `push()`, `pop()`, `splice()`, `sort()` | `map()`, `filter()`, `slice()`, `toSorted()` |
+
+Dit verschil wordt later belangrijk bij React-state. Daar willen we de bestaande array of het bestaande object niet rechtstreeks aanpassen.
+
+```javascript
+const films = ["The Matrix", "Inception"];
+
+const alfabetisch = [...films].sort();
+
+console.log(films);       // ["The Matrix", "Inception"]
+console.log(alfabetisch); // ["Inception", "The Matrix"]
+```
+
+In het voorbeeld maken we eerst met spread een nieuwe array. `sort()` wijzigt daardoor de kopie en niet de oorspronkelijke array.
+
+## Arraymethodes combineren
+
+Je kan verschillende arraymethodes na elkaar uitvoeren. Dit noemen we soms een **data-pipeline**. Lees de bewerkingen van boven naar beneden.
+
+```javascript
+const films = [
+  { titel: "The Matrix", speelduur: 136, actief: true },
+  { titel: "Inception", speelduur: 148, actief: true },
+  { titel: "Interstellar", speelduur: 169, actief: false }
+];
+
+const korteActieveFilms = films
+  .filter((film) => film.actief)
+  .filter((film) => film.speelduur <= 150)
+  .map((film) => film.titel);
+
+console.log(korteActieveFilms);
+// ["The Matrix", "Inception"]
+```
+
+Hier wordt eerst gefilterd op actieve films, daarna op speelduur en ten slotte wordt ieder filmobject omgezet naar een titel.
+
+## Spread operator / Rest parameter
+
+De spread operator en de rest parameter gebruiken dezelfde syntax `...`, maar hebben een andere betekenis afhankelijk waarin ze gebruikt worden.
+
+Spread operator -> **“spreidt” elementen uit**
+
+Rest parameter -> **verzamelt elementen in één variabele (array)**
+
+### Spread operator
+
+De **spread operator** `...` **wordt gebruikt om elementen van een array of object uit te spreiden**. Dit is handig om arrays of objecten te kopiëren of samen te voegen.
+
+**Array kopiëren**
+
+```javascript
+const arr1 = [1, 2, 3];
+const arr2 = [...arr1];
+
+console.log(arr2); // [1, 2, 3]
+```
+
+**Arrays samenvoegen**
+
+```javascript
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+
+const samen = [...arr1, ...arr2];
+
+console.log(samen); // [1, 2, 3, 4]
+```
+
+**Object kopiëren of uitbreiden**
+
+```javascript
+const gebruiker = { naam: "John", leeftijd: 36 };
+
+const nieuweGebruiker = {
+  ...gebruiker,
+  stad: "Gent"
+};
+
+console.log(nieuweGebruiker);
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Deze manier van werken met arrays en/of objecten gaan we geregeld gebruiken in React.
+</aside>
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Oppervlakkige kopie</strong>
+
+Spread maakt enkel een **oppervlakkige kopie**. Alleen het buitenste niveau wordt gekopieerd. Objecten en arrays die hierin genest zijn, blijven naar dezelfde gegevens verwijzen. Bij geneste React-state moet je daarom ook het geneste niveau dat je aanpast kopiëren.
+</aside>
+
+### Rest parameter
+
+De **rest parameter** `...` **verzamelt meerdere waarden in één variabele**. Wordt vaak gebruikt bij functies waarbij het aantal argumenten niet vastligt.
+
+**Variabel aantal parameters**
+
+```javascript
+const som = (...getallen) => {
+  return getallen.reduce((totaal, waarde) => totaal + waarde, 0);
+}
+
+console.log(som(1, 2, 3, 4)); // 10
+```
+
+**Rest waarden verzamelen**
+
+```javascript
+const [eerste, ...rest] = [1, 2, 3, 4];
+
+console.log(eerste); // 1
+console.log(rest);   // [2, 3, 4]
+```
+
+
+## Destructuring
+
+**Destructuring is een manier om waarden uit arrays of objecten eenvoudig op te slaan in aparte variabelen**. Hierdoor wordt code korter, duidelijker en beter leesbaar.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Deze techniek wordt heel vaak gebruikt in moderne JS en in React. Ook wij gaan hier veel mee in contact komen.
+</aside>
+
+### Array destructuring
+
+```javascript
+const kleuren = ["rood", "groen", "blauw"];
+
+const [eersteKleur, tweedeKleur] = kleuren;
+
+console.log(eersteKleur); // rood
+console.log(tweedeKleur); // groen
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+De volgorde bepaalt welke waarde je krijgt.
+</aside>
+
+**Elementen overslaan**
+
+```javascript
+const kleuren = ["rood", "groen", "blauw"];
+
+const [, , derdeKleur] = kleuren;
+
+console.log(derdeKleur); // blauw
+```
+
+**Rest operator combineren met destructuring**
+
+```javascript
+const scores = [10, 20, 30, 40];
+
+const [eersteScore, ...overigeScores] = scores;
+
+console.log(eersteScore);    // 10
+console.log(overigeScores);  // [20, 30, 40]
+```
+
+### Object destructuring
+
+```javascript
+const student = {
+  voornaam: "Jane",
+  leeftijd: 21,
+  opleiding: "Programmeren"
+};
+
+const { voornaam, leeftijd } = student;
+
+console.log(voornaam); // Jane
+console.log(leeftijd); // 21
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+De propertynaam bepaalt de waarde (niet de volgorde).
+</aside>
+
+**Andere variabelenaam gebruiken**
+
+```javascript
+const student = {
+  voornaam: "Jane"
+};
+
+const { voornaam: naam } = student;
+
+console.log(naam); // Jane
+```
+
+**Destructuring in functieparameters**
+
+```javascript
+const toonStudent = ({ voornaam, leeftijd }) => {
+  console.log(`${voornaam} is ${leeftijd} jaar`);
+}
+
+toonStudent({
+  voornaam: "Jane",
+  leeftijd: 21
+});
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Destructuring rechtstreeks in functieparameters, wordt vaak gebruikt met React props.
+</aside>
+
+## Promises
+
+Een Promise is een **JS object dat het resultaat van een asynchrone bewerking voorstelt**. Het **vertegenwoordigt een waarde die nu nog niet beschikbaar is, maar later beschikbaar zal zijn** (letterlijk vertaald "belofte"). Promises worden gebruikt om asynchrone code beter leesbaar en onderhoudbaar te maken en vormen een modern alternatief voor callbacks.
+
+Bij het gebruik van callbacks kan code snel onoverzichtelijk worden wanneer meerdere asynchrone bewerkingen na elkaar uitgevoerd moeten worden (callback hell). Promises bieden een overzichtelijkere manier om deze bewerkingen te structureren.
+
+Een Promise kan zich in drie toestanden bevinden: 
+
+- `pending`: De bewerking is nog bezig (begintoestand).
+- `fulfilled`: De bewerking is succesvol uitgevoerd (mogelijk eindtoestand).
+- `rejected`: De bewerking is mislukt (mogelijke eindtoestand).
+
+Na `fulfilled` of `rejected` is de Promise afgehandeld, ook wel **settled** genoemd. De toestand en het resultaat kunnen daarna niet meer veranderen.
+
+### Producing code
+
+De **producing code is verantwoordelijk voor het uitvoeren van een asynchrone bewerking en het teruggeven van een resultaat**. Deze code maakt de Promise aan en beslist wanneer ze succesvol is (`resolve`) of mislukt (`reject`). Code dat een tijdje kan duren om uit te voeren.
+
+<AnnotatedCodeBlock>
+
+```javascript
+const myPromise = new Promise((resolve, reject) => {
+  const succes = true;
+
+  setTimeout(() => {
+    if (succes) {
+      resolve("Data ontvangen");  // [!note Resolven van de Promise, de bewerking was succesvol.]
+    } else {
+      reject(new Error("Fout bij ophalen data"));  // [!note Geef bij een fout bij voorkeur een Error-object door. Dat bevat ook nuttige foutinformatie, zoals een stack trace.]
+    }
+  }, 1000);
+});
+
+```
+
+</AnnotatedCodeBlock>
+
+### Consuming code
+
+De **consuming code gebruikt het resultaat van een reeds aangemaakte Promise**. Promise wordt afgehandeld via `.then()` voor een succesvolle bewerking en de `.catch()` voor een mislukte bewerking. Code waarop we moeten wachten.
+
+```javascript
+myPromise
+  .then((resultaat) => {
+    console.log(resultaat);
+  })
+  .catch((fout) => {
+    console.error(fout);
+  });
+```
+
+## Async/await
+
+`async/await` is een **moderne manier om met asynchrone code te werken** in JavaScript. Het maakt code leesbaarder en **laat asynchrone operaties eruitzien alsof ze synchroon uitgevoerd worden**. `async/await` is gebouwd bovenop Promises en vereenvoudigt het werken met `.then()` en `.catch()`. Promise-chaining is vaak al duidelijker dan geneste callbacks, maar kan bij meerdere stappen nog steeds moeilijk leesbaar worden.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Tijdens deze lessen gaan we bijna altijd werken met deze modernere manier nl. async/await.
+</aside>
+
+### Async
+
+Het **`async` keyword wordt gebruikt om een functie asynchroon te maken**. Een async functie **returnt altijd een Promise**.
+
+```javascript
+const voorbeeld = async () =>  {
+  return "Hallo";
+}
+
+voorbeeld().then(console.log);
+```
+
+### Await
+
+Het **`await` keyword laat JavaScript wachten tot een Promise afgerond is en geeft het resultaat terug**.
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+In de code van deze cursus gebruiken we `await` binnen een `async` functie. Moderne JavaScript-modules ondersteunen daarnaast ook top-level `await`, maar dat is niet in elke context beschikbaar.
+</aside>
+
+<AnnotatedCodeBlock>
+
+```javascript
+const myPromise = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve("Klaar"), 1000);
+  });
+};
+
+const run = async () => {
+  const resultaat = await myPromise();  // [!note Alleen de verdere uitvoering van deze async functie wordt uitgesteld. JavaScript kan ondertussen andere taken uitvoeren.]
+  console.log(resultaat);
+}
+
+run();
+```
+
+</AnnotatedCodeBlock>
+
+**Vergelijking met Promises**
+
+Dit is hetzelfde gedrag, maar duidelijkere structuur met `async/await`.
+
+```javascript
+myPromise()
+  .then((resultaat) => {
+    console.log(resultaat);
+  })
+  .catch(console.error);
+```
+
+```javascript
+const run = async () => {
+  try {
+    const resultaat = await myPromise();
+    console.log(resultaat);
+  } catch (error) {
+    console.error(error);
+  }
+}
+```
+
+**Meerdere asynchrone operaties**
+
+`await` maakt het eenvoudig meerdere afhankelijke asynchrone bewerkingen na elkaar uit te voeren. De code leest van boven naar beneden. In dit voorbeeld start de tweede bewerking pas nadat de eerste klaar is:
+
+```javascript
+const run = async () => {
+  const stap1 = await myPromise();
+  console.log(stap1);
+
+  const stap2 = await myPromise();
+  console.log(stap2);
+}
+```
+
+### Foutenafhandeling
+
+Bij het gebruik van `async/await` gebruiken we `try/catch` om de fouten af te handelen ipv. de `catch` methode van Promises.
+
+```javascript
+const run = async () => {
+  try {
+    const resultaat = await myPromise();
+    console.log(resultaat);
+  } catch (error) {
+    console.error("Er ging iets mis:", error);
+  }
+}
+```
+
+Je kan ook `finally` toevoegen. De code in dit blok wordt altijd uitgevoerd, zowel bij succes als bij een fout. Dit is bijvoorbeeld handig om een laadindicator opnieuw uit te schakelen.
+
+```javascript
+const run = async () => {
+  try {
+    const resultaat = await myPromise();
+    console.log(resultaat);
+  } catch (error) {
+    console.error("Er ging iets mis:", error);
+  } finally {
+    console.log("Laden beëindigd");
+  }
+};
+```
+
+Vang een fout niet alleen op om ze daarna te negeren. Toon een duidelijke foutmelding, probeer opnieuw of geef de fout door zodat ze op een andere plaats afgehandeld kan worden.
+
+### Promise.all
+
+Met **`Promise.all()` wacht je meerdere Promises samen af**. Dit is nuttig wanneer de bewerkingen niet van elkaar afhankelijk zijn. Je geeft een array met Promises mee en krijgt één nieuwe Promise terug.
+
+Wanneer alle Promises succesvol afgehandeld zijn, krijg je een array met alle resultaten terug. De resultaten staan in dezelfde volgorde als de Promises die je meegaf.
+
+```javascript
+const haalFilmOp = () => {
+  return Promise.resolve({ id: 1, titel: "The Matrix" });
+};
+
+const haalVertoningenOp = () => {
+  return Promise.resolve(["14:30", "17:30", "20:30"]);
+};
+
+const run = async () => {
+  const filmPromise = haalFilmOp();
+  const vertoningenPromise = haalVertoningenOp();
+
+  const [film, vertoningen] = await Promise.all([
+    filmPromise,
+    vertoningenPromise
+  ]);
+
+  console.log(film, vertoningen);
+};
+
+run();
+```
+
+De bewerkingen worden al gestart wanneer de functies aangeroepen worden. `Promise.all()` wacht vervolgens tot ze allemaal klaar zijn. Als één Promise wordt rejected, wordt `Promise.all()` ook rejected. Handel die fout daarom af met `try/catch` wanneer dat nodig is.
+
+### Race conditions
+
+Een **race condition** kan ontstaan wanneer meerdere asynchrone bewerkingen tegelijk bezig zijn en in een andere volgorde eindigen dan waarin ze gestart werden.
+
+Stel dat een gebruiker snel twee films selecteert. De eerste request kan trager zijn dan de tweede request. Daardoor kan het oude resultaat uiteindelijk de nieuwste selectie overschrijven.
+
+```javascript
+let geselecteerdeFilm = null;
+
+const selecteerFilm = async (id) => {
+  const film = await haalFilmOp(id);
+  geselecteerdeFilm = film;
+  console.log(`Geselecteerd: ${film.titel}`);
+};
+
+selecteerFilm(1); // Trage request
+selecteerFilm(2); // Snelle request
+```
+
+Dit kan je bijvoorbeeld oplossen door de vorige request te annuleren of alleen het resultaat van de meest recente request te verwerken. Later bekijken we hoe libraries voor server state hierbij kunnen helpen.
+
+## Oefeningen
+
+### Scope verklaren
+
+Voor de bioscoop willen we controleren of een bezoeker oud genoeg is voor een film. Bekijk de volgende code. Verklaar waarom de laatste regel een `ReferenceError` veroorzaakt en pas de code aan zodat `minimumLeeftijd` daar wel beschikbaar is.
+
+```javascript
+function controleerLeeftijd(leeftijdBezoeker) {
+  if (leeftijdBezoeker < 16) {
+    const minimumLeeftijd = 16;
+  }
+
+  console.log(`Deze film is toegelaten vanaf ${minimumLeeftijd} jaar.`);
+}
+
+controleerLeeftijd(14);
+```
+
+### Volgorde van asynchrone code
+
+Voorspel de volgorde van de uitvoer zonder de code eerst uit te voeren. Controleer je antwoord daarna in de [JavaScript Visualizer](https://www.jsv9000.app).
+
+```javascript
+console.log("Start");
+
+setTimeout(() => {
+  console.log("Beschikbare plaatsen opgehaald");
+}, 0);
+
+Promise.resolve().then(() => {
+  console.log("Filmgegevens verwerkt");
+});
+
+console.log("Bioscooppagina opgebouwd");
+```
+
+### Filmgegevens omzetten met `map()`
+
+Pas de regel met `filmOverzichten` aan. Gebruik `map()` om voor elke film een string te maken in de vorm `The Matrix - 136 minuten`. De oorspronkelijke array mag niet aangepast worden.
+
+<JavaScriptPlayground>
+
+```javascript
+const films = [
+  { id: 1, titel: "The Matrix", speelduur: 136 },
+  { id: 2, titel: "Inception", speelduur: 148 },
+  { id: 3, titel: "Interstellar", speelduur: 169 }
+];
+
+const filmOverzichten = films; // Pas deze regel aan met map().
+
+console.log(filmOverzichten);
+```
+
+</JavaScriptPlayground>
+
+### Films filteren met `filter()`
+
+Pas de regel met `korteFilms` aan. Gebruik `filter()` om enkel de films te behouden die maximaal 150 minuten duren. De oorspronkelijke array mag niet aangepast worden.
+
+<JavaScriptPlayground>
+
+```javascript
+const films = [
+  { id: 1, titel: "The Matrix", speelduur: 136 },
+  { id: 2, titel: "Inception", speelduur: 148 },
+  { id: 3, titel: "Interstellar", speelduur: 169 }
+];
+
+const korteFilms = films; // Pas deze regel aan met filter().
+
+console.log(korteFilms);
+```
+
+</JavaScriptPlayground>
+
+### Asynchrone bewerkingen samen afwachten
+
+Voor een detailpagina worden de gegevens van een film en de bijhorende vertoningen afzonderlijk opgehaald. Deze twee bewerkingen zijn niet afhankelijk van elkaar. Herschrijf `laadFilmPagina()` met `Promise.all()` zodat ze samen worden afgewacht.
+
+```javascript
+const wacht = (resultaat, tijd) => {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(resultaat), tijd);
+  });
+};
+
+const laadFilmPagina = async () => {
+  const film = await wacht({ id: 1, titel: "The Matrix" }, 1000);
+  const vertoningen = await wacht(["14:30", "17:30", "20:30"], 1000);
+
+  console.log(film, vertoningen);
+};
+
+laadFilmPagina();
+```
+
+## Controlevragen
+
+### Wat is het verschil tussen block scope en function scope?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Bij **block scope** is een variabele enkel beschikbaar binnen het blok `{}` waarin ze gedeclareerd werd. `let` en `const` hebben block scope. Een variabele met `var` heeft **function scope** en is beschikbaar binnen de volledige functie, ook buiten een `if`- of `for`-blok.
+
+</details>
+
+### Waarom gebruiken we standaard `const` en wanneer kiezen we voor `let`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+We gebruiken standaard `const` omdat de variabele dan geen volledig nieuwe waarde kan krijgen. Dit maakt de code beter voorspelbaar. We kiezen voor `let` wanneer de waarde later wel opnieuw toegewezen moet worden, bijvoorbeeld bij een teller.
+
+</details>
+
+### Wat is de temporal dead zone?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Dit is het gedeelte tussen het begin van een scope en de declaratie van een variabele met `let` of `const`. De variabele is daar nog niet toegankelijk. Als je ze toch probeert te gebruiken, krijg je een `ReferenceError`.
+
+</details>
+
+### Kan een callback zowel synchroon als asynchroon uitgevoerd worden?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Ja. Een functie zoals `map()` voert haar callback onmiddellijk en dus synchroon uit. Een timer of event kan een callback pas later en dus asynchroon laten uitvoeren.
+
+</details>
+
+### Waarom wordt een timer met een wachttijd van `0` milliseconden niet onmiddellijk uitgevoerd?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+De callback van de timer wordt eerst in de event queue geplaatst. Hij kan pas uitgevoerd worden wanneer de huidige synchrone code klaar is en de call stack leeg is. `0` milliseconden betekent dus niet dat de callback de huidige code onderbreekt.
+
+</details>
+
+### Wanneer kies je voor `map()`, `filter()`, `some()` of `every()`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+- `map()` zet elk element om en returnt een nieuwe array.
+- `filter()` behoudt alleen de elementen die aan een voorwaarde voldoen.
+- `some()` controleert of minstens één element aan een voorwaarde voldoet.
+- `every()` controleert of alle elementen aan een voorwaarde voldoen.
+
+</details>
+
+### Wanneer kies je voor `find()` in plaats van `filter()`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Gebruik `find()` wanneer je alleen het eerste passende element zoekt. Deze methode returnt het element of `undefined`. Gebruik `filter()` wanneer je alle passende elementen in een nieuwe array wil krijgen.
+
+</details>
+
+### Wat is het verschil tussen een muterende en een niet-muterende arraymethode?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Een muterende methode, zoals `push()` of `sort()`, past de bestaande array aan. Een niet-muterende methode, zoals `map()` of `filter()`, laat de bestaande array staan en returnt een nieuwe array.
+
+</details>
+
+### Waarom is spread bij geneste objecten geen volledige kopie?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Spread kopieert alleen het buitenste niveau. Geneste objecten en arrays blijven naar dezelfde gegevens verwijzen. Als je geneste React-state aanpast, moet je daarom ook het geneste niveau kopiëren.
+
+</details>
+
+### Wat betekent het wanneer een Promise settled is?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Een Promise is settled wanneer hij `fulfilled` of `rejected` is. De Promise is dan afgehandeld en kan niet meer van toestand of resultaat veranderen.
+
+</details>
+
+### Blokkeert `await` de volledige JavaScript-thread?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Nee. Alleen de verdere uitvoering van de huidige `async` functie wordt uitgesteld. JavaScript kan ondertussen andere code en callbacks uitvoeren.
+
+</details>
+
+### Wanneer is `Promise.all()` geschikter dan meerdere opeenvolgende `await`-expressies?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Wanneer de asynchrone bewerkingen niet van elkaar afhankelijk zijn. Je kan ze dan samen starten en samen afwachten. Zo hoeven ze niet onnodig één voor één uitgevoerd te worden.
+
+</details>
+
+### Wanneer wordt het `finally`-blok uitgevoerd?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Het `finally`-blok wordt altijd uitgevoerd: zowel wanneer de bewerking slaagt als wanneer er een fout ontstaat. Het is bijvoorbeeld geschikt om een laadindicator opnieuw uit te schakelen.
+
+</details>
+
+### Hoe kan een race condition ontstaan bij twee requests?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Een oudere request kan trager zijn en pas eindigen nadat een nieuwere request al klaar is. Wanneer beide resultaten dezelfde data aanpassen, kan het oude resultaat daardoor de nieuwste waarde overschrijven.
+
+</details>

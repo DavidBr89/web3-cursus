@@ -1,0 +1,74 @@
+---
+title: "Week 9: Node, HTTP en Express"
+sidebar_position: 9
+---
+
+
+## Wat bouwen we deze week?
+
+We bouwen een eigen REST API. We starten met een minimale Node-server, stappen daarna over naar Express en bouwen ten slotte een getypeerde projectstructuur.
+
+## Leerdoelen
+
+Na deze week kun je de rol van Node en Express onderscheiden, requests en responses lezen, REST-routes ontwerpen en routes van controllers scheiden.
+
+## Van HTTP naar Express
+
+Een request bevat onder meer een methode, URL, headers en eventueel een body. Een response bevat een statuscode, headers en een body. Express neemt het handmatig parsen en routeren niet conceptueel weg, maar biedt er een duidelijkere API voor.
+
+```typescript
+router.get("/:id", getProductById);
+router.post("/", createProduct);
+```
+
+Routes koppelen HTTP aan een controller. De controller verwerkt de use case en stuurt precies één response.
+
+```typescript
+export const getProductById = (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const product = products.find((item) => item.id === id);
+
+  if (!product) {
+    return res.status(404).json({ message: "Product niet gevonden" });
+  }
+
+  return res.json(product);
+};
+```
+
+## REST en statuscodes
+
+| Methode | Route | Bedoeling |
+| --- | --- | --- |
+| `GET` | `/products` | collectie lezen |
+| `GET` | `/products/:id` | één item lezen |
+| `POST` | `/products` | item maken |
+| `PATCH` | `/products/:id` | item gedeeltelijk wijzigen |
+| `DELETE` | `/products/:id` | item verwijderen |
+
+
+Gebruik onder meer `200`, `201`, `204`, `400`, `404` en `500` volgens de werkelijke uitkomst.
+
+## Begeleide opdracht
+
+1. Maak een minimale Node-server en volg één request.
+1. Bouw dezelfde route met Express en wijs dezelfde HTTP-onderdelen aan.
+1. Maak een TypeScriptproject en splits het starten van de server en de Expressapplicatie.
+1. Maak een productsrouter.
+1. Verplaats handlerlogica naar `products_controller.ts`.
+1. Implementeer lezen, aanmaken en niet-gevonden.
+1. Test elke route met geldige en ongeldige invoer.
+
+### Checkpoint
+
+Voorspel voor vijf requests route, controller, statuscode en body. Controleer daarna met een API-client.
+
+## Begripscontrole
+
+Maak voor je eigen API een schema van request naar router, controller en response. Leg daarnaast uit welk werk Express overneemt van de minimale Node-server.
+
+## Zelfstandige oefening
+
+Voeg `PATCH /products/:id` toe. Onderscheid een ongeldig id, een ontbrekend product en een geldige wijziging.
+
+[Volgende: middleware en databanken](/semesterproject/week-10).

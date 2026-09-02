@@ -1,0 +1,124 @@
+---
+title: "React"
+sidebar_position: 1
+hide_title: true
+---
+
+import useBaseUrl from "@docusaurus/useBaseUrl";
+
+<header className="technologyTitle">
+  <a
+    className="technologyTitle__logoLink"
+    href="https://react.dev/"
+    aria-label="Open de officiële website van React"
+  >
+    <img
+      className="technologyTitle__logo"
+      src={useBaseUrl("/img/react.svg")}
+      alt=""
+    />
+  </a>
+  <h1>React</h1>
+</header>
+
+## Doel
+
+In dit gedeelte leren we hoe we moeten werken met React. We beginnen met components aan te maken en bekijken verder hoe deze state kunnen bijhouden en wanneer deze gerenderd worden op het scherm. Het doel van dit gedeelte is uiteraard dat je een volledige React applicatie kan bouwen van A tot Z.
+
+React is een library voor het bouwen van gebruikersinterfaces (UI) voor webapplicaties. Met React bouw je applicaties op uit herbruikbare componenten die elk hun eigen logica en weergave bevatten. React maakt het eenvoudiger om dynamische en interactieve interfaces te ontwikkelen door efficiënt om te gaan met veranderingen in data en deze automatisch in de UI te verwerken.
+
+## Het opzetten van een nieuw project
+
+Het makkelijkste om React aan te leren is om onmiddellijk een React projet op te zetten met een tool genaamd [Vite](https://vite.dev). We gebruiken tijdens de lessen `yarn` om nieuwe React projecten aan te maken met het volgende commando:
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Voer dit commando uit in opdrachtprompt (CMD) onder Windows om problemen te vermijden met Powershell. Dit commando maakt een nieuwe map aan met de naam die je gekozen hebt, dus doe dit in een map waarin je jouw React projecten wilt bijhouden.
+</aside>
+
+```console
+$ yarn create vite
+```
+
+Dit geeft een gelijkaardige interactieve CLI zoals de volgende afbeelding:
+
+![](/img/react/yarnvite.png)
+
+Kies hier de volgende zaken:
+
+1. **Project name:** Kies hier de **naam-van-jouw-project**. Het beste is dat je dit doet a.h.v. kebab-casing.
+1. **Select a framework:** Kies hier voor **React**
+1. **Select a variant:** Kies hier voor **TypeScript + React Compiler** (Belangrijke stap!)
+1. **Use Vite 8 beta (Experimental):** Kies hier voor **No**
+1. **Install with yarn and start now?** Kies hier voor **No**
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+We gebruiken [React Compiler](https://react.dev/learn/react-compiler) (redelijk nieuwe feature) in onze nieuw aangemaakte React projecten. Basically gaat dit ervoor zorgen dat React zelf gaat beslissen wanneer er optimalisaties moeten gedaan worden. Dit betekent dus dat we **nergens in onze code `useCallback` of `useMemo` nodig hebben**. Let hier ook op voor jullie project.
+</aside>
+
+We hebben nu onze eerste React applicatie aangemaakt. Vite kon ook voor ons automatisch alle dependencies installeren en de development server opstarten. We hebben hier gekozen om dit niet te doen, we gaan deze stappen manueel doen om te tonen hoe dit werkt.
+
+Voor de volgende stap moeten we in de nieuw aangemaakte map `eerste-react-project` navigeren en de dependencies installeren:
+
+```console
+$ cd eerste-react-project
+$ yarn install
+# Kan ook afgekort door enkel yarn te gebruiken
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Wanneer je voorbeeldcode (GitHub) downloadt en lokaal op je eigen computer wil uitvoeren, zal je telkens opnieuw de dependencies moeten installeren.
+</aside>
+
+Nadat alle dependencies geinstalleerd zijn door het `yarn` of `yarn install` commando uit te voeren kunnen we nu de React applicatie opstarten
+
+```console
+$ yarn dev
+```
+
+![](/img/react/yarndev.png)
+
+Vite zal nu automatisch een development server opstarten en dit standaard op [http://localhost:5173](http://localhost:5173).
+
+![](/img/react/reactstart.png)
+
+## Code editor
+
+Je mag zelf kiezen welke IDE je gebruikt om jouw React applicaties te ontwikkelen. Ik gebruik tijdens de lessen steeds VS Code met een aantal handige extensies.
+
+### Linting
+
+Code linters detecteren problemen in je code terwijl je aan het programmeren bent, zodat je fouten vroegtijdig kan opsporen en corrigeren. [ES Lint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) is zo'n populaire, open-source linter voor JavaScript/TypeScript.
+
+### Formatter
+
+Een formatter is een tool die de opmaak van je code automatisch aanpast zodat deze consistent en leesbaar blijft volgens vaste regels.
+
+[Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) is zo'n formatter. Het zorgt ervoor dat je code automatisch netjes wordt geformatteerd volgens vooraf ingestelde en configureerbare regels. Wanneer je Prettier uitvoert, worden bijvoorbeeld tabs omgezet naar spaties en worden inspringing, aanhalingstekens en andere opmaak aangepast volgens de gekozen configuratie.
+
+Het is ideaal om Prettier automatisch te kunnen laten uitvoeren bij het opslaan (format on save) en/of automatisch bij het plakken van code (format on paste). Je kan dit instellen als volgt:
+
+1. Druk op `CTRL` (Windows) of `CMD` (Mac) `+ SHIFT + P`
+1. Typ `settings`
+1. Druk op `ENTER`
+1. Typ in de zoekbalk `format on`
+1. Zorg ervoor dat de optie `Format on save` / `Format on paste` aangevinkt staat
+
+![](/img/react/prettier.png)
+
+### Snippets
+
+Snippets zijn vooraf gedefinieerde stukjes code die je snel kan invoegen via een korte afkorting, zodat je sneller en efficiënter kan programmeren. Een handige extensie die we kunnen installeren om gebruik te maken van snippets om onze React components vlug aan te maken is [ES7+ React/Redux/React-Native snippets](https://marketplace.visualstudio.com/items?itemName=dsznajder.es7-react-js-snippets).
+
+
+
+
+

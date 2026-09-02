@@ -1,0 +1,388 @@
+---
+title: "Server state met TanStack Query"
+sidebar_position: 8
+---
+
+
+In het vorige hoofdstuk bouwden we een HTTP-laag met Axios. Axios weet hoe een request verstuurd wordt, maar niet hoe lang de ontvangen data bruikbaar blijft of welke componenten dezelfde data nodig hebben.
+
+TanStack Query, vaak nog React Query genoemd, beheert asynchrone server state in React.
+
+## Client state en server state
+
+**Client state**: Ontstaat en leeft in de browser, bijvoorbeeld een geopend menu, gekozen thema of lokale formulierwaarde.
+
+**Server state**: Is eigendom van een server, wordt asynchroon geladen en kan buiten onze applicatie wijzigen.
+
+Server state brengt specifieke problemen mee:
+
+- data kan verouderd raken;
+- verschillende componenten vragen dezelfde data;
+- requests kunnen laden of mislukken;
+- data moet na een wijziging opnieuw gesynchroniseerd worden;
+- eerdere data kan nuttig blijven tijdens een nieuwe request;
+- ongebruikte data hoeft niet onbeperkt in geheugen te blijven.
+
+## De volledig manuele aanpak
+
+Met `useEffect` en `useState` kunnen we serverdata zelf laden. Voor één request lukt dit goed. Voor een volledige applicatie moeten we daarnaast zelf caching, deduplicatie, retries, invalidatie en achtergrondvernieuwing ontwerpen.
+
+```tsx
+const [data, setData] = useState<Movie[]>([]);
+const [isLoading, setIsLoading] = useState(true);
+const [error, setError] = useState<Error | null>(null);
+```
+
+Wanneer twee pagina's dezelfde films nodig hebben, ontstaat snel dubbele state of een zelfgemaakte globale cache. TanStack Query biedt hiervoor een getest model.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+TanStack Query vervangt Axios niet. Axios voert de HTTP-call uit; TanStack Query beheert de levenscyclus en cache van het resultaat.
+</aside>
+
+## Installatie
+
+```shell
+yarn add @tanstack/react-query
+```
+
+Of met npm:
+
+```shell
+npm install @tanstack/react-query
+```
+
+## QueryClient configureren
+
+Maak `src/app/provider.tsx`.
+
+```tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { PropsWithChildren } from 'react';
+
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 30_000,
+            retry: 1,
+        },
+    },
+});
+
+export const AppProvider = ({ children }: PropsWithChildren) => {
+    return (
+        <QueryClientProvider client={queryClient}>
+            {children}
+        </QueryClientProvider>
+    );
+}
+```
+
+Plaats de provider rond de applicatie.
+
+```tsx
+<AppProvider>
+    <RouterProvider router={router} />
+</AppProvider>
+```
+
+Maak de `QueryClient` niet binnen een componentrender aan. Anders ontstaat bij iedere render een nieuwe cache.
+
+## Een eerste query
+
+We hergebruiken de Axios-functie uit onze feature.
+
+```tsx
+import { useQuery } from '@tanstack/react-query';
+import { getMovies } from '../api/getMovies';
+
+const MoviesList = () => {
+    const moviesQuery = useQuery({
+        queryKey: ['movies'],
+        queryFn: () => getMovies(),
+    });
+
+    if (moviesQuery.isPending) {
+        return <p>Films laden...</p>;
+    }
+
+    if (moviesQuery.isError) {
+        return <p>{moviesQuery.error.message}</p>;
+    }
+
+    return (
+        <ul>
+            {moviesQuery.data.map((movie) => (
+                <li key={movie.id}>{movie.title}</li>
+            ))}
+        </ul>
+    );
+}
+```
+
+**`queryKey`**: Identificeert de data in de cache.
+
+**`queryFn`**: Is een asynchrone functie die de data ophaalt of een fout gooit.
+
+**`data`**: Bevat het succesvolle resultaat.
+
+**`isPending`**: Er is nog geen data beschikbaar en de query is pending.
+
+**`isError`**: De query eindigde met een fout.
+
+## Query keys
+
+Iedere waarde waarvan het request afhangt, hoort in de query key.
+
+```tsx
+const moviesQuery = useQuery({
+    queryKey: ['movies', { query, page }],
+    queryFn: () => getMovies({ query, page }),
+});
+```
+
+Wanneer `query` of `page` verandert, gebruikt TanStack Query een andere cache-entry en voert het de passende queryfunctie uit.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+Gebruik niet voor verschillende soorten data dezelfde query key. De key is de identiteit van de gecachete data.
+</aside>
+
+## Query options per feature
+
+Om keys en functies niet doorheen componenten te dupliceren, verzamelen we query options bij de feature.
+
+Maak `src/features/movies/api/movieQueries.ts`.
+
+```typescript
+import { queryOptions } from '@tanstack/react-query';
+import { getMovie } from './getMovie';
+import { getMovies, type GetMoviesParams } from './getMovies';
+
+export const movieQueries = {
+    all: () => ['movies'] as const,
+
+    list: (params: GetMoviesParams) =>
+        queryOptions({
+            queryKey: [...movieQueries.all(), 'list', params],
+            queryFn: () => getMovies(params),
+        }),
+
+    detail: (movieId: number) =>
+        queryOptions({
+            queryKey: [...movieQueries.all(), 'detail', movieId],
+            queryFn: () => getMovie(movieId),
+        }),
+};
+```
+
+Het component gebruikt daarna dezelfde definitie.
+
+```tsx
+const moviesQuery = useQuery(movieQueries.list({ query, page }));
+```
+
+Deze factory houdt de featurekennis bij de feature en maakt invalidatie voorspelbaarder.
+
+## staleTime en garbage collection
+
+TanStack Query beschouwt gecachete data standaard snel als stale. Stale betekent niet dat de data verwijderd is; het betekent dat ze bij een geschikt moment op de achtergrond opnieuw geladen mag worden.
+
+**`staleTime`**: Hoelang data als vers wordt beschouwd.
+
+**`gcTime`**: Hoelang ongebruikte cachedata bewaard blijft voordat garbage collection ze verwijdert.
+
+```tsx
+useQuery({
+    ...movieQueries.detail(movieId),
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+});
+```
+
+Kies deze waarden op basis van het domein. Een filmbeschrijving verandert zelden; live voorraad of een sportscore kan veel sneller verouderen.
+
+## isPending en isFetching
+
+`isPending` betekent dat er nog geen succesvolle data is. `isFetching` betekent dat de queryfunctie momenteel draait, ook wanneer oude data al zichtbaar is.
+
+```tsx
+if (query.isPending) return <FullPageLoader />;
+
+return (
+    <>
+        {query.isFetching && <small>Gegevens vernieuwen...</small>}
+        <MovieList movies={query.data} />
+    </>
+);
+```
+
+Zo kan de bestaande interface zichtbaar blijven tijdens een achtergrondvernieuwing.
+
+## Conditioneel laden
+
+Een query kan wachten tot alle noodzakelijke informatie beschikbaar is.
+
+```tsx
+const movieQuery = useQuery({
+    ...movieQueries.detail(movieId),
+    enabled: movieId > 0,
+});
+```
+
+Gebruik `enabled` wanneer de query werkelijk afhankelijk is van een voorwaarde. Gebruik het niet om alle requests handmatig te sturen alsof `useQuery` een gewone event handler is.
+
+## Data wijzigen met useMutation
+
+Een query leest serverdata. Een mutation maakt, wijzigt of verwijdert data.
+
+```tsx
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createMovie } from '../api/createMovie';
+
+const queryClient = useQueryClient();
+
+const createMovieMutation = useMutation({
+    mutationFn: createMovie,
+    onSuccess: () => {
+        return queryClient.invalidateQueries({
+            queryKey: movieQueries.all(),
+        });
+    },
+});
+```
+
+Roep de mutation aan bij een geldige submit.
+
+```tsx
+const onSubmit = (input: CreateMovieInput) => {
+    createMovieMutation.mutate(input);
+}
+```
+
+Een mutation heeft eigen toestanden zoals `isPending`, `isError` en `isSuccess`.
+
+## Invalidatie
+
+Na het toevoegen van een film kan de bestaande filmlijst verouderd zijn. `invalidateQueries` markeert passende queries als stale en laat actieve queries opnieuw ophalen.
+
+We schrijven dus niet in ieder component handmatig “laad de lijst opnieuw”. We invalidëren de data op basis van haar query key.
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Invalidatie is vaak de eenvoudigste correcte oplossing. Rechtstreeks cachedata aanpassen kan sneller zijn, maar vraagt meer kennis over alle betrokken cachevormen.
+</aside>
+
+## React Hook Form en een mutation
+
+React Hook Form beheert het formulier. De mutation beheert de serverwijziging.
+
+```tsx
+const createMovieMutation = useMutation({
+    mutationFn: createMovie,
+    onSuccess: () => {
+        reset();
+        return queryClient.invalidateQueries({
+            queryKey: movieQueries.all(),
+        });
+    },
+});
+
+const onSubmit: SubmitHandler<CreateMovieInput> = (data) => {
+    createMovieMutation.mutate(data);
+}
+```
+
+Vermeng beide verantwoordelijkheden niet:
+
+- React Hook Form kent velden, validatie en submitinteractie;
+- Zod beschrijft geldige invoer;
+- Axios verstuurt de HTTP-call;
+- TanStack Query beheert mutationstatus en cache;
+- de backend valideert en bewaart de data.
+
+## Fouten tonen
+
+```tsx
+{createMovieMutation.isError && (
+    <p role="alert">{createMovieMutation.error.message}</p>
+)}
+```
+
+Een algemene serverfout past bij de mutation. Een serverfout die duidelijk bij één formulierveld hoort, kan je met React Hook Form `setError` aan dat veld koppelen.
+
+## Wat hoort niet in TanStack Query?
+
+Gebruik de querycache niet automatisch voor:
+
+- een geopend of gesloten menu;
+- lokale formulierwaarden;
+- een tijdelijk geselecteerd tabblad;
+- een thema-instelling;
+- data die volledig uit bestaande props kan worden berekend.
+
+TanStack Query is gericht op asynchrone data waarvan de server de eigenaar is.
+
+## Veelgemaakte fouten
+
+**Axios en TanStack Query als concurrenten zien**: Ze werken op verschillende lagen en vullen elkaar aan.
+
+**Variabelen uit de query key vergeten**: De cache kan dan data van verschillende requests verwarren.
+
+**Resultaten kopiëren naar `useState`**: Je creëert een tweede bron van waarheid die niet automatisch synchroniseert.
+
+**Een nieuwe `QueryClient` bij iedere render maken**: De volledige cache gaat dan telkens verloren.
+
+**Na een mutation niets invalidëren of bijwerken**: De UI kan verouderde data blijven tonen.
+
+**Alle data oneindig vers maken**: Je schakelt achtergrondvernieuwing uit zonder het domein te overwegen.
+
+**Client state in de querycache stoppen**: De gekozen tool past dan niet bij de eigenaar en levenscyclus van de data.
+
+## Oefeningen
+
+### Eerste query
+
+Laad de filmlijst via een bestaande Axios-functie. Toon afzonderlijke pending-, fout-, lege en succestoestanden.
+
+### Query keys
+
+Voeg zoeken en paginering toe. Bewijs met de Devtools of logging dat iedere combinatie haar eigen cache-entry krijgt.
+
+### Detailquery
+
+Maak een query-options factory voor lijsten en details. Stel een passende `staleTime` in en motiveer de gekozen duur.
+
+### Mutation
+
+Voeg een film toe met React Hook Form, Zod, Axios en `useMutation`. Invalideer daarna de lijst en voorkom dubbel verzenden.
+
+### Wijzigingsvraag
+
+Voeg verwijderen toe. Zorg dat detail- en lijstdata na succes niet verouderd blijven.
+
+## Controlevragen
+
+- Wat is het verschil tussen client state en server state?
+- Welke verantwoordelijkheid heeft Axios en welke TanStack Query?
+- Waarom is een query key meer dan alleen een willekeurige naam?
+- Wat is het verschil tussen `isPending` en `isFetching`?
+- Wat betekenen `staleTime` en `gcTime`?
+- Waarom invalidëren we queries na een mutation?
+- Waarom kopiëren we querydata meestal niet naar `useState`?
+
+## Officiële documentatie
+
+- [TanStack Query: overzicht](https://tanstack.com/query/latest/docs/framework/react/overview)
+- [TanStack Query: installatie](https://tanstack.com/query/latest/docs/framework/react/installation)
+- [TanStack Query: quick start](https://tanstack.com/query/latest/docs/framework/react/quick-start)
+- [TanStack Query: queries](https://tanstack.com/query/latest/docs/framework/react/guides/queries)
+- [TanStack Query: query keys](https://tanstack.com/query/latest/docs/framework/react/guides/query-keys)
+- [TanStack Query: mutations](https://tanstack.com/query/latest/docs/framework/react/guides/mutations)
+- [TanStack Query: invalidatie](https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation)

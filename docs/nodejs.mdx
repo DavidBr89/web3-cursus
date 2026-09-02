@@ -1,0 +1,139 @@
+---
+title: Node.js en Yarn
+slug: /ontwikkelomgeving/nodejs
+sidebar_position: 2
+hide_title: true
+description: Node.js en Yarn installeren en controleren voor Web 3.
+---
+
+import useBaseUrl from "@docusaurus/useBaseUrl";
+
+<header className="technologyTitle">
+  <a
+    className="technologyTitle__logoLink"
+    href="https://nodejs.org/"
+    aria-label="Open de officiële website van Node.js"
+  >
+    <img
+      className="technologyTitle__logo nodejsLogo"
+      src={useBaseUrl("/img/nodejs.svg")}
+      alt=""
+    />
+  </a>
+  <h1>Node.js en Yarn</h1>
+</header>
+
+Tijdens Web 3 gebruiken we Node.js om JavaScript en TypeScript buiten de browser uit te voeren. Verschillende hulpmiddelen uit de cursus, waaronder Vite en de TypeScriptcompiler, werken bovenop Node.js.
+
+Node.js bevat standaard **npm** (Node Package Manager). In deze cursus gebruiken we **Yarn** als pakketbeheerder. Installeer daarom eerst Node.js en activeer vervolgens Yarn voordat je aan de andere hoofdstukken begint.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title"><span className="platformHeading"><span className="platformHeading__logos" aria-hidden="true"><img src={useBaseUrl("/img/platform-windows.svg")} alt="" /></span> Windows: gebruik Command Prompt</span></strong>
+
+Voer de commando's uit deze cursus op Windows bij voorkeur uit in **Command Prompt (CMD)**, ook wel de **Opdrachtprompt** genoemd, en niet in PowerShell. PowerShell kan door zijn execution policy de `.ps1`-scripts van npm, Yarn en andere third-partytools blokkeren. CMD gebruikt de bijbehorende `.cmd`-bestanden en vermijdt daardoor deze foutmeldingen.
+
+Je opent CMD door in het Startmenu te zoeken naar **Command Prompt** of **Opdrachtprompt**.
+
+</aside>
+
+## Node.js rechtstreeks installeren
+
+De eenvoudigste manier om te starten is Node.js rechtstreeks te installeren. Download de aanbevolen **LTS-versie** (Long Term Support) via de officiële website:
+
+**[Node.js LTS downloaden →](https://nodejs.org/en/download)**
+
+Kies de installer voor jouw besturingssysteem en doorloop de installatie met de standaardinstellingen. Sluit na de installatie alle geopende terminals, zodat de nieuwe commando's correct beschikbaar worden.
+
+Dit is voldoende om te kunnen volgen in Web 3. Je hoeft NVM niet te installeren.
+
+## Node.js controleren
+
+Sluit na de installatie je terminal en open een nieuw terminalvenster. Controleer vervolgens Node.js en npm:
+
+```shell
+node --version
+npm --version
+```
+
+Beide commando's moeten een versienummer tonen. Krijg je de melding dat `node` niet wordt herkend, herstart dan eerst je terminal. Gebruik je NVM, controleer dan met `nvm current` welke versie actief is.
+
+## Yarn installeren
+
+Yarn raadt Corepack aan om de gebruikte Yarn-versie per project te beheren. Installeer Corepack via npm en activeer daarna Yarn.
+
+### <span className="platformHeading"><span className="platformHeading__logos" aria-hidden="true"><img src={useBaseUrl("/img/platform-apple.svg")} alt="" /><img src={useBaseUrl("/img/platform-linux.svg")} alt="" /></span> macOS en Linux</span>
+
+```bash
+npm install --global corepack
+corepack enable yarn
+```
+
+### <span className="platformHeading"><span className="platformHeading__logos" aria-hidden="true"><img src={useBaseUrl("/img/platform-windows.svg")} alt="" /></span> Windows</span>
+
+Open hiervoor, zoals bovenaan vermeld, **Command Prompt (CMD)** en niet PowerShell.
+
+```batch
+npm install --global corepack
+corepack enable yarn
+```
+
+Controleer daarna de installatie:
+
+```shell
+yarn --version
+```
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Klaar voor de cursus</strong>
+
+Wanneer `node --version`, `npm --version` en `yarn --version` alle drie een versienummer tonen, is deze stap voltooid.
+
+</aside>
+
+## Optioneel: Node.js-versies beheren met NVM
+
+De verplichte installatie is nu afgerond. Wil je verschillende Node.js-versies naast elkaar installeren en gemakkelijk tussen die versies wisselen? Dan kan je **optioneel** een Node version manager gebruiken.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Vervangt de rechtstreekse installatie</strong>
+
+Gebruik de rechtstreekse installatie of NVM, maar niet beide naast elkaar. Verwijder een rechtstreeks geïnstalleerde versie van Node.js voordat je NVM installeert. Installeer daarna ook Corepack opnieuw binnen de Node.js-versie die NVM beheert.
+
+</aside>
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Twee verschillende programma's</strong>
+
+Op macOS en Linux gebruiken we [nvm](https://github.com/nvm-sh/nvm). Op Windows gebruiken we [NVM for Windows](https://github.com/coreybutler/nvm-windows). Ze hebben een gelijkaardige naam en grotendeels dezelfde commando's, maar het zijn afzonderlijke projecten. De gewone `nvm` werkt op Windows alleen binnen WSL.
+
+</aside>
+
+### <span className="platformHeading"><span className="platformHeading__logos" aria-hidden="true"><img src={useBaseUrl("/img/platform-apple.svg")} alt="" /><img src={useBaseUrl("/img/platform-linux.svg")} alt="" /></span> macOS en Linux: nvm</span>
+
+Installeer `nvm` met het installatiecommando uit de [officiële nvm-documentatie](https://github.com/nvm-sh/nvm#installing-and-updating). Gebruik steeds het commando dat daar bij de meest recente versie staat.
+
+Sluit na de installatie je terminal en open een nieuw terminalvenster. Controleer daarna of `nvm` beschikbaar is en installeer de meest recente LTS-versie van Node.js:
+
+```bash
+command -v nvm
+nvm install --lts
+nvm use --lts
+```
+
+### <span className="platformHeading"><span className="platformHeading__logos" aria-hidden="true"><img src={useBaseUrl("/img/platform-windows.svg")} alt="" /></span> Windows: NVM for Windows</span>
+
+Verwijder eerst een eventueel rechtstreeks geïnstalleerde versie van Node.js via **Instellingen → Apps → Geïnstalleerde apps**. Download daarna `nvm-setup.exe` via de [officiële releases van NVM for Windows](https://github.com/coreybutler/nvm-windows/releases) en doorloop de installatie met de standaardinstellingen.
+
+Sluit alle terminals en open **Command Prompt (CMD) als administrator**. Installeer en activeer vervolgens de meest recente LTS-versie:
+
+```batch
+nvm install lts
+nvm list
+nvm use <versienummer>
+```
+
+Vervang `<versienummer>` door de LTS-versie die `nvm list` toont, bijvoorbeeld `24.14.0`.

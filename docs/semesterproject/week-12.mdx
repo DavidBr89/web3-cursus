@@ -1,0 +1,86 @@
+---
+title: "Week 12: Full-stackintegratie en beveiliging"
+sidebar_position: 12
+---
+
+
+## Wat bouwen we deze week?
+
+We maken van de losse frontend- en backenddelen één robuuste applicatie.
+
+## Leerdoelen
+
+Na deze week kun je authstatus centraal aanbieden, frontendroutes beschermen, serverinvoer valideren en loading-, unauthorized- en fouttoestanden door de volledige stack afhandelen.
+
+## Authstatus centraal aanbieden
+
+```tsx
+type AuthContextValue = {
+  user: User | null;
+  isLoading: boolean;
+  login: (credentials: Credentials) => Promise<void>;
+  logout: () => Promise<void>;
+};
+```
+
+Tijdens de eerste profielcontrole weet de app nog niet of er een gebruiker is. `isLoading` voorkomt dat een protected route te vroeg naar login navigeert.
+
+## Een route beschermen
+
+```tsx
+const ProtectedRoute = ({ children }: PropsWithChildren) => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) return <LoadingPage />;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+};
+```
+
+Dit verbetert de gebruikerservaring, maar beveiligt de data niet. De backend moet ieder beschermd request zelf autoriseren.
+
+## Servervalidatie en securitylagen
+
+De client kan omzeild worden. Valideer daarom alle externe invoer opnieuw op de server. We voegen een validator, Helmet en rate limiting toe. Deze lagen hebben verschillende doelen:
+
+- validatie weigert ongeldige invoer;
+- authmiddleware controleert identiteit;
+- autorisatie controleert toestemming;
+- Helmet stelt defensieve headers in;
+- rate limiting beperkt misbruik.
+
+## Begeleide opdracht
+
+1. Maak `AuthContext` en `useAuth` voor de authenticatiestatus.
+1. Zorg dat de app bij starten het huidige profiel ophaalt.
+1. Toon `LoadingPage` zolang authenticatie onbekend is.
+1. Bescherm `ProfilePage` met `ProtectedRoute`.
+1. Maak headerlinks afhankelijk van de gebruiker.
+1. Stuur cookies mee bij relevante API-calls.
+1. Voeg loginvalidatie, Helmet en rate limiting aan Express toe.
+1. Handel `401`, `403`, validatiefouten en serverfouten verschillend af.
+
+### Checkpoint
+
+Herlaad rechtstreeks een protected URL met en zonder geldige cookie. Verberg daarna de navigatielink en bewijs waarom de API zonder backendcontrole nog steeds onveilig zou zijn.
+
+## Begripscontrole
+
+Volg in je eigen code een login vanaf `LoginPage`, via `AuthContext` en HTTP, door Expressmiddleware en controller, tot `ProfilePage`. Noteer bij elke stap data, loadingtoestand en mogelijk foutscenario.
+
+## Eindopdracht
+
+Voeg één beveiligde wijzigingsactie toe, bijvoorbeeld de profielnaam aanpassen:
+
+1. valideer invoer in frontend en backend;
+1. vereis een geldige gebruiker;
+1. update de databank;
+1. werk de zichtbare gebruiker bij;
+1. toon loading, succes en fouten;
+1. leg uit welke laag welke verantwoordelijkheid draagt.
+
+## Eindreflectie
+
+Teken de volledige stroom `component -> hook/context -> HTTP -> middleware -> controller -> Prisma -> databank -> response`. Bespreek voor ieder onderdeel één foutscenario en hoe de gebruiker of server daarop reageert.
+
+[Terug naar het overzicht](/semesterproject/).

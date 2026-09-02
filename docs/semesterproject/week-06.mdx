@@ -1,0 +1,73 @@
+---
+title: "Week 6: Routing en layouts"
+sidebar_position: 6
+---
+
+
+## Wat bouwen we deze week?
+
+De filmapplicatie krijgt afzonderlijke pagina's, navigatie en dynamische filmdetails.
+
+## Leerdoelen
+
+Na deze week kun je routes en geneste routes definiëren, links gebruiken, routeparameters uitlezen en een gedeelde layout bouwen.
+
+## URL als state
+
+De URL beschrijft welke pagina en welk item zichtbaar zijn. Een detailroute bevat daarom het film-id in plaats van alleen lokale componentstate.
+
+```tsx
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootLayout />,
+    children: [
+      { index: true, element: <MoviesPage /> },
+      { path: "movies/:movieId", element: <DetailsPage /> },
+      { path: "contact", element: <ContactPage /> },
+    ],
+  },
+]);
+```
+
+`RootLayout` rendert gedeelde UI en een `Outlet` op de plaats waar de actieve childroute verschijnt.
+
+## Routeparameters
+
+```tsx
+const { movieId } = useParams();
+
+if (!movieId) {
+  return <p>Geen film gekozen.</p>;
+}
+```
+
+Routeparameters zijn strings en kunnen ontbreken. Converteer en valideer ze voordat je ze als numerieke id gebruikt.
+
+## Begeleide opdracht
+
+1. Installeer React Router en configureer de routes uit dit hoofdstuk.
+1. Maak routes voor films, detail en contact.
+1. Bouw `RootLayout` met `Header`, `main`, `Footer` en `Outlet`.
+1. Vervang gewone interne anchors door `Link` of `NavLink`.
+1. Maak een dynamische link vanuit elke `MovieItem`.
+1. Lees het id uit in `DetailsPage` en laad de juiste film.
+1. Voorzie een niet-gevonden toestand.
+
+### Checkpoint
+
+Herlaad rechtstreeks een detail-URL. Dezelfde film moet zichtbaar blijven. Leg uit welk deel van de componentboom bij navigatie behouden blijft.
+
+## Begripscontrole
+
+Teken na de implementatie de routeboom en componentboom. Duid aan waar `Header`, `Footer`, `Outlet`, de filmpagina en de detailpagina verschijnen.
+
+## Zelfstandige oefening
+
+Voeg een route `/movies/:movieId/reviews` toe als geneste route. Zorg dat de filminformatie zichtbaar blijft terwijl alleen het reviewgedeelte wisselt.
+
+## Theorie
+
+Lees [React Router in Data Mode](/react/router) voor de volledige uitleg over installatie, routes, layouts, navigatie, loaders en actions.
+
+[Volgende: gedeelde en server state](/semesterproject/week-07).

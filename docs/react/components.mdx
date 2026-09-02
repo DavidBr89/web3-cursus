@@ -1,0 +1,786 @@
+---
+title: "Beschrijven van de UI"
+sidebar_position: 2
+---
+
+import AnnotatedCodeBlock from "@site/src/components/AnnotatedCodeBlock";
+
+
+## Components
+
+React applicaties zijn opgebouwd uit **components**. Een **component is een onderdeel van de user interface** (UI) dat zijn eigen logica en uiterlijk bevat. Een component kan zo klein zijn als een knop, maar ook zo groot als een volledige pagina. Components zijn dus bouwblokken voor onze applicatie die markup, CSS en JavaScript combineren. 
+
+Een component is eigenlijk een JavaScript functie die markup returnt. 
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Een nieuwe component wordt steeds aangemaakt in een aparte file met een nieuwe extensie namelijk `.tsx`. **Naamgeving van components in React verloopt steeds via PasCal-casing**.
+</aside>
+
+```tsx
+const MyButton = () => {
+    return (
+        <button>Ik ben een knop!</button>
+    );
+}
+```
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Om een nieuwe component aan te maken kunnen we gebruik maken van een snippet namelijk `rafce` en dan `TAB` die ons onmiddellijk een basis component geeft.
+</aside>
+
+![](/img/react/rafce.png)
+
+Components (kleine onderdelen, dus geen volledige pagina's) zetten we in de `components` map in de `src` map. Merk hier op dat we via PasCal-casing werken voor onze component en de `.tsx` extensie. Na de snippet krijgen we deze component terug:
+
+```tsx
+import React from 'react';
+
+const MyButton = () => {
+    return (
+         <div>MyButton</div>
+    );
+}
+
+export default MyButton;
+```
+
+Merk hier op dat we meestal: 
+
+- Een `import` statement hebben om andere components of andere components/files te kunnen gebruiken in deze file. 
+- Een JavaScript functie met een return waarin JSX teruggegeven wordt.
+- Een `export` statement hebben waarin onze eigen component geëxporteerd wordt zodanig dat we deze kunnen hergebruiken in andere components.
+
+## Importeren en exporteren
+
+De kracht van componenten zit in hun herbruikbaarheid: je kan componenten maken die opgebouwd zijn uit andere componenten. Naarmate je applicatie groeit en componenten in elkaar genest worden, is het belangrijk om deze op te splitsen in aparte bestanden.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+**Binnen deze cursus verwachten we dat elke component in een afzonderlijk bestand wordt ondergebracht**. Dit zorgt voor een duidelijke structuur, betere leesbaarheid en herbruikbaarheid van code.
+</aside>
+
+Met `export` maken iets beschikbaar vanuit een bestand. Met `import` gebruiken we die code in een ander bestand. Het exporteren kan op twee manieren gebeuren nl. via een `default export` en via een `named export`.
+
+### Default export
+
+Wordt meestal gebruikt voor React components en gebruik je wanneer jouw bestand één hoofdonderdeel exporteert.
+
+<AnnotatedCodeBlock>
+
+```tsx
+const MyButton = () => {
+    return (
+        <button>Test</button>
+    );
+}
+
+export default MyButton;  // [!note Voor een default export gebruiken we `export default ...`]
+```
+
+</AnnotatedCodeBlock>
+
+Het importeren in een ander bestand gebeurt dan als volgt:
+
+<AnnotatedCodeBlock>
+
+```tsx
+import MyButton from './MyButton.tsx';  // [!note Importeren gebeurt via `import` statement maar onze naam is zonder accolades `{}`, geen destructuring dus. Je mag bij een default export, bij het importeren ook zelf de naam kiezen.]
+```
+
+</AnnotatedCodeBlock>
+
+
+### Named export
+
+Een named export wordt gebruikt wanneer je meerdere dingen wenst te exporteren uit een bestand. Meestal voor bestanden met helper functies in.
+
+```typescript
+
+export const som = (a: number, b: number) => {
+  return a + b;
+}
+
+export const vermenigvuldig = (a: number, b: number) => {
+  return a * b;
+}
+
+```
+
+Het importeren in een ander bestand gebeurt dan als volgt:
+
+<AnnotatedCodeBlock>
+
+```typescript
+import { som, vermenigvuldig } from "./utils.ts";  // [!note Hier worden wel `{}` gebruikt en dit om dat je eigenlijk destructured uit een object waarbij de naamgeving dus hier wel van belang is van wat je geëxporteerd hebt.]
+```
+
+</AnnotatedCodeBlock>
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Default exports en named exports kunnen gecombineerd worden in één bestand.
+</aside>
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+In het `return` statement wordt in een React component HTML achtige syntax teruggegeven. Maar opgelet dit is geen HTML maar JSX wat eigenlijk JavaScript is achter de schermen is.
+</aside>
+
+## JSX
+
+**JSX is een syntax uitbreiding voor JavaScript waarmee je HTML-achtige markup kan schrijven binnen een JavaScript bestand**. Er bestaan andere manieren om onze componenten te beschrijven in React, maar JSX is de meest simpelste manier.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+**JSX** trekt dus heel hard op HTML maar weet dus **dat dit eigenlijk geen HTML is maar JavaScript achter de schermen**! Er is gekozen voor deze aanpak omdat heel veel web ontwikkelaars al reeds ervaring hadden met de HTML syntax. Hierbij is het dan ook toegelaten om inline css en inline JS te schrijven.
+</aside>
+
+### Regels
+
+**Eén root element retourneren**: Wanneer een component meerdere elementen teruggeeft, moeten deze omgeven worden door één enkel parent-element, dit kan je doen door middel van een `div` element of een `React.Fragment`.
+
+<AnnotatedCodeBlock>
+
+```tsx
+<div>  // [!note Deze div moet rond de `h1`, `img` en de `p` elementen staan om één root element terug te geven.]
+    <h1>Web 3</h1>
+    <img src="https://tenor.com/nl/view/javascript-programming-gif-25800240" />
+    <p>JavaScript</p>
+</div>
+```
+
+</AnnotatedCodeBlock>
+
+Dit kan ook wel opgelost worden met een fragment `<></>`. Of ook soms met een `React.Fragment` ik zal verder nog uitleggen waarom je dit ooit zou moeten schrijven. **Een fragment zorgt er voor dat jouw DOM tree niet vervuild wordt met extra `div`'s** die niet nodig zijn voor styling bijvoorbeeld.
+
+```tsx
+<>
+    <h1>Web 3</h1>
+    <img src="https://tenor.com/nl/view/javascript-programming-gif-25800240" />
+    <p>JavaScript</p>
+</>
+
+// OF
+
+<React.Fragment>
+    <h1>Web 3</h1>
+    <img src="https://tenor.com/nl/view/javascript-programming-gif-25800240" />
+    <p>JavaScript</p>
+</React.Fragment>
+```
+
+**Sluiten van alle tags**: In JSX moeten alle tags expliciet gesloten worden. Zelfsluitende tags zoals `<img>` moeten geschreven worden als `<img />`. HTML is vergevingsgezinder dan JSX op dit vlak.
+
+```tsx
+<>
+    <img src="https://tenor.com/nl/view/javascript-programming-gif-25800240" />
+    <ul>
+        <li>Les 1: ES syntax</li>
+        <li>Les 2: React</li>
+    </ul>
+</>
+```
+
+**Gebruik meestal camelCasing**: JSX wordt achter de schermen omgezet naar JavaScript. **Attributen worden daardoor properties van JS objecten**. Wanneer je deze attributen in jouw component wil gebruiken, moeten ze dus geldige JS-namen hebben. JS laat bijvoorbeeld geen variabelen toe met koppeltekens `-` in de naam en sommige woorden zijn gereserveerd, zoals `class`.
+
+Daarom worden veel attributen in camelCase geschreven. Bijvoorbeeld `onClick` in plaats van `onclick`. Omdat `class` een gereserveerd keyword is in JS, gebruiken we in JSX `className`.
+
+![](/img/react/casing.png)
+
+```tsx
+<img src="https://tenor.com/nl/view/javascript-programming-gif-25800240" className="photo" />
+```
+
+## JavaScript in JSX
+
+Zoals al meerdere malen vermeld laat JSX je toe om HTML-achtige markup te schrijven binnen een JS bestand, waardoor de weergavelogica en de inhoud op dezelfde plaats kunnen staan. Soms wil je in die markup een stuk JS-logica gebruiken of een dynamische waarde van een variabele tonen. **In dat geval kan je `{ }` accolades gebruiken in JSX om JS code in te voegen**.
+
+```tsx
+const Avatar = () => {
+    const avatarImg = "https://tenor.com/nl/view/javascript-programming-gif-25800240";
+
+    return <img src={avatarImg} className="photo" />
+}
+
+export default Avatar;
+```
+
+Je kan ook functies aanroepen in deze accolades om de return waarde te tonen bijvoorbeeld:
+
+```tsx
+
+const today = new Date();
+
+const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat("nl-BE", { weekday: 'long' }).format(date);
+}
+
+const TodoList = () => {
+    
+    return <h1>{ formatDate(today) }</h1>
+}
+
+export default TodoList;
+```
+
+### Het gebruik van dubbele accolades
+
+**Naast `string`, `number` en andere JS-expressies kan je in JSX ook objecten doorgeven**. Objecten worden in JS ook weergegeven door accolades. **Wanneer je dus een JS object wilt doorgeven in JSX, moet je het object daarom in een extra paar accolades plaatsen `{{ }}`**. Je kan dit ook zien bijvoorbeeld bij inline CSS in JSX.
+
+
+```tsx
+
+const TodoList = () => {
+    
+    return (
+        <ul style={{ 
+            backgroundColor: 'black',
+            color: 'pink'
+        }}>
+            <li>Leren van React</li>
+            <li>Leren van TypeScript</li>
+        </ul>
+    );
+}
+
+export default TodoList;
+```
+
+## Doorgeven van data via props
+
+React components gebruiken **props** om met elkaar te communiceren. Elke parent-component kan informatie/data doorgeven aan zijn **child-components** door hen props mee te geven. Props lijken op HTML-attributen, maar je kan **eender welke JS-waarde mee doorgeven, zoals objecten, arrays maar ook functies**.
+
+### Stap 1: Props doorgeven aan een child component
+
+We gaan props (data) doorgeven aan een component. In het onderstaande voorbeeld geven we twee props door namelijk een object (person) en een number (size).
+
+```tsx
+
+const Profile = () => {
+    
+    return (
+        <Avatar 
+            person={{ name: "John Doe", imageId: "1bX5QH6" }}
+            size={100}
+         />
+    );
+}
+
+export default Profile;
+```
+
+### Stap 2: Props lezen uit de child component
+
+Props kan je uitlezen uit de child component door de `props` die binnenkomen in de component tussen de haakjes. Eigenlijk krijgt elke React component props mee binnen, we gebruiken deze niet altijd dus scrhijven dit ook niet altijd.
+
+
+<AnnotatedCodeBlock>
+
+```tsx
+  // [!note Props moeten altijd getypt worden door middel van een interface of een type alias. Vergeet dit niet!]
+interface AvatarProps {
+    person: { name: string;
+              imageId: string;
+            };
+    size: number;
+}
+
+const Avatar = (props: AvatarProps) => {  // [!note Hier komen altijd de props mee binnen in de React component, tussen de haakjes van de functie.]
+
+    const { person, size } = props; // Destructuring
+    
+    return (
+        <img
+          className="avatar"
+          src={getImageUrl(person)}
+          alt={person.name}
+          width={size}
+          height={size}
+    />
+    );
+}
+
+export default Avatar;
+```
+
+</AnnotatedCodeBlock>
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+De destructuring die hier gebeurde, kan ook rechtstreeks tussen de haakjes gedaan worden je hoeft dit niet altijd op een aparte lijn code te plaatsen. Meestal doe ik dit als er bijvoorbeeld maar 2 of 3 properties in zitten die ik wens te gebruiken.
+</aside>
+
+Je kan props zien als instelknoppen die je kan aanpassen. Ze vervullen dezelfde rol als argumenten bij functies, en eigenlijk zijn props ook het enige argument dat een component ontvangt. **React component functies krijgen dus altijd één argument mee binnen: nl. een props-object**.
+
+#### Default waarde aan props
+
+Je kan ook een **default waarde meegeven voor de props als deze niet doorgegeven werd door de parent component**.
+
+<AnnotatedCodeBlock>
+
+```tsx
+
+interface AvatarProps {
+    person: { name: string;
+              imageId: string;
+            };
+    size?: number;  // [!note Hier heb ik de size prop optioneel gemaakt in de typing zodanig dat TS niet klaagt in mijn component dat deze prop verplicht is.]
+}
+
+const Avatar = ({ person, size = 100 }: AvatarProps) => {  // [!note Een default waarde kan je meegeven door middel van een `=` waarde te geven.]
+
+    return (
+        <img
+          className="avatar"
+          src={getImageUrl(person)}
+          alt={person.name}
+          width={size}
+          height={size}
+    />
+    );
+}
+
+export default Avatar;
+```
+
+</AnnotatedCodeBlock>
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Door eerst de props in de component te typen waarin je deze binnenkrijgt, kan TypeScript je helpen met te vertellen welke props eventueel verplicht zijn en welke optioneel zodanig dat je ook geen fouten typt en de juiste waarde meegeeft.
+</aside>
+
+![](/img/react/avatarpropstype.png)
+
+![](/img/react/profilepropsrequired.png)
+
+![](/img/react/avatardefaultprops.png)
+
+![](/img/react/profilepropsoptional.png)
+
+#### Forwarden van props
+
+Soms kan het doorgeven van props repetitief worden daardoor kan je ook de props doorgeven met de spread syntax.
+
+```tsx
+
+interface ProfileProps {
+    person: { name: string;
+              imageId: string;
+            };
+    size: number;
+    isSepia: boolean
+}
+
+const Profile = ({ person, size, isSepia }: ProfileProps) => {
+
+    return (
+        <div className="card">
+            <Avatar
+                person={person}
+                size={size}
+                isSepia={isSepia}
+             />
+        </div>
+    );
+}
+
+export default Avatar;
+```
+
+In bepaalde situaties kan het handiger zijn om niet altijd opnieuw deze props volledig te moeten schrijven en kan je gebruik maken van de spread operator om de props "uit te spreiden".
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Je kan dit gebruiken als deze component zelf de props niet gebruikt maar dus volledig wenst door te geven.
+</aside>
+
+<AnnotatedCodeBlock>
+
+```tsx
+
+interface ProfileProps {
+    person: { name: string;
+              imageId: string;
+            };
+    size: number;
+    isSepia: boolean
+}
+
+const Profile = (props: ProfileProps) => {
+
+    return (
+        <div className="card">
+            <Avatar
+                {...props}  // [!note Veel kortere schrijfwijze]
+             />
+        </div>
+    );
+}
+
+export default Avatar;
+```
+
+</AnnotatedCodeBlock>
+
+#### JSX doorgeven als children
+
+Het is gebruikelijk in HTML om tags te nesten.
+
+```html
+<div>
+    <img />
+</div>
+```
+
+Soms wil je dit ook met je eigen components kunnen doen deze nesten.
+
+```tsx
+<Card>
+    <Avatar />
+</Card>
+```
+
+Wanneer je dit op deze manier doet, **ontvangt de parent component deze inhoud via een prop genaamd `children`**. In het voorbeeld hierboven ontvant dus de Card component een children prop met de waarde een Avatar component.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+Type de `children` prop nooit manueel maar gebruik een ingebouwde type in React die we kunnen gebruiken namelijk de `PropsWithChildren`.
+</aside>
+
+<AnnotatedCodeBlock>
+
+```tsx
+
+import { type PropsWithChildren } from 'react';
+
+const Card = (props: PropsWithChildren) => {
+    return (
+        <div className="card">
+            {props.children}  // [!note Dit is een krachtig instrument waarmee we alle children kunnen gebruiken in onze eigen component.]
+        </div>
+    )
+}
+
+const Profile = () => {
+    return (
+        <Card>
+            <Avatar person={{ name: "Jane Doe", imageId: "denf2"}} size={100} />
+        </Card>
+    )
+}
+```
+
+</AnnotatedCodeBlock>
+
+**Je kan een component met `children` prop zien als een component met een "opening" die door de parent component kan worden opgevuld met willekeurige JSX**.
+
+<aside className="courseCallout courseCallout--info">
+
+<strong className="courseCallout__title">Ter info</strong>
+
+**Props zijn niet altijd statisch. Props geven de data van een component weer op een bepaald moment in de tijd, niet enkel bij het initialiseren van de component.**
+</aside>
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+**Probeer nooit props rechtstreeks te wijzigen deze zijn immutable**.
+</aside>
+
+## Conditioneel renderen
+
+**Components kunnen soms iets anders tonen gebaseerd op specifieke condities, dit noemen we conditioneel renderen**. In React kunnen we conditioneel renderen door middel van `if` statements, `&&` en `?:` operators.
+
+```tsx
+
+interface ItemProps {
+    name: string;
+    isPacked: boolean;
+}
+
+const Item = ({name, isPacked}: ItemProps) => {
+    return <li className="item">{ name }</li>;
+}
+
+const PackingList = () => {
+    return (
+        <div>
+            <ul>
+                <Item isPacked={true} name="Space Suit" />
+                <Item isPacked={false} name="Helmet with a golden leaf" />
+                <Item isPacked={true} name="Photo of Jane" />
+            </ul>
+        </div>
+    )
+}
+```
+
+In het bovenstaande voorbeeld hebben we `Item` components met een `isPacked` prop waarbij true/false meegegeven werd. Als het true is willen we bijvoorbeeld een vinkje (V) zetten achter de naam. We kunnen dit doen met een if/else statement
+
+```tsx
+interface ItemProps {
+    name: string;
+    isPacked: boolean;
+}
+
+const Item = ({name, isPacked}: ItemProps) => {
+
+    if(isPacked) {
+        return <li className="item">{ name } V</li>;
+    }
+    
+    return <li className="item">{ name }</li>; 
+}
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+**Je kan een `if/else` statement gebruiken in de body van een component maar niet rechtstreeks in de JSX.**
+</aside>
+
+### Conditioneel niets renderen met `null`
+
+Soms wil je helemaal niets renderen. Stel dat je van het bovenstaande voorbeeld de ingepakte items niet wens te tonen. Een React component moet altijd iets teruggeven, in dit geval kan je `null` returnen om niets te renderen.
+
+```tsx
+interface ItemProps {
+    name: string;
+    isPacked: boolean;
+}
+
+const Item = ({name, isPacked}: ItemProps) => {
+
+    if(isPacked) {
+        return null;
+    }
+    
+    return <li className="item">{ name }</li>; 
+}
+```
+
+### Conditioneel renderen in JSX
+
+#### De ternary operator `? :`
+
+Bij het vorige voorbeeld zag het statement dat we returnde er grotendeels hetzelfde uit buiten het vinkje (V) dat er bij geplaatst werd. Dit is onhandig om repetitieve code te gebruiken. We kunnen ook conditioneel het vinkje (V) er bij zetten inline in de JSX. We kunnen dit doen met de ternary operator `? :`
+
+```tsx
+interface ItemProps {
+    name: string;
+    isPacked: boolean;
+}
+
+const Item = ({name, isPacked}: ItemProps) => {
+    
+    return <li className="item">{ isPacked ? name + " V" : name}</li>; 
+}
+```
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+**De ternary operator is handig voor eenvoudige voorwaarden, maar gebruik hem niet overal of teveel. Wanneer de JSX te complex wordt is het beter om aparte components te maken, variabelen te gebruiken en/of de logica op te splitsen.**
+</aside>
+
+#### De AND operator `&&`
+
+Een andere veelgebruikte verkorte syntax is de AND `&&` operator. **Binnen React wordt deze vaak gebruikt wanneer je alleen JSX wil renderen als een bepaalde conditie waar is, en niets wil renderen als de conditie onwaar is**.
+
+```tsx
+interface ItemProps {
+    name: string;
+    isPacked: boolean;
+}
+
+const Item = ({name, isPacked}: ItemProps) => {
+    
+    return <li className="item">{name} { isPacked && " V"}</li>; 
+}
+```
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+**Gebruik geen numbers aan de linkerzijde van de `&&`. Om de expressie te evalueren zet JS de linkerzijde automatisch om naar een boolean**. Wanneer de linkerzijde echter 0 is, krijgt de volledige expressie die waarde, en React zal dan effectief 0 renderen in plaats van niets. De oplossing hierbij is om de linkerzijde expliciet een boolean van te maken.
+</aside>
+
+## Renderen van lijsten
+
+Vaak willen we meerdere gelijkaardige componenten weergeven op basis van een lijst van data. Hiervoor kunnen we de JS array methodes gebruiken om een array van data om te zetten naar een array van componenten (JSX).
+
+```tsx
+
+const persons = [
+  'Creola Katherine Johnson: mathematician',
+  'Mario José Molina-Pasquel Henríquez: chemist',
+  'Mohammad Abdus Salam: physicist',
+  'Percy Lavon Julian: chemist',
+  'Subrahmanyan Chandrasekhar: astrophysicist'
+];
+
+const List = () => {
+    
+    return (
+        <ul>
+            {persons.map( p => {
+                return <li>{ p }</li>
+            })}
+        </ul>
+    );
+}
+
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+We gebruiken de `map` methode omdat we eigenlijk onze data willen transformeren van bvb. een array van strings naar een array van JSX elementen. Als we een array meegeven in JSX worden alle elementen na elkaar gerenderd, daarom werkt dit.
+</aside>
+
+<AnnotatedCodeBlock>
+
+```tsx
+
+const numbers = [1, 2, 3, 4];
+const listItems = numbers.map(n => <li>{ n }</li>);
+
+  // [!note Het gaat dus eigenlijk over het transformeren van data.]
+// Wordt eigenlijk het volgende [<li>1</li>, <li>2</li>, <li>3</li>, <li>4</li>]
+```
+
+</AnnotatedCodeBlock>
+
+Als je nu in de console kijkt in de browser krijg je wel volgende foutmelding. **Als we de map methode gebruiken moeten we verplicht een speciale `key` prop meegeven aan het eerste child element in de map body**.
+
+![](/img/react/key.png)
+
+Meestal gaat onze data wel gestructureerder zijn dan de array van strings en gaat dit een array van objecten zijn (bvb. data dat van een API komt).
+
+```tsx
+const people = [{
+  id: 0,
+  name: 'Creola Katherine Johnson',
+  profession: 'mathematician',
+}, {
+  id: 1,
+  name: 'Mario José Molina-Pasquel Henríquez',
+  profession: 'chemist',
+}, {
+  id: 2,
+  name: 'Mohammad Abdus Salam',
+  profession: 'physicist',
+}, {
+  id: 3,
+  name: 'Percy Lavon Julian',
+  profession: 'chemist',  
+}, {
+  id: 4,
+  name: 'Subrahmanyan Chandrasekhar',
+  profession: 'astrophysicist',
+}];
+
+const List = () => {
+    return (
+        <ul>
+            {people.map(p => (
+                <li>{ p.name }</li>
+                )
+            )}
+        </ul>
+    );
+}
+```
+
+We krijgen nog steeds de fout in de console over dat elke child een unieke key moet hebben.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+**JSX elementen die in een `map()` gebruikt worden als eerste child moeten een `key` prop hebben**.
+</aside>
+
+Keys laten weten aan React welk element uit een array overeenkomt met welke component, zodat React deze later kan herkennen. Dit wordt belangrijk wanneer elementen in een array kunnen veranderen van plaats, toegevoegd of verwijderd worden. 
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+**We gebruiken als `key` prop steeds een echte unieke waarde waar mogelijk, als je een array van objecten krijgt heb je meestal een id property die de perfecte kandidaat is voor de waarden van een key**.
+</aside>
+
+<AnnotatedCodeBlock>
+
+```tsx
+const people = [{
+  id: 0,
+  name: 'Creola Katherine Johnson',
+  profession: 'mathematician',
+}, {
+  id: 1,
+  name: 'Mario José Molina-Pasquel Henríquez',
+  profession: 'chemist',
+}, {
+  id: 2,
+  name: 'Mohammad Abdus Salam',
+  profession: 'physicist',
+}, {
+  id: 3,
+  name: 'Percy Lavon Julian',
+  profession: 'chemist',  
+}, {
+  id: 4,
+  name: 'Subrahmanyan Chandrasekhar',
+  profession: 'astrophysicist',
+}];
+
+const List = () => {
+    return (
+        <ul>
+            {people.map(p => (
+                <li key={p.id}>{ p.name }</li>  // [!note Nu met een unieke `key` prop meegegeven.]
+                )
+            )}
+        </ul>
+    );
+}
+```
+
+</AnnotatedCodeBlock>
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+**Gebruik zo weinig mogelijk of zelfs niet de index van een element in de array als `key`. Dit is niet aan te raden omdat de volgorde van elementen kan wijzigen wanneer items toegevoegd worden, verwijderd of herschikt**. Het gebruiken van een index als `key` kan hierdoor leiden tot moeilijk te vinden bugs. **Genereer ook geen dynamische `keys`** met bijvoorbeeld `Math.random()`, in dit geval zullen de keys steeds veranderen bij elke render waardoor React alle componenten en DOM-elementen telkens opnieuw moet aanmaken, dit zorgt voor een tragere applicatie. Gebruik daarom altijd een **stabiele en unieke identifier uit je data als `key`**.
+</aside>
+

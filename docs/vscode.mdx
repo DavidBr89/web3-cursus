@@ -1,0 +1,149 @@
+---
+title: Visual Studio Code
+slug: /ontwikkelomgeving/vscode
+sidebar_position: 1
+hide_title: true
+description: Visual Studio Code installeren en configureren voor Web 3.
+---
+
+import useBaseUrl from "@docusaurus/useBaseUrl";
+
+<header className="technologyTitle">
+  <a
+    className="technologyTitle__logoLink"
+    href="https://code.visualstudio.com/"
+    aria-label="Open de officiële website van Visual Studio Code"
+  >
+  <img
+    className="technologyTitle__logo"
+    src={useBaseUrl("/img/vscode.png")}
+    alt=""
+  />
+  </a>
+  <h1>Visual Studio Code</h1>
+</header>
+
+## Onze ontwikkelomgeving
+
+Tijdens Web 3 gebruiken we **Visual Studio Code** (VS Code) als geïntegreerde ontwikkelomgeving. We gebruiken dezelfde editor tijdens de lessen, demo's en oefeningen. Zo vind je de gebruikte menu's, commando's en sneltoetsen altijd op dezelfde plaats terug. Je bent vrij om een andere IDE te gebruiken maar hier is er geen ondersteuning voor tijdens de lessen.
+
+VS Code is gratis en beschikbaar voor Windows, macOS en Linux. De editor ondersteunt de talen en hulpmiddelen die we in dit vak nodig hebben, waaronder JavaScript, TypeScript, React, Node.js en Git.
+
+
+## Downloaden en installeren
+
+Download VS Code uitsluitend via de officiële website:
+
+**[Visual Studio Code downloaden →](https://code.visualstudio.com/Download)**
+
+De website biedt een geschikte installer voor jouw besturingssysteem:
+
+- **Windows:** download de *User Installer* voor x64;
+- **macOS:** kies de versie die bij je processor past (*Apple silicon* of *Intel chip*);
+- **Linux:** kies het pakket voor je distributie, bijvoorbeeld `.deb`, `.rpm` of Snap.
+
+Doorloop na het downloaden de installatie met de standaardinstellingen. Vink de optie **ADD to PATH** aan als deze vermeld staat in de installer, dit zorgt ervoor dat je straks het `code` commando kunt gebruiken in de terminal/cmd.
+
+## Overzicht van sneltoetsen
+
+Gebruik het overzicht om de belangrijkste sneltoetsen van Visual Studio Code snel terug te vinden. Deze versie bevat de sneltoetsen voor Windows.
+
+Op macOS zijn de sneltoetsen meestal hetzelfde, maar gebruik je doorgaans `Cmd` waar in het Windows-overzicht `Ctrl` staat. De Windows-toets `Alt` komt op een Mac meestal overeen met `Option`. Sommige combinaties kunnen afwijken; VS Code toont de juiste sneltoets altijd naast het bijbehorende menu-item.
+
+<a
+  className="downloadLink"
+  href={useBaseUrl("/files/keyboard-shortcuts-windows.pdf")}
+  download
+>
+  <span className="downloadLink__icon" aria-hidden="true">↓</span>
+  <span>VS Code-sneltoetsen downloaden</span>
+  <span className="downloadLink__meta">PDF</span>
+</a>
+
+## VS Code openen vanuit de terminal
+
+Tijdens de lessen openen we projecten regelmatig vanuit een terminal, Command Prompt of PowerShell. Daarvoor gebruiken we het commando `code`.
+
+### Het commando eenmalig instellen
+
+#### Windows
+
+Vink tijdens de installatie van VS Code de optie **Add to PATH** aan. Heb je VS Code al geïnstalleerd, voer dan de installer opnieuw uit en activeer deze optie. Sluit daarna alle geopende terminals en open Command Prompt of PowerShell opnieuw.
+
+#### macOS
+
+1. Open VS Code.
+2. Open het Command Palette met `Cmd + Shift + P`.
+3. Zoek naar **Shell Command: Install 'code' command in PATH**.
+4. Voer het commando uit en open daarna een nieuw terminalvenster.
+
+#### Linux
+
+Wanneer je VS Code via het officiële `.deb`- of `.rpm`-pakket, Snap of je package manager installeert, wordt het `code`-commando normaal automatisch aan `PATH` toegevoegd. Open na de installatie een nieuw terminalvenster.
+
+### De huidige map openen
+
+Navigeer eerst in je terminal naar de map die je als project wilt openen. Voer daar vervolgens dit commando uit:
+
+```shell
+code .
+```
+
+De punt `.` betekent **de huidige map**. VS Code opent die map als workspace, waardoor alle bestanden en submappen zichtbaar worden in de Explorer.
+
+Een volledig voorbeeld:
+
+```shell
+cd Documents/web3
+code .
+```
+
+Je kunt ook rechtstreeks een specifieke map meegeven:
+
+```shell
+code mijn-react-project
+```
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Wordt het commando niet herkend?</strong>
+
+Sluit je terminal volledig en open hem opnieuw. Controleer daarna met `code --version` of het commando beschikbaar is. Werkt het nog steeds niet, voer dan de stappen voor jouw besturingssysteem hierboven opnieuw uit.
+
+</aside>
+
+## Extensies voor Web 3
+
+Extensies voegen ondersteuning toe voor de technologieën en werkafspraken die we tijdens Web 3 gebruiken. Open het extensieoverzicht via het pictogram **Extensions** in de zijbalk of met:
+
+- `Ctrl + Shift + X` op Windows en Linux;
+- `Cmd + Shift + X` op macOS.
+
+Zoek een extensie steeds op naam en controleer ook de naam van de uitgever. Installeer alleen de extensies die hieronder worden vermeld.
+
+### Te installeren
+
+| Extensie | Uitgever | Waarom gebruiken we deze? |
+| --- | --- | --- |
+| [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) | Microsoft | Toont problemen en mogelijke fouten in JavaScript-, TypeScript- en React-code rechtstreeks in de editor. |
+| [Prettier - Code formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) | Prettier | Formatteert code automatisch en zorgt dat iedereen dezelfde consistente opmaak gebruikt. |
+| [ES7+ React/Redux/React-Native snippets](https://marketplace.visualstudio.com/items?itemName=dsznajder.es7-react-js-snippets) | dsznajder | Voegt handige afkortingen toe waarmee je onder andere snel een React-component kunt aanmaken. |
+| [Bruno](https://marketplace.visualstudio.com/items?itemName=bruno-api-client.bruno) | Bruno | Laat je HTTP-requests versturen, collecties beheren en onze REST API testen zonder VS Code te verlaten. |
+| [Prisma](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) | Prisma | Geeft syntax highlighting, formatting en ondersteuning voor Prisma-schema's tijdens het backendgedeelte. |
+
+### Optioneel
+
+Deze extensies zijn niet noodzakelijk voor dit OLOD, maar kunnen het werken in VS Code aangenamer maken:
+
+| Extensie | Uitgever | Meerwaarde |
+| --- | --- | --- |
+| [Path Intellisense](https://marketplace.visualstudio.com/items?itemName=christian-kohler.path-intellisense) | Christian Kohler | Vult bestands- en mappaden aan tijdens het typen. |
+| [Material Icon Theme](https://marketplace.visualstudio.com/items?itemName=PKief.material-icon-theme) | Philipp Kief | Maakt bestandstypes en mappen herkenbaarder met duidelijke pictogrammen. |
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Houd deze lijst bij de hand</strong>
+
+De extensielijst vormt de standaardconfiguratie voor dit vak. Nieuwe of gewijzigde extensies worden hier toegevoegd, zodat je jouw installatie op ieder moment kunt controleren.
+
+</aside>

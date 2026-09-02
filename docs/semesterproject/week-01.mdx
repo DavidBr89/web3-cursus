@@ -1,0 +1,101 @@
+---
+title: "Week 1: TypeScript als fundament"
+sidebar_position: 1
+---
+
+
+## Wat bouwen we deze week?
+
+We leggen de taalbasis voor React Bios. Je beschrijft films met types en schrijft functies die alleen geldige filmgegevens accepteren. Er is nog geen React nodig: je leert eerst lezen wat TypeScript je vertelt.
+
+## Leerdoelen
+
+Na deze week kun je:
+
+- variabelen, objecten, arrays, parameters en returnwaarden typeren;
+- `type`, `interface`, unions en optionele eigenschappen gebruiken;
+- compilerfouten lezen en gericht oplossen;
+- een API-datamodel vertalen naar herbruikbare types.
+
+## Waarom TypeScript?
+
+JavaScript ontdekt veel fouten pas tijdens de uitvoering. TypeScript controleert vooraf of waarden gebruikt worden zoals afgesproken.
+
+```typescript
+const formatRating = (rating: number): string => rating.toFixed(1);
+
+formatRating(8.274);
+formatRating("acht"); // compileerfout
+```
+
+De fout is geen hinder die je met `any` moet verbergen. Ze toont dat de functie en de aanroep verschillende verwachtingen hebben.
+
+## Het domein modelleren
+
+```typescript
+type Genre = "action" | "comedy" | "drama";
+
+interface Movie {
+  id: number;
+  title: string;
+  rating: number;
+  genre: Genre;
+  tagline?: string;
+}
+```
+
+Een eigenschap met `?` mag ontbreken. Gebruik die notatie alleen wanneer afwezigheid werkelijk een geldige toestand is.
+
+## Functies typeren
+
+```typescript
+const findMovie = (movies: Movie[], id: number): Movie | undefined =>
+  movies.find((movie) => movie.id === id);
+
+const movie = findMovie(movies, 42);
+
+if (movie) {
+  console.log(movie.title);
+}
+```
+
+`find` kan niets vinden. Het returntype dwingt je daarom om die toestand veilig af te handelen.
+
+## Begeleide opdracht
+
+1. Maak `movies.ts` en definieer `Genre` en `Movie`.
+1. Maak een array met minstens vier geldige films.
+1. Schrijf `getTopRated(movies, minimumRating)`.
+1. Schrijf `findMovie(movies, id)` met een eerlijk returntype.
+1. Toon bij een ontbrekende film een boodschap in plaats van een runtimefout.
+1. Voeg bewust een fout type toe en lees de volledige compilerfout.
+
+### Checkpoint
+
+`npx tsc --noEmit` eindigt zonder fouten en je kunt uitleggen waarom `findMovie` `undefined` kan teruggeven.
+
+## Vooruitblik naar de applicatie
+
+Bewaar je domeintypes centraal. Vanaf de Reactweken zullen pagina's, componenten en API-functies dezelfde voorstelling van een film gebruiken. Eén gedeeld type voorkomt dat ieder onderdeel andere eigenschappen verwacht.
+
+## Zelfstandige oefening
+
+Voeg de status `planned`, `released` of `cancelled` toe. Schrijf een functie die alleen uitgebrachte films teruggeeft. Wijzig daarna het model zodat een rating tijdelijk mag ontbreken en pas de formattering aan zonder `any` of type assertion.
+
+## Wat lever je in?
+
+- je TypeScriptbestand;
+- één onderzochte compilerfout;
+- drie zinnen over de fout die TypeScript voorkwam.
+
+## Controleer jezelf
+
+- Waarom is `any` meestal geen oplossing?
+- Wanneer is een eigenschap optioneel?
+- Waarom is `Movie | undefined` correcter dan altijd `Movie`?
+
+## Theorie
+
+Lees [TypeScript](/typescript) en maak de oefeningen bij het hoofdstuk.
+
+[Volgende: moderne en asynchrone JavaScript](/semesterproject/week-02).

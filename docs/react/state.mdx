@@ -1,0 +1,393 @@
+---
+title: "State"
+sidebar_position: 3
+---
+
+import AnnotatedCodeBlock from "@site/src/components/AnnotatedCodeBlock";
+
+
+Components moeten vaak aanpassen wat er op het scherm getoond wordt als gevolg van een interactie. Tot nu toe was onze applicatie steeds statisch: na de eerste render bleef alles onveranderd. In een echte applicatie is dat natuurlijk niet voldoende. Wat als we bijvoorbeeld een counter willen aanmaken waarvan zijn waarde moet verhogen telkens we op een knop klikken. 
+
+Een eerste poging zou kunnen zijn om hiervoor een gewone variabele te gebruiken en die binnen de `onClick` event listener te verhogen.
+
+```tsx
+const Counter = () => {
+
+    let counter = 1;
+
+    return (
+        <>
+        <p>{ counter }</p>
+        <button onClick={() => {
+            counter += 1;
+        }}>Verhoog met 1</button>
+        </>
+    );
+}
+```
+
+Hoewel dit de logische manier lijkt, zal dit niet werken. De waarde van `counter` verandert wel in de code, maar de wijziging wordt niet zichtbaar op het scherm. **Dit komt omdat React niet automatisch opnieuw rendert wanneer een gewone variabele verandert**. Om veranderingen te tonen op het scherm, moet React weten dat er iets aangepast is. Daarvoor gebruiken we **state**. **State is zoals het geheugen van een component: wanneer de state verandert, zal React de component rerenderen en wordt de waarde wel correct op het scherm getoond**.
+
+## useState hook
+
+Om state te kunnen gebruiken in onze components (function components) maken we gebruik van de `useState` hook.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+**Een hook is een speciale functie in React, die je toelaat om extra functionaliteit toe te voegen aan een component. Hooks herken je steeds aan hun naam: ze beginnen altijd met `use`**.
+</aside>
+
+<AnnotatedCodeBlock>
+
+```tsx
+import { useState } from 'react';
+
+const Counter = () => {
+
+    const [counter, setCounter] = useState(1);  // [!note State definiëren voor deze component]
+
+    return (
+        <>
+        <p>{ counter }</p>
+        <button onClick={() => {
+            setCounter(counter + 1);  // [!note Updater functie oproepen, hierdoor wordt de component gererenderd.]
+        }}>Verhoog met 1</button>
+        </>
+    );
+}
+```
+
+</AnnotatedCodeBlock>
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Bij literal waarden zoals een `number`, `string`, `boolean` is het niet nodig om de useState hook te typen met TS.
+</aside>
+
+Uitleg:
+
+- `counter` is de huidige waarde van de state
+- `setCounter` is de functie die de state kan wijzigen (de updater functie)
+- `useState(1)` de beginwaarde van de state
+
+## Rerenderen
+
+**Wanneer we dus de updater functie oproepen van de useState hook, zal React de component opnieuw renderen.** De waarde van de state blijft wel bewaard tussen twee rerenders.
+
+Dit betekent concreet:
+
+- De functie van de component opnieuw wordt opgeroepen
+- De nieuwe waarde van de state gebruikt wordt.
+- De interface automatisch geüpdatet wordt.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+**State mag nooit rechtstreeks aangepast worden**. Je moet steeds de updater functie gebruiken. **State moet je dusdanig altijd behandelen op een immutable manier**. Wat je dus meegeeft in de updater functie overschrijft eigenlijk de oude state met een nieuwe waarde.
+</aside>
+
+De waarde van state binnen één render is vast. Je zou in het onderstaande voorbeeld verwachten dat de waarde met 2 verhoogt, maar dit gebeurt niet. Dit komt omdat beide updates dezelfde oude waarde gebruiken.
+
+```tsx
+import { useState } from 'react';
+
+const Counter = () => {
+
+    const [counter, setCounter] = useState(1);
+
+    return (
+        <>
+        <p>{ counter }</p>
+        <button onClick={() => {
+            setCounter(counter + 1);
+            setCounter(counter + 1);
+        }}>Verhoog met 1</button>
+        </>
+    );
+}
+```
+
+We kunnen dit oplossen door een functie mee te geven aan de updater functie die steeds de correcte huidige waarde mee binnen krijgt.
+
+<AnnotatedCodeBlock>
+
+```tsx
+import { useState } from 'react';
+
+const Counter = () => {
+
+    const [counter, setCounter] = useState(1); // [!note De state counter krijgt als beginwaarde 1.]
+
+    return (
+        <>
+        <p>{ counter }</p>
+        <button onClick={() => {
+            setCounter((prev) => prev + 1);
+            setCounter((prev) => prev + 1);
+        }}>Verhoog met 1</button>
+        </>
+    );
+}
+```
+
+</AnnotatedCodeBlock>
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Wanneer je de updater functie oproept wordt de state niet onmiddellijk aangepast. **React verzamelt meerdere updates en voert deze samen uit (batching)**. Dit verloopt dus asynchroon en daardoor kan je ook niet onmiddellijk vertrouwen op de oude waarde van de state. Gebruik daarom indien nodig, de functionele vorm.
+</aside>
+
+## Wanneer state gebruiken
+
+Gebruik **state** wanneer een **wijziging zichtbaar moet zijn in de gebruikersinterface na bijvoorbeeld een interactie**. Als een **wijziging een rerender moet veroorzaken**.
+
+Gebruik **gewone variabelen** voor **tijdelijke berekeningen** en **waarden die niet op het scherm getoond moeten worden**.
+
+## Typen van de state
+
+Typescript zal vaak automatisch het type van de state kunnen afleiden op basis van de beginwaarde (number, string, boolean, ...). Maar soms moet je het type zelf meegeven, dit is zo wanneer de beginwaarde niet voldoende informatie bevat bvb. `[ ]` of `null`, `undefined`.
+
+<AnnotatedCodeBlock>
+
+```tsx
+import { useState } from 'react';
+
+interface Student {
+    id: number;
+    firstName: string;
+    lastName: string;
+    age: number;
+}
+
+const StudentCard = () => {
+
+    const [students, setStudents] = useState< Student[] >([]);  // [!note Het typen gebeurt aan de hand van de diamond operators `< >` (Generics) onmiddellijk na de useState en voor de haakjes.]
+    const [student, setStudent] = useState< Student | null >(null);
+    
+    return (
+        <>
+        <ul>{ students.map(s => { 
+            return <li key={s.id}>{`${s.firstName} ${s.lastName}`}</li>; 
+            })}
+        </ul>
+        {student && (
+            <>
+                <p>{ student.firstName }, { student.lastName }</p>
+                <p>{ student.age } jaar.</p> 
+            </>
+        )}
+        </>
+    );
+}
+```
+
+</AnnotatedCodeBlock>
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+Wanneer je `null` gebruikt als beginwaarde, moet je hier rekening mee houden in jouw component, zoniet kan jouw applicatie crashen.
+</aside>
+
+Dit kan ook op een kortere manier namelijk met optional chaining `?.`.
+
+```tsx
+<p>{student?.firstName} {student?.lastName}</p>
+```
+
+## Objecten en arrays aanpassen in state
+
+We zagen eerder al dat **state altijd op een immutable manier behandeld moet worden**. Bij een literal waarde zoals een `number` is dat eenvoudig: we geven gewoon een nieuwe waarde mee aan de updater functie. Maar wat als onze state een **object** of een **array** is? Ook dan mogen we de bestaande state **nooit rechtstreeks aanpassen**. We maken steeds een **nieuwe** versie en geven die mee aan de updater functie.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+React vergelijkt de oude en de nieuwe state op basis van **referentie**. Als je een bestaand object of array rechtstreeks aanpast (bvb. met `student.age = 21` of `students.push(...)`), blijft de referentie dezelfde. React denkt dan dat er niets veranderd is en zal **niet rerenderen**.
+</aside>
+
+### Een object aanpassen
+
+Stel dat we de leeftijd van een `student` willen verhogen. We mogen `student.age` niet rechtstreeks aanpassen. In plaats daarvan maken we een nieuw object aan met de spread operator `...` en overschrijven we enkel de velden die we willen wijzigen.
+
+<AnnotatedCodeBlock>
+
+```tsx
+const verjaardag = () => {
+    setStudent({
+        ...student,        // [!note We kopiëren eerst alle bestaande velden van het oude object.]
+        age: student.age + 1, // [!note Daarna overschrijven we enkel het veld `age`. De andere velden blijven behouden.]
+    });
+}
+```
+
+</AnnotatedCodeBlock>
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+Vergeet de spread operator `...` niet. Zonder die kopie bevat je nieuwe object enkel het veld `age` en ben je alle andere velden (`id`, `firstName`, `lastName`) kwijt.
+</aside>
+
+### Een array aanpassen
+
+Voor arrays gebruiken we **geen** methodes die de array zelf wijzigen (zoals `push`, `pop`, `splice`, of een rechtstreekse toewijzing via een index). We gebruiken methodes die een **nieuwe** array teruggeven.
+
+**Een element toevoegen** doen we met de spread operator:
+
+<AnnotatedCodeBlock>
+
+```tsx
+const voegToe = (nieuweStudent: Student) => {
+    setStudents([...students, nieuweStudent]); // [!note We maken een nieuwe array met alle bestaande studenten plus de nieuwe student.]
+}
+```
+
+</AnnotatedCodeBlock>
+
+**Een element verwijderen** doen we met `filter`, die enkel de elementen behoudt die aan de voorwaarde voldoen:
+
+<AnnotatedCodeBlock>
+
+```tsx
+const verwijder = (id: number) => {
+    setStudents(students.filter(s => s.id !== id)); // [!note We houden alle studenten over behalve diegene met het meegegeven `id`.]
+}
+```
+
+</AnnotatedCodeBlock>
+
+**Een element aanpassen** doen we met `map`, waarbij we het juiste element vervangen door een nieuwe versie en de rest ongewijzigd laten:
+
+<AnnotatedCodeBlock>
+
+```tsx
+const verhoogLeeftijd = (id: number) => {
+    setStudents(students.map(s =>
+        s.id === id
+            ? { ...s, age: s.age + 1 } // [!note Voor de student die we zoeken maken we een nieuw object (opnieuw met de spread operator).]
+            : s                        // [!note Alle andere studenten geven we ongewijzigd terug.]
+    ));
+}
+```
+
+</AnnotatedCodeBlock>
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Merk op dat `filter` en `map` altijd een **nieuwe** array teruggeven en de originele array niet wijzigen. Daarom zijn ze ideaal om met state te werken. `push`, `pop` en `splice` wijzigen daarentegen de bestaande array en mag je dus **niet** gebruiken om state aan te passen.
+</aside>
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Bij een geneste structuur (een object in een object, of objecten in een array) moet je op **elk niveau** een nieuwe kopie maken. Probeer daarom je state zo **plat** mogelijk te houden, dat maakt het aanpassen een pak eenvoudiger.
+</aside>
+
+## De structuur van state (best practices)
+
+Wanneer een component meerdere stukjes state bevat, is het belangrijk om goed na te denken over **hoe** je die state structureert. Een goede structuur maakt je component eenvoudiger om aan te passen en voorkomt bugs. Hieronder enkele belangrijke richtlijnen.
+
+### Groepeer gerelateerde state
+
+Als twee state-variabelen **altijd samen veranderen**, is het vaak beter om ze te combineren in één object. Zo vergeet je nooit om er eentje mee aan te passen.
+
+```tsx
+// Minder goed: twee variabelen die altijd samen veranderen
+const [x, setX] = useState(0);
+const [y, setY] = useState(0);
+
+// Beter: één object
+const [positie, setPositie] = useState({ x: 0, y: 0 });
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Opmerking</strong>
+
+Variabelen die **onafhankelijk** van elkaar veranderen, hou je net wél apart. Combineer dus enkel wat logisch bij elkaar hoort.
+</aside>
+
+### Vermijd tegenstrijdige state
+
+Zorg ervoor dat je state nooit in een **onmogelijke toestand** terecht kan komen. Met meerdere booleans riskeer je combinaties die elkaar tegenspreken.
+
+```tsx
+// Minder goed: deze twee kunnen tegelijk true zijn (onmogelijke toestand)
+const [isVerzonden, setIsVerzonden] = useState(false);
+const [isVerzenden, setIsVerzenden] = useState(false);
+
+// Beter: één status die maar één waarde tegelijk kan hebben
+const [status, setStatus] = useState< 'klaar' | 'verzenden' | 'verzonden' >('klaar');
+```
+
+### Vermijd overbodige state
+
+Zet **geen** waarden in state die je kan **berekenen** tijdens het renderen op basis van props of bestaande state. Zulke afgeleide waarden bereken je gewoon ter plaatse.
+
+```tsx
+const [firstName, setFirstName] = useState('Ada');
+const [lastName, setLastName] = useState('Lovelace');
+
+// Niet in state zetten! Gewoon berekenen tijdens het renderen:
+const fullName = `${firstName} ${lastName}`;
+```
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Let op</strong>
+
+Als je `fullName` **ook** in state zou bijhouden, loop je het risico dat die niet meer overeenkomt met `firstName` en `lastName`. Je moet hem dan overal mee updaten, wat snel fout loopt.
+</aside>
+
+### Vermijd duplicatie
+
+Bewaar hetzelfde gegeven niet op meerdere plaatsen in je state. Wil je bijvoorbeeld de geselecteerde student bijhouden, bewaar dan enkel zijn `id` en niet het volledige object.
+
+```tsx
+// Minder goed: het student-object zit nu op twee plaatsen
+const [students, setStudents] = useState< Student[] >([]);
+const [geselecteerd, setGeselecteerd] = useState< Student | null >(null);
+
+// Beter: bewaar enkel het id, en zoek het object op wanneer je het nodig hebt
+const [students, setStudents] = useState< Student[] >([]);
+const [geselecteerdId, setGeselecteerdId] = useState< number | null >(null);
+
+const geselecteerd = students.find(s => s.id === geselecteerdId);
+```
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Belangrijk</strong>
+
+Bij duplicatie moet je bij elke wijziging **alle kopieën** mee aanpassen. Vergeet je er eentje, dan tonen verschillende delen van je UV plots andere data.
+</aside>
+
+### Vermijd diep geneste state
+
+State die diep genest is, is lastig om immutable aan te passen (denk aan alle spread operators die je nodig hebt). Hou je structuur zo **plat** mogelijk. Een lijst van objecten is meestal eenvoudiger te beheren dan objecten genest in objecten genest in objecten.
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Tip</strong>
+
+Een goede vuistregel: kan je een stukje state **afleiden** uit andere state of props? Zet het dan niet in state. Hoe minder state een component heeft, hoe minder er kan misgaan.
+</aside>
+
+
+
+
+
+
