@@ -77,7 +77,9 @@ React is een library voor het bouwen van gebruikersinterfaces. We bouwen een int
 
 ## Het opzetten van een nieuw project
 
-Het makkelijkste om React aan te leren is om onmiddellijk een React projet op te zetten met een tool genaamd [Vite](https://vite.dev). We gebruiken tijdens de lessen `yarn` om nieuwe React projecten aan te maken met het volgende commando:
+De eenvoudigste manier om React te leren, is onmiddellijk een Reactproject op te zetten met [Vite](https://vite.dev/guide/). Tijdens de lessen gebruiken we `yarn`.
+
+De vragen van de interactieve Vite-wizard kunnen veranderen tussen versies. Daarom geven we de projectnaam en de gewenste template rechtstreeks mee in het commando:
 
 <aside className="courseCallout courseCallout--note">
 
@@ -87,20 +89,17 @@ Voer dit commando uit in opdrachtprompt (CMD) onder Windows om problemen te verm
 </aside>
 
 ```console
-$ yarn create vite
+yarn create vite eerste-react-project --template react-compiler-ts --eslint --no-immediate
 ```
 
-Dit geeft een gelijkaardige interactieve CLI zoals de volgende afbeelding:
+Dit commando legt alle keuzes meteen vast:
 
-![](/img/react/yarnvite.png)
+- `eerste-react-project` is de map- en projectnaam. Gebruik voor een andere applicatie een naam in kebab-case;
+- `react-compiler-ts` kiest React met TypeScript en React Compiler;
+- `--eslint` kiest ESLint voor de codecontrole die we in deze cursus gebruiken;
+- `--no-immediate` zorgt ervoor dat Vite de dependencies en development server nog niet automatisch start. We voeren die stappen hieronder zelf uit.
 
-Kies hier de volgende zaken:
-
-1. **Project name:** Kies hier de **naam-van-jouw-project**. Het beste is dat je dit doet a.h.v. kebab-casing.
-1. **Select a framework:** Kies hier voor **React**
-1. **Select a variant:** Kies hier voor **TypeScript + React Compiler** (Belangrijke stap!)
-1. **Use Vite 8 beta (Experimental):** Kies hier voor **No**
-1. **Install with yarn and start now?** Kies hier voor **No**
+Wil je de keuzemenu's toch bekijken, dan kan je ook alleen `yarn create vite` uitvoeren en achtereenvolgens je projectnaam, React en **TypeScript + React Compiler** kiezen. Kies ook ESLint wanneer Vite daarom vraagt. Vragen over tijdelijke beta-versies maken geen deel meer uit van deze installatie.
 
 <aside className="courseCallout courseCallout--danger">
 
@@ -109,13 +108,13 @@ Kies hier de volgende zaken:
 We gebruiken [React Compiler](https://react.dev/learn/react-compiler) (redelijk nieuwe feature) in onze nieuw aangemaakte React projecten. Basically gaat dit ervoor zorgen dat React zelf gaat beslissen wanneer er optimalisaties moeten gedaan worden. Dit betekent dus dat we **nergens in onze code `useCallback` of `useMemo` nodig hebben**. Let hier ook op voor jullie project.
 </aside>
 
-We hebben nu onze eerste React applicatie aangemaakt. Vite kon ook voor ons automatisch alle dependencies installeren en de development server opstarten. We hebben hier gekozen om dit niet te doen, we gaan deze stappen manueel doen om te tonen hoe dit werkt.
+We hebben nu onze eerste Reactapplicatie aangemaakt. Door `--no-immediate` te gebruiken, installeren en starten we het project bewust zelf.
 
 Voor de volgende stap moeten we in de nieuw aangemaakte map `eerste-react-project` navigeren en de dependencies installeren:
 
 ```console
-$ cd eerste-react-project
-$ yarn install
+cd eerste-react-project
+yarn install
 # Kan ook afgekort door enkel yarn te gebruiken
 ```
 
@@ -129,7 +128,7 @@ Wanneer je voorbeeldcode (GitHub) downloadt en lokaal op je eigen computer wil u
 Nadat alle dependencies geinstalleerd zijn door het `yarn` of `yarn install` commando uit te voeren kunnen we nu de React applicatie opstarten
 
 ```console
-$ yarn dev
+yarn dev
 ```
 
 ![](/img/react/yarndev.png)
@@ -165,7 +164,6 @@ Het is ideaal om Prettier automatisch te kunnen laten uitvoeren bij het opslaan 
 ### Snippets
 
 Snippets zijn vooraf gedefinieerde stukjes code die je snel kan invoegen via een korte afkorting, zodat je sneller en efficiënter kan programmeren. Een handige extensie die we kunnen installeren om gebruik te maken van snippets om onze React components vlug aan te maken is [ES7+ React/Redux/React-Native snippets](https://marketplace.visualstudio.com/items?itemName=dsznajder.es7-react-js-snippets).
-
 
 
 
