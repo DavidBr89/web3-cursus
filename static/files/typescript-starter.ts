@@ -1,15 +1,42 @@
-// TODO: beschrijf de mogelijke statussen van een film.
+/*
+ * DEEL 1 — DOMEINTYPES
+ *
+ * Een filmstatus mag alleen "concept", "actief" of "gearchiveerd" zijn.
+ * Beschrijf hieronder een type dat geen andere waarden aanvaardt.
+ */
 type FilmStatus = never;
 
 interface Film {
-  // TODO: beschrijf een film
+  /*
+   * Beschrijf een film met:
+   * - id: een getal;
+   * - titel: tekst;
+   * - speelduur: een getal in minuten;
+   * - genres: een array van teksten;
+   * - status: een geldige FilmStatus;
+   * - beschrijving: optionele tekst.
+   */
 }
 
 interface Vertoning {
-  // TODO: beschrijf een vertoning
+  /*
+   * Beschrijf een vertoning met:
+   * - id en filmId: getallen;
+   * - starttijd: een Date;
+   * - zaal: tekst;
+   * - vrijePlaatsen: een getal.
+   */
 }
 
-// TODO: leid deze types af uit Film zonder de properties opnieuw uit te schrijven.
+/*
+ * Leid de volgende types af uit Film. Schrijf de properties van Film niet
+ * opnieuw uit. Kies zelf welk TypeScript-hulpmiddel bij ieder resultaat past.
+ *
+ * FilmPreview: alleen id, titel en status.
+ * NieuweFilm: alle nodige filmgegevens behalve id.
+ * FilmUpdate: alleen aanpasbare filmeigenschappen, allemaal optioneel.
+ * ReadonlyFilm: een film waarvan properties niet opnieuw toegewezen mogen worden.
+ */
 type FilmPreview = never;
 type NieuweFilm = never;
 type FilmUpdate = never;
@@ -31,7 +58,7 @@ const films = [
     genres: ["actie", "sciencefiction"],
     status: "concept"
   }
-]; // TODO: type deze array als Film[]
+]; // TODO: zorg ervoor dat alleen geldige films aan deze array toegevoegd kunnen worden.
 
 const vertoningen = [
   {
@@ -48,66 +75,117 @@ const vertoningen = [
     zaal: "Zaal 2",
     vrijePlaatsen: 18
   }
-]; // TODO: type deze array als Vertoning[]
+]; // TODO: zorg ervoor dat alleen geldige vertoningen aan deze array toegevoegd kunnen worden.
+
+/*
+ * DEEL 2 — GETYPEERDE FUNCTIES
+ *
+ * Voorzie iedere functie van correcte parameter- en returntypes. Controleer ook
+ * op de plaatsen waar je ze gebruikt welk type TypeScript afleidt.
+ */
 
 const getActieveFilms = (films) => {
-  // TODO: voeg parameter- en returntypes toe
+  // Return alle films met status "actief". Pas de oorspronkelijke array niet aan.
   return films.filter((film) => film.status === "actief");
 };
 
 const findFilmById = (films, id) => {
-  // TODO: voeg parameter- en returntypes toe
+  // Return de film met dit id. Hou rekening met een id dat niet bestaat.
   return films.find((film) => film.id === id);
 };
 
 const maakFilmPreview = (film) => {
-  // TODO: voeg types toe en return alleen id, titel en status
+  // Return een nieuw object dat alleen id, titel en status bevat.
 };
 
 const maakNieuweFilm = (data, id) => {
-  // TODO: voeg types toe en maak een volledige Film
+  // Combineer de aangeleverde filmgegevens met het nieuwe id tot een volledige film.
 };
 
 const pasFilmAan = (film, wijzigingen) => {
-  // TODO: voeg types toe en muteer de oorspronkelijke film niet
+  // Return een aangepaste film zonder het oorspronkelijke object te muteren.
 };
 
 const getVertoningenVoorFilm = (vertoningen, filmId) => {
-  // TODO: voeg parameter- en returntypes toe
+  // Return alle vertoningen die bij het opgegeven film-id horen.
 };
 
+/*
+ * DEEL 3 — HERBRUIKBARE TYPES
+ *
+ * ApiResponse moet een boolean success, data van het ontvangen type en een
+ * tekstuele message bevatten. Maak daarna zelf minstens één response voor een
+ * film en één response voor een array van films.
+ */
 interface ApiResponse<T> {
-  // TODO: voeg success, data en message toe
+  // TODO: beschrijf de drie eigenschappen.
 }
 
+/*
+ * Werk deze functie af zodat ze voor films én vertoningen bruikbaar is.
+ * Elk ontvangen item moet een numeriek id hebben. Een onbekend id levert geen
+ * item op; zorg dat dit zichtbaar is in het returntype.
+ */
 const findById = <T>(items: T[], id: number): T | undefined => {
-  // TODO: zorg ervoor dat deze functie veilig met item.id kan werken.
+  // TODO: werk de zoekfunctie af en pas de types aan waar nodig.
   return undefined;
 };
 
+/*
+ * DEEL 4 — ONBEKENDE GEGEVENS
+ *
+ * Data van buiten de applicatie begint als unknown. Controleer de waarde voor
+ * je ze als Film gebruikt; omzeil de controles niet met een type assertion.
+ */
 const isFilmStatus = (waarde: unknown): waarde is FilmStatus => {
-  // TODO: controleer of de ontvangen waarde een geldige filmstatus is.
+  // Return alleen true voor een geldige filmstatus.
   return false;
 };
 
 const isFilm = (waarde: unknown): waarde is Film => {
-  // TODO: controleer alle verplichte properties en hun types
+  /*
+   * Controleer de verplichte properties en hun types. Controleer ook dat genres
+   * een array is waarin ieder element tekst is en dat de status geldig is.
+   */
   return false;
 };
 
 const parseFilm = (waarde: unknown): Film => {
-  // TODO: return een geldige film of gooi een duidelijke Error
+  // Return de film wanneer ze geldig is; gooi anders een duidelijke Error.
   throw new Error("Nog niet geïmplementeerd");
 };
 
-// TODO: beschrijf de mogelijke resultaten tijdens het laden van data.
+/*
+ * DEEL 5 — LAADTOESTANDEN
+ *
+ * LaadResultaat kent drie toestanden:
+ * - loading;
+ * - success, met data van het ontvangen type;
+ * - error, met een foutmelding.
+ */
 type LaadResultaat<T> = never;
 
 const beschrijfLaadResultaat = <T>(resultaat: LaadResultaat<T>): string => {
-  // TODO: geef voor ieder mogelijk resultaat een duidelijke beschrijving.
+  /*
+   * Return voor iedere toestand een duidelijke boodschap. Zorg dat TypeScript
+   * ook een melding geeft wanneer later een toestand toegevoegd maar hier
+   * vergeten wordt. Bepaal zelf hoe je dat realiseert.
+   */
   return "Nog niet geïmplementeerd";
 };
 
-// TODO: voeg eigen tests toe voor geldige en ongeldige situaties.
+/*
+ * DEEL 6 — CONTROLEREN EN ONDERZOEKEN
+ *
+ * Voeg eigen controles toe voor normale en foutieve situaties. Onderzoek ook:
+ * - een ongeldige filmstatus;
+ * - tekst gebruiken waar een getal verwacht wordt;
+ * - een optionele property gebruiken zonder te controleren of ze bestaat;
+ * - een property van een ReadonlyFilm proberen aan te passen;
+ * - onbekende data gebruiken voordat ze gecontroleerd werd.
+ *
+ * Noteer kort wat TypeScript bij elk geval meldt en corrigeer de code daarna.
+ * Gebruik geen any, @ts-ignore of onveilige type assertion als uitweg.
+ */
 
 export {};
