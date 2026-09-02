@@ -2,8 +2,9 @@
  * Classroom50-assignment: JavaScript verdieping
  * Bioscoopwebapplicatie
  *
- * Vul de TODO's aan zonder de oorspronkelijke data te muteren.
- * Test iedere functie afzonderlijk en commit regelmatig.
+ * Lees eerst de volledige opdracht. Vul daarna de TODO's aan, test iedere
+ * functie afzonderlijk en commit regelmatig. Gebruik voor deel 1 geen manuele
+ * for-lussen en pas de oorspronkelijke filmgegevens niet aan.
  */
 
 const films = [
@@ -35,6 +36,8 @@ const films = [
 
 // ============================================================
 // DEEL 1: FILM DATA LAB
+// Schrijf functies om de filmgegevens te zoeken, filteren en om te zetten.
+// Iedere functie moet ook correct werken met een lege array.
 // ============================================================
 
 const getActieveFilms = (films) => {
@@ -66,12 +69,26 @@ const heeftFilmVoorLeeftijd = (films, leeftijd) => {
 };
 
 const addTotaalVrijePlaatsen = (films, vertoningen) => {
-  // TODO: voeg aan iedere film de som van de vrije plaatsen toe.
+  // TODO: return een nieuwe array waarin iedere film vrijePlaatsen bevat.
+  // De waarde is de som van de vrije plaatsen van alle bijbehorende vertoningen.
   // Een film zonder vertoningen krijgt vrijePlaatsen: 0.
   // Pas de oorspronkelijke films en vertoningen niet aan.
 };
 
-// Deze functie bevat bewust een mutatiebug.
+/*
+ * MUTATIEBUG ONDERZOEKEN
+ *
+ * Deze functie bevat bewust een mutatiebug. Voorspel eerst de drie resultaten
+ * van de controlecode en voer ze daarna uit. Leg uit welke referenties gedeeld
+ * worden en waarom daardoor ook de oorspronkelijke gegevens wijzigen.
+ *
+ * Herschrijf de functie vervolgens zodat:
+ * - ze een nieuwe array returnt;
+ * - alleen de gewijzigde film een nieuw object wordt;
+ * - de geneste genre-array veilig aangepast wordt;
+ * - de andere filmobjecten behouden blijven;
+ * - een onbekend film-id de gegevens ongewijzigd laat.
+ */
 const voegGenreToe = (films, filmId, genre) => {
   const film = films.find((film) => film.id === filmId);
 
@@ -89,11 +106,13 @@ const voegGenreToe = (films, filmId, genre) => {
 // console.log(aangepasteFilms === films);
 // console.log(aangepasteFilms[0] === films[0]);
 
-// TODO: voeg hieronder minstens vijf eigen controles toe.
+// TODO: voeg minstens vijf controles toe, waaronder lege en onbekende invoer.
 
 
 // ============================================================
 // DEEL 2: RESILIENT CINEMA LOADER
+// De onderstaande API simuleert trage requests en fouten. Wijzig de API zelf
+// niet. Schrijf de functies die ze gebruiken onder de test voor uitvoervolgorde.
 // ============================================================
 
 const vertoningen = [
@@ -156,40 +175,62 @@ const testUitvoervolgorde = () => {
   console.log("einde");
 };
 
-// TODO: voorspel eerst de uitvoer en verwijder daarna de commentaar.
+/*
+ * Voorspel eerst de uitvoervolgorde. Noteer bij iedere regel of ze rechtstreeks,
+ * via de microtask queue of via de task queue uitgevoerd wordt. Voer de functie
+ * daarna uit en vergelijk het resultaat met je voorspelling.
+ */
 // testUitvoervolgorde();
 
 const loadFilms = async () => {
-  // TODO: haal alle films op en handel fouten niet stilzwijgend af.
+  // TODO: haal alle films op. Zorg dat een fout niet stilzwijgend verdwijnt.
 };
 
 const loadFilm = async (id) => {
-  // TODO: haal één film op en hou rekening met een onbekend id.
+  // TODO: haal één film op en bepaal wat er bij een onbekend id gebeurt.
 };
 
 const loadFilmDetails = async (id) => {
-  // TODO: haal de film en zijn vertoningen samen op met Promise.all().
+  /*
+   * TODO: haal de film en zijn vertoningen op en return:
+   * {film, vertoningen}
+   *
+   * De twee requests zijn onafhankelijk. Zorg dat de totale wachttijd niet
+   * onnodig langer wordt en dat een fout niet verborgen wordt.
+   */
 };
 
 const loadFilmDetailsMetFallback = async (id) => {
-  // TODO: laad de film en probeer daarna de vertoningen te laden.
-  // Bij een fout voor de vertoningen return je:
-  // {film, vertoningen: [], vertoningenGeladen: false}
-  // Verberg een fout bij het laden van de film zelf niet.
+  /*
+   * TODO: de film moet nog beschikbaar zijn wanneer alleen het ophalen van de
+   * vertoningen mislukt. Return altijd deze vorm wanneer de film geladen is:
+   * {film, vertoningen, vertoningenGeladen}
+   *
+   * Bij mislukte vertoningen is de array leeg en vertoningenGeladen false.
+   * Een fout tijdens het ophalen van de film zelf mag niet verborgen worden.
+   */
 };
 
 const loadFilmTitles = async (ids) => {
-  // TODO: haal de films samen op en return hun titels.
+  /*
+   * TODO: haal alle onafhankelijke films zo efficiënt mogelijk op en return de
+   * titels in dezelfde volgorde als de ontvangen ids.
+   */
 };
 
 const loadFilmSafely = async (id) => {
-  // TODO: return {status: "success", data} bij succes.
-  // TODO: return {status: "error", message} bij een fout.
+  /*
+   * TODO: verberg de fout niet, maar zet het resultaat om naar een voorspelbare
+   * vorm voor de rest van de applicatie:
+   * - bij succes: {status: "success", data};
+   * - bij een fout: {status: "error", message}.
+   */
 };
 
 // ============================================================
 // FOUTIEVE IMPLEMENTATIES
-// Beschrijf het probleem en herstel daarna iedere functie.
+// Beschrijf bij iedere functie eerst wat er fout loopt en wanneer dit zichtbaar
+// wordt. Herstel ze daarna zonder de fout enkel te verbergen.
 // ============================================================
 
 const brokenLoad1 = () => {
@@ -212,7 +253,9 @@ const brokenLoad3 = async () => {
 
 // ============================================================
 // RACE CONDITION
-// Toon het probleem aan en verwerk alleen de nieuwste selectie.
+// Wanneer films snel na elkaar geselecteerd worden, kan een oudere aanvraag pas
+// na een nieuwere aanvraag eindigen. Toon dit probleem eerst aan en zorg daarna
+// dat alleen het resultaat van de recentste selectie verwerkt wordt.
 // ============================================================
 
 let geselecteerdeFilm = null;
@@ -226,5 +269,14 @@ const selecteerFilm = async (id) => {
 // TODO: roep selecteerFilm snel na elkaar aan met verschillende ids.
 // TODO: pas de functie daarna aan zodat een oud resultaat de nieuwste
 // selectie niet meer kan overschrijven.
+// Leg uit waarom het probleem niet altijd zichtbaar is en welke beperking jouw
+// oplossing nog heeft.
 
-// Voeg je overige controles onder deze regel toe.
+/*
+ * OPLEVERING
+ *
+ * Voeg hieronder of in aparte testbestanden controles toe voor succesvolle en
+ * foutieve situaties. Zorg dat je ook de mutatiebug, uitvoervolgorde en race
+ * condition kan aantonen. Je moet iedere keuze en ieder codefragment uit je
+ * oplossing zelf kunnen uitleggen en aanpassen.
+ */
