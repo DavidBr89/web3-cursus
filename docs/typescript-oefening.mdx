@@ -51,6 +51,31 @@ De Classroom50-repository bevat de nodige projectconfiguratie. Met dit bestand k
   <span className="downloadLink__meta">TS</span>
 </a>
 
+### TypeScript lokaal gebruiken
+
+Je hoeft TypeScript **niet globaal te installeren**. De Classroom50-repository bevat TypeScript als lokale dependency, samen met een `package.json`, een `tsconfig.json` en de nodige scripts. Zo gebruikt iedereen de TypeScript-versie die bij de opdracht hoort.
+
+Installeer na het clonen eerst de dependencies:
+
+```shell title="Opdrachtregel"
+yarn
+```
+
+Laat TypeScript daarna je code controleren zonder JavaScript-bestanden te genereren:
+
+```shell title="Opdrachtregel"
+yarn tsc --noEmit
+```
+
+VS Code gebruikt de lokale TypeScript-configuratie voor foutmeldingen en IntelliSense. VS Code alleen vervangt de projectinstallatie echter niet: de lokale dependency is ook nodig om de opdracht op dezelfde manier te compileren en automatisch te testen.
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Later in Vite en React</strong>
+
+Wanneer je een Vite-project met de template `react-ts` maakt, worden TypeScript en de nodige React-types al lokaal aan het project toegevoegd. Ook daar is geen globale TypeScript-installatie nodig.
+</aside>
+
 ## Werkwijze
 
 1. Accepteer de assignment in Classroom50.
