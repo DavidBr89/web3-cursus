@@ -1,0 +1,50 @@
+---
+title: "Classroom50-oefening: Interactiviteit"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Interactiviteit</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+In [Interactiviteit](./interactivity) verbond je events met state-updates. In deze mijlpaal werk je de bediening van het filmaanbod af en type je ieder gebruikt event correct.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/react-interactivity/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de verwachte oplossing van de State-mijlpaal: filters, favorieten en ticketkeuze hebben al een duidelijke state-eigenaar. Enkele bedieningselementen zijn nog niet gekoppeld; dat is het startpunt van deze opdracht.
+
+## Opdrachten
+
+1. Maak het filmzoekveld controlled met een getypte `React.ChangeEvent<HTMLInputElement>`-handler.
+2. Voeg een getypte genreselect toe.
+3. Maak een checkbox waarmee alleen actieve films getoond worden.
+4. Voeg een resetbutton toe zonder een ongebruikt eventobject door te geven.
+5. Bouw een eenvoudig zoekformulier waarvan `React.FormEvent<HTMLFormElement>` de standaardnavigatie voorkomt.
+6. Laat een filmkaart en de favorietenknop binnen die kaart verschillende acties uitvoeren en gebruik alleen waar nodig `stopPropagation`.
+7. Toon toegankelijke feedback bij lege resultaten.
+8. Zorg dat alle bediening met toetsenbord en correcte HTML-elementen werkt.
+
+## Wijzigingsvraag
+
+Verplaats één inline handler naar een benoemde functie en één eenvoudige benoemde handler naar een inline callback. Motiveer telkens waarom de gekozen vorm leesbaar blijft.
+
+## Oplevering
+
+Push deze werkende Cinema App-mijlpaal en documenteer de types van minstens vier handlers. Gebruik geen `any` en type een event niet breder dan nodig.
+
+## Wat moet je kunnen uitleggen?
+
+- verschil tussen een functie doorgeven en uitvoeren;
+- waarom events niet automatisch “omhoog schrijven” naar state;
+- controlled inputs en één bron van waarheid;
+- event bubbling en het gerichte gebruik van `preventDefault` en `stopPropagation`.

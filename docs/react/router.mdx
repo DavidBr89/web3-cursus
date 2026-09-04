@@ -1,7 +1,12 @@
 ---
-title: "React Router in Data Mode"
+title: "Routing"
 sidebar_position: 5
+hide_title: true
 ---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["reactRouter"]}>Routing</TechnologyTitle>
 
 ## Waar staan we in het verhaal?
 
@@ -463,6 +468,52 @@ export default MovieErrorPage;
 
 Door foutafhandeling aan een route te koppelen, kan een deel van de applicatie een gepaste fout tonen zonder dat de volledige applicatie verdwijnt.
 
+## Error Boundaries
+
+Een **Error Boundary** vangt fouten op die tijdens het renderen in een onderliggende componentboom ontstaan. In plaats van een volledig leeg of defect scherm ziet de gebruiker een gecontroleerde fallbackinterface.
+
+Een `try/catch` rond JSX kan een renderfout in een child niet opvangen:
+
+```tsx
+// Dit vangt een renderfout in EventDetails niet op.
+const EventPage = () => {
+  try {
+    return <EventDetails />;
+  } catch {
+    return <p>De pagina kon niet getoond worden.</p>;
+  }
+};
+```
+
+Bij onze Data Router vormt `errorElement` al een routegebonden Error Boundary. Die vangt fouten uit de loader, action en het renderen van die routetak op. Geneste routes kunnen elk een eigen boundary krijgen; React Router gebruikt de dichtstbijzijnde boundary boven de plaats waar de fout ontstond.
+
+```tsx
+{
+  path: 'events',
+  element: <EventsLayout />,
+  errorElement: <EventsErrorPage />,
+  children: [
+    {
+      path: ':eventId',
+      element: <EventDetailsPage />,
+      loader: eventLoader,
+    },
+  ],
+}
+```
+
+Hierdoor kan alleen het evenementendeel vervangen worden door fout-UI terwijl de rest van de applicatie bruikbaar blijft. Voorzie daarnaast minstens een boundary op de rootroute voor fouten waarvoor geen specifiekere boundary bestaat.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Niet iedere fout hoort bij een Error Boundary</strong>
+
+Verwachte validatiefouten en een mislukte gebruikersactie toon je in de normale UI van het formulier of de mutation. Een Error Boundary is vooral een vangnet voor onverwachte render- en routefouten. Fouten uit gewone event handlers handel je af waar de actie uitgevoerd wordt.
+
+</aside>
+
+React zelf heeft nog geen rechtstreekse functionele component-API om een algemene Error Boundary te definiëren. Buiten een Data Router kan je één kleine classboundary maken of een gerichte library zoals `react-error-boundary` gebruiken. Voor deze cursus gebruiken we bij routepagina's in de eerste plaats de ingebouwde boundaries van React Router.
+
 ## Data wijzigen met een action
 
 Een `loader` leest data. Een `action` verwerkt een datamutatie, meestal vanuit een formulier.
@@ -660,23 +711,58 @@ Lees deze structuur als een boom. De rootlayout blijft staan, terwijl React Rout
 
 Maak routes voor een startpagina, filmlijst en contactpagina. Voeg een layout met header en footer toe. De actieve link krijgt een andere stijl.
 
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Maak één rootroute met een layout en plaats de drie pagina's in `children`. De layout rendert `Header`, `Outlet` en `Footer`. Gebruik `NavLink` voor de navigatie zodat de actieve link via `isActive` een aangepaste class kan krijgen.
+
+</details>
+
 ### Dynamische detailpagina
 
 Maak een route `/movies/:movieId`. Iedere filmkaart bevat een link naar zijn detailpagina. Handel een ontbrekend of ongeldig id af.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Definieer het pad als `movies/:movieId`, bouw links met het id uit de data en lees de parameter met `useParams`. Behandel de parameter eerst als string, valideer of converteer hem en toon of gooi een passende fout wanneer geen item bestaat.
+
+</details>
 
 ### Loader en foutafhandeling
 
 Verplaats het ophalen van de detaildata naar een loader. Laat de loader bij een onbekende film een response met status `404` gooien en toon een routegebonden foutpagina.
 
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Laat de loader de routeparameter valideren en de bestaande API-functie oproepen. Gebruik `throw new Response(..., { status: 404 })` voor een ontbrekend item. Koppel een `errorElement` aan de dichtstbijzijnde passende route en lees de fout daar met `useRouteError`.
+
+</details>
+
 ### Action en pending UI
 
 Maak een formulier om een film toe te voegen. Verwerk het met een action, toon feedback tijdens `submitting` en navigeer na succes terug naar de filmlijst.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Gebruik React Routers `Form`, lees in de action de `request.formData()` en roep daar de mutatiefunctie aan. Geef de submitbutton feedback en een `disabled`-toestand op basis van `useNavigation().state === 'submitting'`. Return na succes een `redirect` naar de lijst.
+
+</details>
 
 ### Wijzigingsvraag
 
 Voeg een zoekterm als search parameter toe. Na herladen moet dezelfde zoekterm en hetzelfde resultaat zichtbaar blijven.
 
-## Controlevragen
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Lees en wijzig de zoekterm met `useSearchParams` in plaats van alleen lokale state. Gebruik de parameter als bron voor het invoerveld en het filter. Omdat de waarde in de URL staat, blijft ze na herladen en in een gedeelde link beschikbaar.
+
+</details>
+
+## Check jezelf
 
 - Wat is het verschil tussen `Link` en een gewone anchor?
 - Waarom heeft een layout een `Outlet` nodig?
@@ -686,11 +772,14 @@ Voeg een zoekterm als search parameter toe. Na herladen moet dezelfde zoekterm e
 - Welke verantwoordelijkheid heeft een action?
 - Wanneer kies je `redirect` en wanneer `useNavigate`?
 - Wat is het verschil tussen `404` in een loader en een catch-all route?
+- Welk probleem lost een Error Boundary op en welke fouten behandel je er niet mee?
 
-## Officiële documentatie
+## Officiële bronnen
 
 - [React Router: Data Mode installeren](https://reactrouter.com/start/data/installation)
 - [React Router: routes configureren](https://reactrouter.com/start/data/routing)
 - [React Router: navigeren](https://reactrouter.com/start/data/navigating)
 - [React Router: data laden](https://reactrouter.com/start/data/data-loading)
 - [React Router: actions](https://reactrouter.com/start/data/actions)
+- [React Router: Error Boundaries](https://reactrouter.com/how-to/error-boundary)
+- [React: rendering errors opvangen met een Error Boundary](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)

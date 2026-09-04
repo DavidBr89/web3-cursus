@@ -1,0 +1,490 @@
+---
+title: "Styling"
+sidebar_position: 5
+hide_title: true
+---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["tailwind"]}>Styling</TechnologyTitle>
+
+## Waar staan we in het verhaal?
+
+Onze components beschrijven ondertussen structuur en gedrag, maar een bruikbare interface heeft ook een consistente visuele vorm nodig. In deze cursus gebruiken we **Tailwind CSS**. Tailwind biedt kleine utility classes die rechtstreeks één of enkele CSS-eigenschappen instellen.
+
+```tsx
+export const EventCard = () => (
+  <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <h2 className="text-xl font-semibold text-slate-900">Frontend Meetup</h2>
+    <p className="mt-2 text-sm text-slate-600">Donderdag om 19 uur</p>
+  </article>
+);
+```
+
+In JSX gebruiken we `className` in plaats van het HTML-attribuut `class`.
+
+## Waarom Tailwind?
+
+Zonder Tailwind schrijven we een eigen class en de bijhorende CSS op een andere plaats:
+
+```tsx
+<article className="event-card">...</article>
+```
+
+```css
+.event-card {
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: white;
+}
+```
+
+Met Tailwind stellen we die eigenschappen samen uit bestaande utilities. Daardoor hoeven we minder namen te verzinnen en zien we dicht bij de JSX hoe een element vormgegeven wordt.
+
+Tailwind is nog steeds CSS. Kennis van de box model, flexbox, grid, responsive design en toegankelijkheid blijft nodig om de juiste utilities te kiezen.
+
+## Installatie in een Vite-project
+
+Voor de huidige Tailwind-versie installeren we Tailwind en de officiële Vite-plugin:
+
+```bash
+yarn add tailwindcss @tailwindcss/vite
+```
+
+Voeg de plugin toe aan `vite.config.ts`:
+
+```ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+});
+```
+
+Importeer Tailwind in het globale CSS-bestand:
+
+```css
+@import "tailwindcss";
+```
+
+Zorg dat dit CSS-bestand vanuit `main.tsx` geladen wordt:
+
+```tsx
+import './index.css';
+```
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Let op de versie</strong>
+
+Online voorbeelden voor oudere Tailwind-versies gebruiken vaak andere installatie- en configuratiestappen. Volg voor het cursusproject de huidige officiële Vite-installatie en de afspraken uit de startersrepository.
+
+</aside>
+
+## Veelgebruikte utilities lezen
+
+Een reeks classes kan je woord voor woord ontleden:
+
+```tsx
+<button className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white">
+  Inschrijven
+</button>
+```
+
+- `rounded-lg` geeft afgeronde hoeken;
+- `bg-indigo-600` kiest de achtergrondkleur;
+- `px-4` voegt horizontale padding toe;
+- `py-2` voegt verticale padding toe;
+- `font-medium` bepaalt het lettergewicht;
+- `text-white` bepaalt de tekstkleur.
+
+De exacte waarden komen uit het designsysteem van Tailwind. Zo gebruiken verschillende components dezelfde schaal voor ruimte, kleuren en typografie.
+
+## Interactieve toestanden
+
+Met een variant zoals `hover:` wordt een utility alleen in die toestand actief:
+
+```tsx
+<button
+  type="button"
+  className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+>
+  Inschrijven
+</button>
+```
+
+Voorzie niet alleen een hoverstijl. Toetsenbordgebruikers hebben een duidelijke `focus-visible`-toestand nodig en een uitgeschakelde knop moet ook met het echte `disabled`-attribuut onbruikbaar zijn.
+
+## Responsive design
+
+Tailwind werkt mobile-first. Classes zonder prefix gelden altijd; een prefix zoals `md:` geldt vanaf dat breakpoint:
+
+```tsx
+<section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+  {/* cards */}
+</section>
+```
+
+De lijst heeft eerst één kolom, vanaf `md` twee en vanaf `lg` drie. Kies breakpoints op basis van wanneer de inhoud ruimte nodig heeft, niet op basis van één specifiek toestelmodel.
+
+## Conditionele classes
+
+Omdat `className` een gewone prop is, kan JavaScript de waarde bepalen:
+
+```tsx
+type StatusBadgeProps = {
+  isSoldOut: boolean;
+};
+
+export const StatusBadge = ({ isSoldOut }: StatusBadgeProps) => (
+  <span
+    className={
+      isSoldOut
+        ? 'rounded-full bg-red-100 px-3 py-1 text-sm text-red-800'
+        : 'rounded-full bg-green-100 px-3 py-1 text-sm text-green-800'
+    }
+  >
+    {isSoldOut ? 'Uitverkocht' : 'Beschikbaar'}
+  </span>
+);
+```
+
+Bij meerdere conditionele classes kan `clsx` de samenstelling leesbaarder maken:
+
+```tsx
+import clsx from 'clsx';
+
+const className = clsx(
+  'rounded-lg px-4 py-2 font-medium',
+  isPrimary ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-900',
+  isDisabled && 'cursor-not-allowed opacity-50',
+);
+```
+
+## Bouw volledige classnamen
+
+Tailwind scant bronbestanden als tekst om gebruikte classes te vinden. Bouw daarom geen gedeeltelijke classnamen met interpolatie:
+
+```tsx
+// Vermijden
+<div className={`bg-${color}-600`} />
+```
+
+Gebruik een expliciete mapping met volledige classnamen:
+
+```tsx
+const colorClasses = {
+  info: 'bg-blue-600 text-white',
+  success: 'bg-green-600 text-white',
+  danger: 'bg-red-600 text-white',
+} as const;
+
+type AlertTone = keyof typeof colorClasses;
+
+type AlertProps = {
+  tone: AlertTone;
+};
+
+export const Alert = ({ tone }: AlertProps) => (
+  <div className={`rounded-lg p-4 ${colorClasses[tone]}`}>
+    Er is nieuwe informatie beschikbaar.
+  </div>
+);
+```
+
+Deze mapping is bovendien correct getypt: alleen bestaande varianten zijn toegelaten.
+
+## Herhaling verplaatsen naar components
+
+Tailwind betekent niet dat lange classlijsten overal gekopieerd moeten worden. Wanneer markup, gedrag en styling samen herhaald worden, maak je een herbruikbare React-component:
+
+```tsx
+import type { ButtonHTMLAttributes, PropsWithChildren } from 'react';
+
+type ButtonProps = PropsWithChildren<ButtonHTMLAttributes<HTMLButtonElement>>;
+
+export const Button = ({ children, className, ...props }: ButtonProps) => (
+  <button
+    className={clsx(
+      'rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white',
+      'hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50',
+      className,
+    )}
+    {...props}
+  >
+    {children}
+  </button>
+);
+```
+
+De standaard HTML-buttonprops blijven beschikbaar en correct getypt. Een algemene `Button` hoort volgens onze architectuur onder `components/ui`; een domeinspecifieke kaart blijft bij haar feature.
+
+## Conflicten oplossen met tailwind-merge
+
+Bij een herbruikbare component willen we soms toelaten dat de gebruiker via `className` een standaardutility overschrijft:
+
+```tsx
+<Button className="bg-emerald-600">Bevestigen</Button>
+```
+
+De component kan nu zowel `bg-indigo-600` als `bg-emerald-600` bevatten. Alleen de volgorde in de uiteindelijke string garandeert bij gegenereerde CSS niet altijd welke utility wint. [`tailwind-merge`](https://github.com/dcastil/tailwind-merge) herkent conflicterende Tailwind-classes en behoudt de relevante laatste waarde.
+
+Installeer de libraries die we voor classcompositie gebruiken:
+
+```bash
+yarn add clsx tailwind-merge class-variance-authority
+```
+
+Een klein `cn`-hulpmiddel combineert `clsx` en `tailwind-merge`. Maak bijvoorbeeld `src/lib/cn.ts`:
+
+```ts
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
+```
+
+De twee libraries hebben elk een andere taak:
+
+- `clsx` voegt strings, arrays en conditionele objecten samen;
+- `tailwind-merge` verwijdert daarna conflicterende Tailwind-utilities.
+
+```ts
+cn('rounded-lg bg-indigo-600 px-4', false && 'opacity-50', 'bg-emerald-600');
+// "rounded-lg px-4 bg-emerald-600"
+```
+
+We kunnen de eerdere Button daardoor aanpasbaar maken zonder dubbele achtergrond- of paddingutilities over te houden:
+
+```tsx
+import type { ButtonHTMLAttributes } from 'react';
+import { cn } from '../../lib/cn';
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
+
+export const Button = ({ className, ...props }: ButtonProps) => (
+  <button
+    className={cn(
+      'rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white',
+      'hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50',
+      className,
+    )}
+    {...props}
+  />
+);
+```
+
+Gebruik `tailwind-merge` vooral waar classes uit verschillende bronnen samenkomen, bijvoorbeeld standaardclasses en een `className`-prop. Het is geen vervanging voor een duidelijke component-API.
+
+## Varianten beheren met Class Variance Authority
+
+Een UI-component krijgt vaak een beperkt aantal geldige varianten. Met losse booleans zoals `isPrimary`, `isDanger`, `isSmall` en `isLarge` kunnen onduidelijke of tegenstrijdige combinaties ontstaan.
+
+**Class Variance Authority**, meestal afgekort tot **CVA**, laat ons de mogelijke varianten centraal beschrijven en er automatisch TypeScripttypes uit afleiden.
+
+```tsx
+import { cva, type VariantProps } from 'class-variance-authority';
+import type { ButtonHTMLAttributes } from 'react';
+import { cn } from '../../lib/cn';
+
+const buttonVariants = cva(
+  [
+    'rounded-lg font-medium transition-colors',
+    'focus-visible:outline-2 focus-visible:outline-offset-2',
+    'disabled:cursor-not-allowed disabled:opacity-50',
+  ],
+  {
+    variants: {
+      intent: {
+        primary: 'bg-indigo-600 text-white hover:bg-indigo-700',
+        secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
+        danger: 'bg-red-600 text-white hover:bg-red-700',
+      },
+      size: {
+        small: 'px-3 py-1.5 text-sm',
+        medium: 'px-4 py-2',
+        large: 'px-6 py-3 text-lg',
+      },
+    },
+    defaultVariants: {
+      intent: 'primary',
+      size: 'medium',
+    },
+  },
+);
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
+  VariantProps<typeof buttonVariants>;
+
+export const Button = ({
+  intent,
+  size,
+  className,
+  ...props
+}: ButtonProps) => (
+  <button
+    className={cn(buttonVariants({ intent, size }), className)}
+    {...props}
+  />
+);
+```
+
+De afgeleide props laten alleen de beschreven waarden toe:
+
+```tsx
+<Button intent="primary" size="large">Opslaan</Button>
+<Button intent="danger">Verwijderen</Button>
+
+{/* TypeScriptfout: "huge" bestaat niet als size */}
+<Button size="huge">Ongeldig</Button>
+```
+
+`VariantProps<typeof buttonVariants>` voorkomt dat we een tweede handgeschreven union moeten onderhouden naast de variantconfiguratie. De gewone buttonprops, zoals `type`, `disabled`, `onClick` en `aria-label`, blijven beschikbaar via `ButtonHTMLAttributes<HTMLButtonElement>`.
+
+`cva` kiest de classes; `cn` laat daarna een eventuele `className`-prop conditioneel samenvoegen en Tailwindconflicten oplossen.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Niet iedere component heeft CVA nodig</strong>
+
+Gebruik CVA voor herbruikbare UI-componenten met echte, benoemde varianten. Voor één conditionele class in een featurecomponent blijft een ternary of `clsx` meestal eenvoudiger.
+
+</aside>
+
+## Wanneer gewone CSS nog nuttig is
+
+Tailwind verbiedt gewone CSS niet. Gebruik CSS bijvoorbeeld voor:
+
+- globale basisstijlen;
+- complexe animaties;
+- stijlen van externe HTML waarop je geen `className` kan plaatsen;
+- uitzonderlijke regels die met utilities minder leesbaar worden.
+
+Kies bewust en houd dezelfde aanpak binnen een onderdeel consequent.
+
+## Veelgemaakte fouten
+
+**`class` schrijven in JSX**: Gebruik `className`.
+
+**Alle classes dynamisch samenstellen**: Tailwind kan onvolledige classnamen niet betrouwbaar detecteren. Gebruik volledige strings in een mapping.
+
+**Alleen voor één schermbreedte ontwerpen**: Begin klein en voeg responsive varianten toe waar de inhoud ze nodig heeft.
+
+**Hover als enige feedback gebruiken**: Voorzie ook focus-, disabled- en waar nodig loadingtoestanden.
+
+**Utilities eindeloos kopiëren**: Herhaalde UI met dezelfde betekenis is vaak een component.
+
+**`clsx` en `tailwind-merge` als hetzelfde behandelen**: `clsx` stelt conditionele classlijsten samen; `tailwind-merge` lost conflicterende Tailwind-utilities op.
+
+**Voor iedere component CVA gebruiken**: CVA voegt vooral waarde toe wanneer een gedeelde component meerdere benoemde varianten heeft.
+
+**Varianttypes opnieuw uitschrijven**: Leid ze met `VariantProps` af uit dezelfde CVA-configuratie om twee bronnen van waarheid te vermijden.
+
+**Ontoegankelijke HTML mooi maken**: Styling vervangt correcte semantische elementen, labels en toetsenbordbediening niet.
+
+## Oefeningen
+
+### Een responsive kaart
+
+Geef een eenvoudige evenementkaart padding, een rand, afgeronde hoeken en een subtiele schaduw. Plaats datum en locatie onder elkaar op een klein scherm en naast elkaar vanaf `md`.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Gebruik op de kaart bijvoorbeeld `rounded-xl`, `border`, `p-6` en `shadow-sm`. Geef de container van datum en locatie eerst `flex-col` en voeg `md:flex-row` toe. Controleer de overgang door de browserbreedte te wijzigen.
+
+</details>
+
+### Een getypte variant
+
+Maak een `Badge` met de varianten `info`, `success` en `warning`. Gebruik een getypte mapping met volledige Tailwind-classnamen en laat TypeScript andere waarden weigeren.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Definieer de mapping met `as const`, leid het varianttype af met `keyof typeof badgeClasses` en selecteer in de component `badgeClasses[variant]`. Vermijd een template zoals `bg-${color}-100`.
+
+</details>
+
+### Een Button met CVA
+
+Maak een algemene Button met de intents `primary`, `secondary` en `danger` en de groottes `small` en `medium`. Leid de proptypes af met `VariantProps` en zorg dat een meegegeven `className` via `cn` kan overschrijven.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Definieer basisclasses en beide variantgroepen in één `cva`-aanroep. Combineer `ButtonHTMLAttributes<HTMLButtonElement>` met `VariantProps<typeof buttonVariants>`. Geef `intent` en `size` aan `buttonVariants` en combineer het resultaat met de externe `className` via `cn`.
+
+</details>
+
+## Check jezelf
+
+### Waarom gebruiken we in JSX `className`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+`className` is de React-prop waarmee het HTML-`class`-attribuut beschreven wordt.
+
+</details>
+
+### Wat betekent mobile-first bij responsive utilities?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Utilities zonder prefix vormen de basis voor alle schermgroottes. Varianten zoals `md:` overschrijven of vullen die stijlen aan vanaf het betreffende breakpoint.
+
+</details>
+
+### Waarom is ``bg-${color}-600`` geen goed patroon?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Tailwind scant tekstueel naar volledige classnamen en kan de mogelijke samengestelde waarden niet betrouwbaar ontdekken. Gebruik een expliciete mapping met volledige strings.
+
+</details>
+
+### Wanneer maak je van herhaalde utilities een component?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Wanneer dezelfde markup, betekenis, interactie en styling als één herbruikbare UI-eenheid terugkomen. Maak niet voor elke losse class een abstractie.
+
+</details>
+
+### Wat is het verschil tussen `clsx` en `tailwind-merge`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+`clsx` bouwt een classstring uit conditionele invoer. `tailwind-merge` begrijpt groepen Tailwind-utilities en verwijdert conflicten zoals twee verschillende achtergrondkleuren of paddingwaarden.
+
+</details>
+
+### Welk probleem lost CVA op?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+CVA beschrijft de toegelaten visuele varianten van een component centraal. Met `VariantProps` worden de geldige propwaarden rechtstreeks uit die configuratie afgeleid.
+
+</details>
+
+## Officiële bronnen
+
+- [Tailwind CSS installeren met Vite](https://tailwindcss.com/docs/installation/using-vite)
+- [Tailwind CSS: styling with utility classes](https://tailwindcss.com/docs/styling-with-utility-classes)
+- [Tailwind CSS: responsive design](https://tailwindcss.com/docs/responsive-design)
+- [Tailwind CSS: hover, focus en andere states](https://tailwindcss.com/docs/hover-focus-and-other-states)
+- [Tailwind CSS: detecting classes in source files](https://tailwindcss.com/docs/detecting-classes-in-source-files)
+- [tailwind-merge: wanneer en hoe gebruiken](https://github.com/dcastil/tailwind-merge/blob/main/docs/when-and-how-to-use-it.md)
+- [Class Variance Authority: variants](https://cva.style/getting-started/variants)
+- [Class Variance Authority met TypeScript](https://cva.style/getting-started/typescript)
+
+[Volgende: hooks](/react/hooks).

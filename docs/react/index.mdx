@@ -21,6 +21,8 @@ import useBaseUrl from "@docusaurus/useBaseUrl";
   <h1>React</h1>
 </header>
 
+![](/img/react/milk-lasts-longer.png)
+
 ## Doel
 
 In dit gedeelte bouwen we stap voor stap een bioscoopwebapplicatie. We starten niet onmiddellijk met hooks en packages. Bij iedere stap vertrekken we van een probleem dat ontstaat wanneer de applicatie groeit. Daarna bekijken we welk React-concept ons helpt om dat probleem op te lossen.
@@ -58,16 +60,22 @@ Voor een eenvoudige, grotendeels statische website kan gewone HTML, CSS en JavaS
 
 ## De rode draad: onze bioscoopapplicatie
 
+De Classroom50-opdracht onder ieder verplicht theorieblok is een volgende mijlpaal van dezelfde **Cinema App**. Je begint dus niet telkens met een los onderwerp. Je bouwt de bestaande frontend verder uit; wanneer een opdracht een nieuwe repository gebruikt, bevat de starter het verwachte beginpunt uit de vorige mijlpaal.
+
 We bouwen de applicatie niet in één keer. Elk hoofdstuk voegt iets toe omdat de vorige versie tegen een nieuw probleem botst:
 
 1. **Components:** dezelfde filmkaart en knop komen op meerdere plaatsen terug. We splitsen de interface op in herbruikbare bouwblokken.
 2. **State:** een gekozen genre en aantal tickets moeten op het scherm kunnen veranderen zonder de pagina opnieuw te laden.
 3. **Interactiviteit:** knoppen, invoervelden en events verbinden het gedrag van de bezoeker met onze state.
-4. **Hooks:** componenten krijgen meer gedrag en moeten soms samenwerken met iets buiten React.
-5. **Routing:** het filmaanbod, een filmdetail en de reservatie moeten elk een eigen URL krijgen en bruikbaar blijven met de terugknop.
-6. **Formulieren:** een reservatie bevat meerdere velden, validatie en foutmeldingen die samen beheerd moeten worden.
-7. **Axios:** de filmgegevens komen uiteindelijk niet meer uit een lokale array maar uit de backend.
-8. **TanStack Query:** serverdata kan laden, mislukken en verouderd raken. We willen requests en caching niet in iedere pagina opnieuw bouwen.
+4. **Styling:** met Tailwind CSS geven we de componenten een consistente en responsive vorm.
+5. **Hooks:** componenten krijgen meer gedrag en moeten soms samenwerken met iets buiten React.
+6. **Context:** waarden die veel diepe afstammelingen nodig hebben, worden beschikbaar zonder ze door iedere tussenlaag te sturen.
+7. **Routing:** het filmaanbod, een filmdetail en de reservatie moeten elk een eigen URL krijgen en bruikbaar blijven met de terugknop.
+8. **Formulieren:** een reservatie bevat meerdere velden, validatie en foutmeldingen die samen beheerd moeten worden.
+9. **Data fetching:** de filmgegevens komen uiteindelijk niet meer uit een lokale array maar uit de backend. Met Axios bouwen we de HTTP-laag; met TanStack Query beheren we loading, fouten, caching en verouderde serverdata.
+10. **Architectuur:** alle onderdelen krijgen een duidelijke plaats in een feature-first projectstructuur die kan meegroeien met de applicatie.
+
+Wie verder wil gaan, vindt na de kernleerlijn nog een **optioneel hoofdstuk over testen** met Vitest en React Testing Library. Dit hoofdstuk behoort niet tot de verplichte lesinhoud.
 
 Aan het einde hebben we niet zomaar losse React-technieken gezien. We hebben gezien hoe de architectuur van een frontend meegroeit met de problemen van een echte applicatie.
 
@@ -129,3 +137,11 @@ Vite zal nu automatisch een development server opstarten en dit standaard op [ht
 De installatie van VS Code, de aanbevolen extensies en de instellingen voor formattering zijn al besproken bij [VS Code in de ontwikkelomgeving](../vscode.mdx). Gebruik voor de Reactprojecten dezelfde instellingen.
 
 ![](/img/react/prettier.png)
+
+## Officiële bronnen
+
+- [React: Learn](https://react.dev/learn)
+- [React: installatie](https://react.dev/learn/installation)
+- [React Compiler](https://react.dev/learn/react-compiler)
+- [Vite: Getting Started](https://vite.dev/guide/)
+- [Vite: React-plugin](https://vite.dev/plugins/#vitejs-plugin-react)

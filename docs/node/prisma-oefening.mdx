@@ -1,0 +1,58 @@
+---
+title: "Classroom50-oefening: Prisma"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Prisma</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+Na [Prisma](./prisma) vervang je tijdelijke arrays door een relationele MySQL-databank. TMDB blijft eigenaar van algemene filmmetadata; je eigen databank bewaart gebruikers, geselecteerde TMDB-films, vertoningen en reservaties.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/prisma/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de gevalideerde Cinema API, een geïnstalleerde Prisma-setup en `.env.example`. Het Prisma-schema bevat alleen de generator en datasource: studenten modelleren de domeinentiteiten en maken hun eigen developmentmigratie.
+
+## Deel 1: datamodel
+
+1. Modelleer `User`, `Movie`, `Screening` en `Reservation` met de nodige relaties. `Movie` bewaart minstens het TMDB-id en alleen metadata die de eigen applicatie werkelijk nodig heeft.
+2. Kies primary keys, verplichte en optionele velden bewust.
+3. Voeg zinvolle unieke constraints en timestamps toe, waaronder een constraint die een ongewenste dubbele reservatie voorkomt waar het domein dat vereist.
+4. Maak en inspecteer een developmentmigratie.
+5. Voeg seeddata toe die normale en randgevallen mogelijk maakt.
+
+## Deel 2: queries
+
+1. Implementeer create, read, update en delete via één gedeelde Prisma Client.
+2. Gebruik `select` zodat interne velden niet uitgelezen worden voor publieke responses.
+3. Laad relaties alleen waar het contract ze nodig heeft.
+4. Implementeer filteren, sorteren en paginatie.
+5. Vertaal een ontbrekende vertoning en unieke constraint naar een applicatiefout.
+6. Gebruik een transactie om een reservatie te maken en de beschikbare plaatsen consistent aan te passen.
+
+## Onderzoek met Prisma Studio
+
+Controleer relaties en wijzigingen in Prisma Studio. Voer daarna dezelfde actie via de API uit en leg uit waarom Studio de route-, validatie- en servicelaag niet test.
+
+## Oplevering
+
+Push het Cinema-datamodel, migraties, seed, services en Bruno-requests. Commit nooit de echte databaseconnectiestring.
+
+## Wat moet je kunnen uitleggen?
+
+- model en migratie;
+- relation fields en foreign keys;
+- `select` tegenover `include`;
+- waarom één Prisma Client gedeeld wordt;
+- databankconstraint tegenover vooraf controleren;
+- waarom de gekozen transactie atomair moet zijn.

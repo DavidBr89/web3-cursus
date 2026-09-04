@@ -1,0 +1,292 @@
+---
+title: "Routes en middleware"
+sidebar_position: 2
+hide_title: true
+---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["express"]}>Routes en middleware</TechnologyTitle>
+
+## De levenscyclus van een request
+
+Een Express-applicatie is in essentie een geordende reeks functies. Iedere middleware kan het request onderzoeken of aanpassen, een response beëindigen, een fout doorgeven of met `next()` verdergaan.
+
+```ts
+import express, { type Express } from 'express';
+
+const app: Express = express();
+
+app.use(express.json());
+app.use('/api/events', eventsRouter);
+app.use(notFoundHandler);
+app.use(errorHandler);
+```
+
+De volgorde is betekenisvol. Een route die vóór `express.json()` staat, ontvangt bijvoorbeeld nog geen geparste JSON-body.
+
+## Request, Response en NextFunction
+
+Een gewone middleware kan correct getypt worden met de Express-types:
+
+```ts
+import type { NextFunction, Request, Response } from 'express';
+
+export const requestLogger = (
+  request: Request,
+  _response: Response,
+  next: NextFunction,
+) => {
+  console.log(request.method, request.path);
+  next();
+};
+```
+
+Een ongebruikte parameter krijgt hier een `_`-prefix. `next()` draagt de afhandeling over aan de volgende passende functie. Vergeet je zowel een response als `next()`, dan blijft het request hangen.
+
+Voor routehandlers kan `RequestHandler` compacter zijn:
+
+```ts
+import type { RequestHandler } from 'express';
+
+export const readHealth: RequestHandler = (_request, response) => {
+  response.status(200).json({ status: 'ok' });
+};
+```
+
+`request` beschrijft wat de client verstuurde. `response` bouwt het antwoord dat Express via Node naar de client stuurt. Een handler mag per request maar één response beëindigen.
+
+```ts
+response
+  .status(201)
+  .location(`/api/events/${event.id}`)
+  .json(event);
+```
+
+`response.status(...)` kiest de status maar verstuurt nog niets. `json`, `send`, `sendStatus` en `end` beëindigen de response.
+
+## JSON parsing is middleware
+
+Zonder parser is een JSON-body niet vanzelf beschikbaar:
+
+```ts
+app.use(express.json({ limit: '100kb' }));
+```
+
+De limiet voorkomt dat de API zonder reden zeer grote bodies in geheugen probeert te laden. Een ongeldige JSON-body kan al in deze middleware mislukken voordat de controller bereikt wordt.
+
+`express.urlencoded(...)` is bedoeld voor URL-encoded formulierdata. Voeg middleware alleen toe wanneer het project het overeenkomstige contenttype werkelijk ontvangt.
+
+## Een Router
+
+Een Router groepeert routes rond één resource:
+
+```ts
+import { Router } from 'express';
+import { createEvent, readAllEvents, readEvent } from '../controllers/events';
+
+export const eventsRouter = Router();
+
+eventsRouter.get('/', readAllEvents);
+eventsRouter.get('/:eventId', readEvent);
+eventsRouter.post('/', createEvent);
+```
+
+In `app.ts` krijgt de router een basispad:
+
+```ts
+app.use('/api/events', eventsRouter);
+```
+
+Daardoor ontstaan onder meer `GET /api/events` en `GET /api/events/:eventId`.
+
+## Parameters, query en body
+
+Express verdeelt requestdata volgens haar plaats in HTTP:
+
+```ts
+export const readEvent: RequestHandler = (request, response) => {
+  const eventId = Number(request.params.eventId);
+  const search = request.query.search;
+  const input = request.body;
+
+  // Eerst valideren, daarna gebruiken.
+};
+```
+
+- `params` bevat dynamische stukken uit het routepad;
+- `query` bevat filters na `?` in de URL;
+- `body` bevat de payload van bijvoorbeeld een POST-request.
+
+Route- en queryparameters komen oorspronkelijk als strings binnen. `Number(...)` kan `NaN` opleveren en is dus nog geen volledige validatie.
+
+## Algemene en routegebonden middleware
+
+Algemene middleware geldt voor alle volgende routes:
+
+```ts
+app.use(express.json());
+app.use(requestLogger);
+```
+
+Routegebonden middleware staat alleen voor routes die haar nodig hebben:
+
+```ts
+eventsRouter.delete('/:eventId', requireAuthentication, requireAdmin, deleteEvent);
+```
+
+Iedere functie heeft één verantwoordelijkheid:
+
+```text
+requireAuthentication → wie ben je?
+requireAdmin          → mag je dit?
+deleteEvent           → voer de use case uit
+```
+
+## Een request uitbreiden
+
+Authenticatiemiddleware wil vaak een gecontroleerde gebruiker beschikbaar maken voor latere handlers. Gebruik daarvoor declaration merging in plaats van `request as any`:
+
+```ts
+// src/types/express.d.ts
+declare global {
+  namespace Express {
+    interface Request {
+      auth?: {
+        userId: number;
+        role: 'USER' | 'ADMIN';
+      };
+    }
+  }
+}
+
+export {};
+```
+
+Middleware kan daarna `request.auth` invullen. Het veld blijft optioneel omdat niet iedere route authenticatie vereist. Een beveiligde handler staat altijd na middleware die het bestaan ervan controleert.
+
+## Controllers dun houden
+
+Een controller vertaalt HTTP naar een applicatieactie:
+
+```ts
+export const readAllEvents: RequestHandler = async (_request, response) => {
+  const events = await eventService.findAll();
+  response.status(200).json(events);
+};
+```
+
+De controller kiest statuscode en responsevorm. Databankdetails en omvangrijke businessregels horen in een service of repository, niet rechtstreeks in ieder routebestand.
+
+## Debuggen vanuit de requestflow
+
+Wanneer een endpoint niet doet wat je verwacht, volg dan de keten in plaats van overal logs te plaatsen:
+
+1. bereikt het request de juiste poort en het juiste basispad?
+2. matchen HTTP-methode en routepatroon?
+3. loopt het door de verwachte middleware?
+4. zijn params, query en body zoals verwacht?
+5. wordt de controller bereikt?
+6. eindigt exact één response of gaat een fout naar de error handler?
+
+Een gerichte tijdelijke middleware kan methode, pad en status meten:
+
+```ts
+export const requestLogger: RequestHandler = (request, response, next) => {
+  const startedAt = performance.now();
+
+  response.on('finish', () => {
+    const duration = Math.round(performance.now() - startedAt);
+    console.log(request.method, request.originalUrl, response.statusCode, `${duration}ms`);
+  });
+
+  next();
+};
+```
+
+Log geen wachtwoorden, tokens of volledige gevoelige requestbodies. Express heeft daarnaast eigen debugnamespaces voor intern routergedrag.
+
+## Veelgemaakte fouten
+
+**`next()` vergeten**: Het request eindigt nooit wanneer de middleware ook geen response stuurt.
+
+**Na een response nog verder uitvoeren**: Gebruik `return` bij vroege foutresponses om dubbele responses te voorkomen.
+
+**Middleware verkeerd ordenen**: Een consumer kan alleen informatie gebruiken die eerdere middleware heeft toegevoegd.
+
+**Alles in `app.ts` plaatsen**: Routes, validatie en businesslogica worden dan moeilijk afzonderlijk te begrijpen.
+
+**`request.body as Input` vertrouwen**: Een assertion valideert geen externe data.
+
+## Oefeningen
+
+### Requestflow tekenen
+
+Maak een router voor workshops met publieke GET-routes en een beveiligde DELETE-route. Teken voor beide requests welke middleware en handler in welke volgorde uitgevoerd worden.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Plaats algemene JSON- en loggingmiddleware in `app.ts`. Koppel de router aan `/api/workshops`. Plaats authenticatie en autorisatie alleen vóór de DELETE-handler. Een GET-request mag die twee functies niet doorlopen.
+
+</details>
+
+### Een parameter typeren
+
+Lees `workshopId` uit `/api/workshops/:workshopId`. Handel een ontbrekende, niet-numerieke of niet-positieve waarde af voordat een service wordt aangeroepen.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Lees de string uit `request.params`, converteer met `Number` en controleer met `Number.isInteger` en `> 0`. Geef bij een ongeldige parameter een 400-response of een getypeerde validatiefout door.
+
+</details>
+
+## Check jezelf
+
+### Waarom is de volgorde van `app.use` belangrijk?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Express voert passende middleware in registratievolgorde uit. Een route kan alleen gebruikmaken van parsing, logging of authinformatie die eerder in de keten werd toegepast.
+
+</details>
+
+### Wat moet een middleware altijd doen?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Ze moet een response beëindigen, `next()` oproepen om verder te gaan of een fout aan de foutketen doorgeven. Anders blijft het request wachten.
+
+</details>
+
+### Waarom is `request.auth` optioneel in de globale Request-definitie?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Niet ieder request passeert authenticatiemiddleware. Alleen beveiligde routes kunnen na de guard op een ingevulde authwaarde rekenen.
+
+</details>
+
+### Welke methodes beëindigen een response?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Onder meer `json`, `send`, `sendStatus` en `end`. `status` stelt alleen de statuscode in en beëindigt de response nog niet.
+
+</details>
+
+## Officiële bronnen
+
+- [Express: Routing](https://expressjs.com/en/guide/routing.html)
+- [Express: Using middleware](https://expressjs.com/en/guide/using-middleware.html)
+- [Express API: Request](https://expressjs.com/en/5x/api.html#req)
+- [Express API: Response](https://expressjs.com/en/5x/api.html#res)
+- [Express: Debugging](https://expressjs.com/en/5x/guide/debugging/)
+- [TypeScript: Declaration Merging](https://www.typescriptlang.org/docs/handbook/declaration-merging.html)
+
+[Volgende: een REST API ontwerpen](/node/rest-api).

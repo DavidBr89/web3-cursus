@@ -1,0 +1,60 @@
+---
+title: "Classroom50-oefening: Validatie en fouten"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Validatie en fouten</ClassroomExerciseTitle>
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+## Waarom deze oefening?
+
+Na [Validatie en fouten](./validation-errors) maak je van de Cinema API een robuuste grens die onbetrouwbare invoer en verwachte fouten consistent behandelt.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/express-validation/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de vorige Cinema API-mijlpaal en enkele bewust onveilige handlers. Het centrale onderzoeksbestand is ook afzonderlijk beschikbaar:
+
+<a className="downloadLink" href={useBaseUrl('/files/express-validation-starter.ts')} download>
+  <span className="downloadLink__icon" aria-hidden="true">↓</span>
+  <span>Validatiestarter downloaden</span>
+  <span className="downloadLink__meta">TS</span>
+</a>
+
+## Opdrachten
+
+1. Valideer create- en updatebody’s voor vertoningen en reservaties met express-validator.
+2. Controleer film-id’s, zaalnamen, ticketaantallen, ISO-datums en optionele velden.
+3. Converteer waarden pas als onderdeel van de validatieketen.
+4. Verwerk validatieresultaten in herbruikbare middleware.
+5. Gebruik alleen gevalideerde velden in de controller.
+6. Maak een getypeerde `AppError` voor verwachte fouten.
+7. Voeg een 404-routehandler en centrale error handler toe.
+8. Vertaal onder meer ongeldige invoer, onbekende film of vertoning en onvoldoende plaatsen naar passende fouten en verberg onverwachte details achter 500.
+9. Bewijs in Bruno dat ruwe stacktraces en interne errors de client niet bereiken.
+
+## Foutieve startercode
+
+Verbeter ook een handler die `request.body as Input` vertrouwt, een error rechtstreeks serialiseert en na een response verder uitvoert.
+
+## Oplevering
+
+Push implementatie, Bruno-foutscenario’s en een tabel die iedere fout aan haar laag en statuscode koppelt.
+
+## Wat moet je kunnen uitleggen?
+
+- compile-time types tegenover runtimevalidatie;
+- syntactische regels tegenover businessregels;
+- waarom error middleware vier parameters heeft;
+- verwachte tegenover onverwachte fouten;
+- Express 5 en rejected async handlers.

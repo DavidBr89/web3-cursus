@@ -6,6 +6,22 @@
 
 import { themes as prismThemes } from "prism-react-renderer";
 
+const pdfSlug = (value) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+const getPdfFileName = (
+  _siteConfig,
+  _pluginConfig,
+  pageTitle,
+  _pageId,
+  parentTitles,
+) => pdfSlug([...parentTitles, pageTitle].filter(Boolean).join("-"));
+
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 /** @type {import('@docusaurus/types').Config} */
@@ -59,6 +75,24 @@ const config = {
 
   themes: ["@docusaurus/theme-live-codeblock"],
 
+  plugins: [
+    [
+      "@axinom/docusaurus-plugin-papersaurus",
+      {
+        sidebarNames: ["tutorialSidebar"],
+        productTitles: ["Web 3"],
+        author: "David Breckx",
+        addDownloadButton: true,
+        downloadButtonText: "Download als PDF",
+        autoBuildPdfs: false,
+        keepDebugHtmls: false,
+        puppeteerTimeout: 120000,
+        alwaysIncludeSiteStyles: true,
+        getPdfFileName,
+      },
+    ],
+  ],
+
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
@@ -76,6 +110,11 @@ const config = {
           src: "img/web3_logo.png",
         },
         items: [
+          {
+            type: "html",
+            position: "left",
+            value: '<span class="navbarAcademicYear" aria-label="Academiejaar 2026–2027">2026–2027</span>',
+          },
           {
             type: "docSidebar",
             sidebarId: "tutorialSidebar",
@@ -96,10 +135,12 @@ const config = {
               },
               {label: "TypeScript", to: "/typescript"},
               {label: "React", to: "/react"},
+              {label: "Node.js en Express", to: "/node"},
+              {label: "Project", to: "/project"},
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} David Breckx - Web 3`,
+        copyright: `Copyright © ${new Date().getFullYear()} David Breckx · Web 3. Cursusmateriaal mag niet zonder toestemming worden overgenomen of verspreid.`,
       },
       prism: {
         theme: prismThemes.vsLight,

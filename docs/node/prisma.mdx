@@ -1,0 +1,312 @@
+---
+title: "Prisma"
+sidebar_position: 5
+hide_title: true
+---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["prisma"]}>Prisma</TechnologyTitle>
+
+## Waarom een databanklaag?
+
+Een array in het geheugen verdwijnt wanneer de server herstart en kan niet betrouwbaar door meerdere serverprocessen gedeeld worden. Voor duurzame relationele data gebruikt het lesproject MySQL met Prisma ORM.
+
+Prisma verbindt drie onderdelen:
+
+```text
+Prisma-schema → migraties → databank
+       ↓
+gegenereerde, getypeerde Prisma Client
+       ↓
+TypeScriptqueries in services
+```
+
+Een ORM vervangt kennis van relationele databanken en SQL niet. Primary keys, unieke constraints, foreign keys en transacties blijven databankconcepten.
+
+## Het schema
+
+Installeer Prisma Client en de Prisma CLI volgens de versie van de startersrepository:
+
+```bash
+yarn add @prisma/client
+yarn add --dev prisma
+yarn prisma init
+```
+
+Het initialisatiecommando maakt de basisconfiguratie voor Prisma en de databaseconnectie. Commit nooit een echte `DATABASE_URL`, maar vermeld de verwachte variabele wel in `.env.example`.
+
+De huidige lesbackend gebruikt een `schema.prisma`:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  firstName String
+  lastName  String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+- `@id` markeert de primary key;
+- `@default(autoincrement())` laat MySQL identifiers maken;
+- `@unique` bewaakt uniciteit in de databank;
+- `@default(now())` vult het creatiemoment in;
+- `@updatedAt` wordt bij updates aangepast;
+- `env("DATABASE_URL")` leest de connectiestring uit de serveromgeving.
+
+De `password`-kolom bevat uitsluitend een passwordhash, nooit het oorspronkelijke wachtwoord.
+
+## Eén Prisma Client
+
+Maak één gedeelde client voor het proces:
+
+```ts
+// src/lib/prisma.ts
+import { PrismaClient } from '@prisma/client';
+
+export const prisma = new PrismaClient();
+```
+
+Maak niet in iedere requesthandler een nieuwe `PrismaClient` en verbreek de verbinding niet na iedere query. De server hergebruikt de connection pool. Bij gecontroleerd afsluiten kan het proces `$disconnect()` aanroepen.
+
+## Migraties
+
+Een schemawijziging moet ook reproduceerbaar in de echte databank terechtkomen:
+
+```bash
+yarn prisma migrate dev --name create_users
+```
+
+Een migratie:
+
+- beschrijft de SQL-wijziging;
+- wordt samen met de code geversioneerd;
+- laat teamleden dezelfde databankstructuur opbouwen;
+- vormt een geschiedenis van het datamodel.
+
+Gebruik in productie de daarvoor bedoelde deployworkflow en voer niet zomaar developmentmigraties uit. Lees gegenereerde migraties, zeker wanneer bestaande data gewijzigd of verwijderd kan worden.
+
+## CRUD met Prisma Client
+
+### Create
+
+```ts
+const event = await prisma.event.create({
+  data: {
+    title: input.title,
+    capacity: input.capacity,
+  },
+});
+```
+
+### Read
+
+```ts
+const events = await prisma.event.findMany({
+  orderBy: { startsAt: 'asc' },
+});
+
+const event = await prisma.event.findUnique({
+  where: { id: eventId },
+});
+```
+
+`findUnique` kan `null` teruggeven. De service moet dus beslissen of dat bijvoorbeeld een 404-fout wordt.
+
+### Update
+
+```ts
+const event = await prisma.event.update({
+  where: { id: eventId },
+  data: { title: input.title },
+});
+```
+
+### Delete
+
+```ts
+await prisma.event.delete({ where: { id: eventId } });
+```
+
+Prisma parameteriseert deze gewone queries. Bouw geen SQL door onbetrouwbare strings aan elkaar te plakken.
+
+## Select en include
+
+Gebruik `select` om alleen benodigde velden te lezen:
+
+```ts
+const user = await prisma.user.findUnique({
+  where: { email },
+  select: {
+    id: true,
+    email: true,
+    firstName: true,
+  },
+});
+```
+
+Gebruik `include` wanneer de response gerelateerde records nodig heeft. Vraag niet automatisch iedere relatie op; grotere objectgrafen kosten databankwerk en kunnen gevoelige velden bevatten.
+
+## Relaties
+
+Een gebruiker kan zich voor meerdere events inschrijven en een event heeft meerdere registraties:
+
+```prisma
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  registrations Registration[]
+}
+
+model Event {
+  id            Int            @id @default(autoincrement())
+  title         String
+  registrations Registration[]
+}
+
+model Registration {
+  id      Int   @id @default(autoincrement())
+  userId  Int
+  eventId Int
+  user    User  @relation(fields: [userId], references: [id])
+  event   Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+}
+```
+
+Het tussenmodel kan later eigen velden krijgen, zoals een registratiedatum of status. De samengestelde unieke constraint voorkomt dezelfde inschrijving dubbel op databankniveau.
+
+## Transacties
+
+Wanneer meerdere wijzigingen samen moeten slagen of falen, gebruik je een transactie:
+
+```ts
+await prisma.$transaction(async transaction => {
+  await transaction.registration.create({ data: registrationData });
+  await transaction.event.update({
+    where: { id: eventId },
+    data: { availableSeats: { decrement: 1 } },
+  });
+});
+```
+
+Zonder transactie kan de registratie slagen terwijl het aanpassen van de plaatsen mislukt. Een transactie bewaakt atomiciteit, maar businessregels rond gelijktijdigheid moeten nog steeds zorgvuldig ontworpen worden.
+
+## Prismafouten vertalen
+
+Een unieke constraint kan ondanks vooraf controleren nog botsen door twee gelijktijdige requests. Behandel de databankconstraint als laatste garantie en vertaal gekende Prismafouten naar een passend applicatiecontract, bijvoorbeeld 409.
+
+Stuur het volledige Prisma-errorobject nooit rechtstreeks naar de client.
+
+## Data onderzoeken met Prisma Studio
+
+Prisma Studio is een visuele editor waarmee je tabellen en relaties tijdens development kan bekijken:
+
+```bash
+yarn prisma studio
+```
+
+Gebruik Studio om te controleren of een migratie de verwachte velden en relaties opleverde en of een API-request werkelijk records wijzigde. Pas data er voorzichtig mee aan: Studio werkt rechtstreeks op de gekozen databank en omzeilt de validatie en businessregels van je Express API.
+
+Een screenshot is hier nuttig wanneer hij één User-tabel en een gerelateerde tabel naast elkaar toont. De student moet daarop het verschil kunnen aanwijzen tussen primary key, foreign key, relationeel record en de geneste vorm die Prisma Client eventueel teruggeeft.
+
+## Veelgemaakte fouten
+
+**Een PrismaClient per request maken**: Dit verspilt connecties.
+
+**Na het starten onmiddellijk `$disconnect()` uitvoeren**: Een langlevende server moet de client blijven gebruiken.
+
+**Alle velden uitlezen en gevoelige velden achteraf verwijderen**: Gebruik een veilige `select`.
+
+**Alleen in code op uniciteit controleren**: De databankconstraint is noodzakelijk bij gelijktijdige requests.
+
+**Een schema wijzigen zonder migratie**: Andere omgevingen kunnen de wijziging dan niet reproduceerbaar toepassen.
+
+**Prisma Studio als gewone applicatie-interface gebruiken**: Studio is een developmenttool en past data buiten je API-regels om aan.
+
+## Oefeningen
+
+### Een relatie modelleren
+
+Modelleer auteurs en boeken als een één-op-veelrelatie. Een boek heeft exact één auteur en een auteur kan meerdere boeken hebben.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Geef `Book` een `authorId` en een `author`-relatie met `fields: [authorId]` en `references: [id]`. Geef `Author` een lijstveld `books Book[]`. Maak daarna een migratie en controleer de gegenereerde foreign key.
+
+</details>
+
+### Een veilige gebruikerquery
+
+Schrijf een query die een gebruiker voor een publieke profielresponse leest zonder passwordhash.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Gebruik `findUnique` met een `select` waarin alleen id, naam en andere werkelijk publieke velden `true` zijn. Neem `password` nergens op in het resultaat.
+
+</details>
+
+## Check jezelf
+
+### Wat is het verschil tussen het Prisma-schema en een migratie?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Het schema beschrijft de gewenste modellen. Een migratie bevat reproduceerbare databankwijzigingen waarmee een bestaande database naar die structuur evolueert.
+
+</details>
+
+### Waarom moet `findUnique` als mogelijk `null` behandeld worden?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+De unieke waarde kan geldig gevormd zijn terwijl er geen overeenkomstig record bestaat. De service vertaalt dat ontbrekende resultaat naar passend gedrag, vaak een 404.
+
+</details>
+
+### Wanneer is een transactie nodig?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Wanneer meerdere databankwijzigingen één logische operatie vormen en dus allemaal moeten slagen of allemaal teruggedraaid moeten worden.
+
+</details>
+
+### Waarom bewijst correcte data in Prisma Studio niet dat je API correct werkt?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Studio benadert de databank rechtstreeks en doorloopt je Expressroutes, validatie, services en autorisatie niet. Test het HTTP-contract daarom afzonderlijk met Bruno of de frontend.
+
+</details>
+
+## Officiële bronnen
+
+- [Prisma ORM](https://www.prisma.io/docs/orm)
+- [Prisma schema](https://www.prisma.io/docs/orm/prisma-schema/overview)
+- [Prisma Client CRUD](https://www.prisma.io/docs/orm/prisma-client/queries/crud)
+- [Prisma relations](https://www.prisma.io/docs/orm/prisma-schema/data-model/relations)
+- [Prisma Migrate](https://www.prisma.io/docs/orm/prisma-migrate)
+- [Prisma transactions](https://www.prisma.io/docs/orm/prisma-client/queries/transactions)
+- [Prisma Studio](https://www.prisma.io/docs/studio)
+
+[Volgende: authenticatie en beveiliging](/node/auth-security).

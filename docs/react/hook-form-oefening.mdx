@@ -1,0 +1,53 @@
+---
+title: "Classroom50-oefening: Formulieren"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Formulieren</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+In [Formulieren](./hook-form) leerde je formulierwaarden, validatie, submitstatus en serverfouten beheren. Je bouwt het reservatieformulier van de Cinema App met React Hook Form en Zod.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/react-forms/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de gerouteerde Cinema App, een leeg reservatiescherm en de geïnstalleerde formulierpackages. Er is nog geen schema of formulierimplementatie meegeleverd.
+
+## Opdrachten
+
+1. Definieer één Zod-schema en leid het TypeScript-inputtype daaruit af.
+2. Voorzie naam, e-mail, vertoning, aantal tickets en akkoord met de reservatievoorwaarden.
+3. Geef alle velden betekenisvolle beginwaarden.
+4. Gebruik semantische labels en koppel foutmeldingen toegankelijk aan velden.
+5. Converteer het aantal op één duidelijke plaats naar een number.
+6. Valideer afhankelijke velden met een geschikte Zodregel.
+7. Voorkom dubbel verzenden en toon submitfeedback.
+8. Simuleer een uitverkochte vertoning als veldgebonden serverfout en een algemene netwerkfout.
+9. Reset na succes en behoud bij een fout de bruikbare invoer.
+10. Splits schema, formuliercomponent en submitfunctie volgens de featuregrens.
+
+## Wijzigingsvraag
+
+Gebruik dezelfde formuliervelden voor het bewerken van een bestaande reservatie. Vul waarden in en reset correct wanneer een andere reservatie gekozen wordt.
+
+## Oplevering
+
+Push de Cinema App en een tabel met per veld: begintype, runtimevalidatie, mogelijke fout en het moment waarop die zichtbaar wordt.
+
+## Wat moet je kunnen uitleggen?
+
+- waarom clientvalidatie servervalidatie niet vervangt;
+- `register`, `handleSubmit` en `formState`;
+- schema en afgeleid inputtype;
+- veldfouten tegenover rootfouten;
+- wanneer `Controller` werkelijk nodig is.

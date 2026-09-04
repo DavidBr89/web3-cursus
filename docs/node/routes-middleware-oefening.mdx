@@ -1,0 +1,48 @@
+---
+title: "Classroom50-oefening: Routes en middleware"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Routes en middleware</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+Na [Routes en middleware](./routes-middleware) bouw je de requestketen voor films, vertoningen en reservaties. De data blijft voorlopig in geheugen zodat alle aandacht naar Express gaat.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/express-middleware/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de afgewerkte Node/Express-intromijlpaal en getypte in-memory Cinema-data. De feature-routers, controllers en eigen middleware zijn nog niet geïmplementeerd.
+
+## Opdrachten
+
+1. Maak afzonderlijke routers voor movies, screenings en reservations.
+2. Koppel ze onder `/api/movies`, `/api/screenings` en `/api/reservations`.
+3. Splits routes en correct getypte controllers.
+4. Voeg JSON-parsing met een bewuste bodylimiet toe.
+5. Maak loggingmiddleware die methode, original URL, status en duur toont zonder gevoelige bodies.
+6. Lees en controleer route-, query- en bodywaarden op hun juiste plaats.
+7. Maak routegebonden middleware die bij een beheeractie tijdelijk een aangeleverde testheader vereist.
+8. Breid `Express.Request` via declaration merging uit met gecontroleerde requestinformatie.
+9. Onderzoek de uitvoervolgorde door drie middlewarefuncties voor en na `next()` te loggen.
+
+## Oplevering
+
+Push deze backendmijlpaal en teken voor één publieke filmrequest en één voorlopig beveiligde beheerrequest exact welke functies uitgevoerd worden.
+
+## Wat moet je kunnen uitleggen?
+
+- middlewarevolgorde;
+- response beëindigen tegenover `next()`;
+- params, query en body;
+- `RequestHandler` en declaration merging;
+- waarom controllers dun blijven.

@@ -7,21 +7,9 @@ description: Node.js en Yarn installeren en controleren voor Web 3.
 ---
 
 import useBaseUrl from "@docusaurus/useBaseUrl";
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
 
-<header className="technologyTitle">
-  <a
-    className="technologyTitle__logoLink"
-    href="https://nodejs.org/"
-    aria-label="Open de officiële website van Node.js"
-  >
-    <img
-      className="technologyTitle__logo nodejsLogo"
-      src={useBaseUrl("/img/nodejs.svg")}
-      alt=""
-    />
-  </a>
-  <h1>Node.js en Yarn</h1>
-</header>
+<TechnologyTitle technologies={["node", "yarn"]}>Node.js en Yarn</TechnologyTitle>
 
 Tijdens Web 3 gebruiken we Node.js om JavaScript en TypeScript buiten de browser uit te voeren. Verschillende hulpmiddelen uit de cursus, waaronder Vite en de TypeScriptcompiler, werken bovenop Node.js.
 
@@ -137,3 +125,11 @@ nvm use <versienummer>
 ```
 
 Vervang `<versienummer>` door de LTS-versie die `nvm list` toont, bijvoorbeeld `24.14.0`.
+
+## Officiële bronnen
+
+- [Node.js: officiële downloadpagina](https://nodejs.org/en/download)
+- [Node.js: releases](https://nodejs.org/en/about/previous-releases)
+- [Yarn: installatie](https://yarnpkg.com/getting-started/install)
+- [nvm: officiële repository](https://github.com/nvm-sh/nvm)
+- [NVM for Windows: officiële repository](https://github.com/coreybutler/nvm-windows)

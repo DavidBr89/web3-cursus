@@ -1,0 +1,63 @@
+---
+title: "Classroom50-oefening: Data fetching"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Data fetching</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+In [Axios](./axios) en [TanStack Query](./query) zag je twee aanvullende lagen: een HTTP-client verstuurt requests en TanStack Query beheert de levenscyclus van server state. Je vervangt de lokale filmdata door gegevens uit de officiële TMDB API.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/react-data-fetching/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de volledige vorige React-mijlpaal, Axios en TanStack Query. Ook `.env.example` en een lege HTTP-laag zijn aanwezig. Iedere student voegt zelf de persoonlijke TMDB-key of het Read Access Token toe aan een niet-gecommit `.env.local`-bestand.
+
+## Deel 1: HTTP-laag
+
+1. Maak gratis een TMDB-account en vraag via de accountinstellingen API-toegang aan.
+2. Plaats de aangeleverde API-key of Read Access Token in een lokale `.env`-variabele en commit die niet.
+3. Configureer één Axios-instance met `https://api.themoviedb.org/3` als basis-URL en de gekozen TMDB-authenticatie.
+4. Maak getypte API-functies voor populaire films, zoeken en filmdetails.
+5. Houd TMDB-responsevormen en eigen UI-types uit elkaar en map alleen benodigde velden.
+6. Bouw poster-URL’s uit een afbeeldingsbasis, formaat en `poster_path` en behandel een ontbrekende poster.
+7. Vertaal Axiosfouten centraal naar een beperkte applicatiefout.
+8. Geef taal, pagina en zoekterm via `params` door en bouw querystrings niet handmatig.
+9. Voorzie annulering via een `AbortSignal` waar de caller die nodig heeft.
+
+## Deel 2: Server state
+
+1. Configureer één QueryClient via een provider.
+2. Definieer stabiele query keys waarin alle requestafhankelijkheden zitten.
+3. Maak herbruikbare query options bij de feature.
+4. Toon pending-, error-, empty- en success-UI.
+5. Behoud lokale favorieten voorlopig buiten de TMDB-querycache en motiveer waarom dit geen mutation naar TMDB is.
+6. Toon bestaande data tijdens achtergrondverversing zonder ze naar lokale state te kopiëren.
+7. Kies en motiveer `staleTime` voor minstens één query.
+
+## Foutscenario's
+
+TMDB kan traag antwoorden, een onbekende film opleveren of tijdelijk falen. Toon voor ieder geval bruikbare UI en vermijd technische details voor de gebruiker. Respecteer ook de TMDB-voorwaarden en attributierichtlijnen uit de startersrepository.
+
+## Oplevering
+
+Push de Cinema App, een `.env.example` zonder sleutel, een schema met de verantwoordelijkheden van Axios en TanStack Query en een overzicht van gebruikte query keys.
+
+## Wat moet je kunnen uitleggen?
+
+- waarom Axios en TanStack Query geen concurrenten zijn;
+- welke data server state is;
+- waarom iedere requestafhankelijkheid in de query key hoort;
+- `isPending` tegenover `isFetching`;
+- waarom favoriete films nog niet naar TMDB of de querycache geschreven worden;
+- waarom querydata niet zomaar naar Context of `useState` gekopieerd wordt.

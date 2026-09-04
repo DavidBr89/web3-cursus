@@ -1,0 +1,56 @@
+---
+title: "Classroom50-oefening: Hooks"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Hooks</ClassroomExerciseTitle>
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+## Waarom deze oefening?
+
+In [Hooks](./hooks) behandelde je refs, Effects, cleanup en herbruikbare stateful logica. Je past die concepten toe op de Cinema App zonder Effects te gebruiken voor werk dat tijdens het renderen kan gebeuren.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/react-hooks/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+Deze opdracht vertrekt van de vorige Cinema App-mijlpaal en voegt bewust foutieve Effect-code toe. Download het onderzoeksbestand wanneer je de opdracht buiten Classroom50 voorbereidt:
+
+<a className="downloadLink" href={useBaseUrl('/files/react-hooks-starter.tsx')} download>
+  <span className="downloadLink__icon" aria-hidden="true">↓</span>
+  <span>Hooks-starter downloaden</span>
+  <span className="downloadLink__meta">TSX</span>
+</a>
+
+## Opdrachten
+
+1. Focus het filmzoekveld via een correct getypte DOM-ref.
+2. Maak een `useOnlineStatus`-hook rond browser-events met symmetrische setup en cleanup.
+3. Toon de verbindingsstatus op twee plaatsen en verklaar waarom beide hookaanroepen hun eigen state hebben.
+4. Synchroniseer één relevante browser-API met de huidige pagina en ruim het Effect correct op waar nodig.
+5. Bouw een tweede custom hook voor herbruikbare Cinema App-logica zonder globale state te verbergen.
+6. Herken en verwijder een meegeleverd Effect dat gefilterde films naar state kopieert.
+7. Controleer setup en cleanup in Strict Mode.
+
+Gebruik geen `useMemo` of `useCallback` tenzij je een gemeten probleem en de reden schriftelijk kunt aantonen.
+
+## Oplevering
+
+Push de volgende Cinema App-mijlpaal en een korte beschrijving van de setup/cleanupcyclus. Vermeld ook waarom één Effect uit de starter overbodig was.
+
+## Wat moet je kunnen uitleggen?
+
+- state tegenover refs;
+- wanneer een Effect werkelijk nodig is;
+- waarom cleanup vóór een nieuwe setup kan lopen;
+- waarom een custom hook logica maar geen gedeelde state oplevert;
+- hoe de Rules of Hooks in je code zichtbaar zijn.

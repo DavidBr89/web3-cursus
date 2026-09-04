@@ -1,0 +1,51 @@
+---
+title: "Classroom50-oefening: Context"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Context</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+In [Context](./context) zag je hoe een provider een waarde beschikbaar maakt aan diepe afstammelingen. Je maakt de favorieten uit de Cinema App beschikbaar aan de filmlijst, detailpagina en navigatie zonder elke tussencomponent transportprops te geven.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/react-context/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de Cinema App tot en met Hooks. Favorieten worden bewust nog via meerdere componentlagen doorgegeven, zodat het probleem dat Context oplost zichtbaar en onderzoekbaar blijft.
+
+## Opdrachten
+
+1. Toon eerst prop drilling voor favoriete film-id’s door minstens drie componentlagen.
+2. Definieer daarna een `FavoritesContextValue` en een Context met `undefined` als ontbrekende waarde.
+3. Maak een getypte `FavoritesProvider` met `PropsWithChildren`.
+4. Maak `useFavorites` en gooi een duidelijke fout buiten de Provider.
+5. Exporteer Provider en hook via de publieke feature-ingang, niet het ruwe Context-object.
+6. Laat verschillende diepe consumers favorieten lezen, toevoegen en verwijderen.
+7. Onderzoek of de huidige zoekterm in dezelfde Context hoort en motiveer je beslissing.
+8. Plaats tijdelijk een geneste Provider en onderzoek welke waarde consumers lezen.
+
+## Classificatie
+
+Classificeer daarnaast de zoekterm, geselecteerde film, favoriete id’s, TMDB-resultaten en ticketvelden als lokale state, lifted state, URL-state, server state of geschikte Contextwaarde. Verplaats niet alles naar Context.
+
+## Oplevering
+
+Push de implementatie, een voor/na-componentboom en de motivatie voor de grens van je Context.
+
+## Wat moet je kunnen uitleggen?
+
+- welk prop-drillingprobleem werkelijk opgelost werd;
+- waarom het contexttype `| undefined` bevat;
+- hoe de custom hook na zijn guard een smaller type returnt;
+- waarom data nog steeds van boven naar beneden stroomt;
+- wanneer Context geen goede keuze is.

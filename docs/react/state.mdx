@@ -1,9 +1,13 @@
 ---
 title: "State"
 sidebar_position: 3
+hide_title: true
 ---
 
 import AnnotatedCodeBlock from "@site/src/components/AnnotatedCodeBlock";
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["react"]}>State</TechnologyTitle>
 
 ## Waar staan we in het verhaal?
 
@@ -79,13 +83,103 @@ Uitleg:
 
 ## Rerenderen
 
-**Wanneer we dus de updater functie oproepen van de useState hook, zal React de component opnieuw renderen.** De waarde van de state blijft wel bewaard tussen twee rerenders.
+**Wanneer we de updaterfunctie van `useState` oproepen, vragen we React om de component opnieuw te renderen.** De waarde van de state blijft tussen twee renders bewaard.
 
-Dit betekent concreet:
+Een update van de interface verloopt volgens de officiële React-documentatie in drie fasen:
 
-- De functie van de component opnieuw wordt opgeroepen
-- De nieuwe waarde van de state gebruikt wordt.
-- De interface automatisch geüpdatet wordt.
+```text
+1. Trigger          2. Render                   3. Commit
+setCounter(...)  ─▶ React berekent nieuwe JSX ─▶ React past de DOM aan
+```
+
+### Fase 1: trigger
+
+Een render moet eerst aangevraagd of **getriggerd** worden. Dat gebeurt:
+
+- bij de eerste render van de applicatie;
+- wanneer de state van een component wordt aangepast;
+- of wanneer een ancestor opnieuw rendert, waardoor React ook de onderliggende components rendert.
+
+In ons voorbeeld voert een klik eerst de event handler uit. `setCounter(counter + 1)` verandert de `counter` uit de huidige render niet onmiddellijk, maar zet een nieuwe render in de wachtrij.
+
+```tsx
+<button onClick={() => {
+    setCounter(counter + 1); // Vraagt een nieuwe render aan.
+}}>
+    Verhoog met 1
+</button>
+```
+
+### Fase 2: render
+
+Tijdens de renderfase roept React de componentfunctie opnieuw aan. De functie krijgt de nieuwe snapshot van de state en berekent daarmee nieuwe JSX. Als de component andere components teruggeeft, rendert React die recursief totdat het weet hoe de volledige onderliggende UI eruit hoort te zien.
+
+```tsx
+const Counter = () => {
+    const [counter, setCounter] = useState(1);
+
+    // React roept Counter opnieuw aan en berekent deze JSX
+    // met de counterwaarde van deze render.
+    return <p>Aantal: {counter}</p>;
+}
+```
+
+Renderen betekent dus **components aanroepen en JSX berekenen**. Het betekent nog niet dat de browser-DOM al werd aangepast. Daarom moet rendercode puur blijven: dezelfde props, state en context moeten dezelfde JSX opleveren. React mag een render meermaals uitvoeren, onderbreken of opnieuw beginnen.
+
+### De Virtual DOM als mentaal model
+
+De term **Virtual DOM** wordt vaak gebruikt voor de lichte beschrijving van de interface die React in het geheugen opbouwt. JSX maakt dus niet onmiddellijk echte DOM-elementen. Het levert React-elementen op: gewone beschrijvingen van wat er op het scherm zou moeten staan.
+
+![Een vereenvoudigde voorstelling van hoe React na een statewijziging een nieuwe UI-boom berekent, die met de vorige boom vergelijkt en alleen de gewijzigde delen in de browser-DOM bijwerkt.](/img/react/virtualdom.png)
+
+In de afbeelding stellen de rode knopen de gewijzigde delen voor:
+
+1. Een statewijziging triggert een nieuwe render.
+2. React berekent met de nieuwe props, state en context een nieuwe beschrijving van de UI.
+3. React vergelijkt het nieuwe resultaat met het vorige resultaat. Dit vergelijkingsproces wordt vaak **reconciliation** genoemd.
+4. Tijdens de commit werkt React alleen de nodige onderdelen van de echte browser-DOM bij.
+
+De afbeelding is bewust vereenvoudigd. De Virtual DOM is geen tweede zichtbare DOM en ook geen volledige kopie die bij iedere wijziging integraal naar de browser wordt geschreven. Het is vooral een nuttig mentaal model om het verschil te begrijpen tussen **berekenen wat de UI moet zijn** en **de echte DOM aanpassen**.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">“Rerender” betekent niet “alles vervangen”</strong>
+
+Het label *re-render* bovenaan de afbeelding slaat op het opnieuw uitvoeren van React-components en het berekenen van een nieuw resultaat. Alleen de rode verschillen hoeven daarna tijdens de commit in de browser-DOM te worden aangepast.
+</aside>
+
+### Fase 3: commit
+
+Na het renderen vergelijkt React het nieuwe resultaat met het vorige resultaat. Tijdens de **commitfase** voert React alleen de nodige wijzigingen aan de DOM uit. Als het resultaat hetzelfde is gebleven, kan een component dus wel gerenderd zijn zonder dat React een DOM-element wijzigt.
+
+```text
+Vorige JSX: <p>Aantal: 1</p>
+Nieuwe JSX: <p>Aantal: 2</p>
+                          ▲
+Commit: React wijzigt alleen deze tekst in de DOM.
+```
+
+Na de commit kan de browser het aangepaste scherm schilderen. De browser noemt dit ook rendering, maar in deze cursus gebruiken we **renderen** voor het uitvoeren van React-components en **painten** voor het tekenen door de browser.
+
+### Waar past `useEffect` in dit proces?
+
+Een Effect is niet een van de drie fasen. `useEffect` laat code uitvoeren **nadat React de wijziging heeft gecommit** en dient om een component te synchroniseren met iets buiten React, zoals een browser-API, verbinding of externe widget.
+
+```text
+Trigger ─▶ Render ─▶ Commit ─▶ Effect indien nodig
+                         └────▶ browser paint
+```
+
+De precieze volgorde tussen een Effect en het painten kan afhangen van de oorzaak van de update. Het belangrijke mentale model is hier: **een Effect draait nooit tijdens de pure renderfase**. Je hoeft de hook op dit moment nog niet te kunnen gebruiken. Setup, dependencies en cleanup worden stap voor stap behandeld bij [`useEffect` in het hoofdstuk over hooks](./hooks#effect-hook-useeffect).
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Rerenderen is niet hetzelfde als de DOM aanpassen</strong>
+
+Een rerender betekent dat React de componentfunctie opnieuw oproept om nieuwe JSX te berekenen. Pas tijdens de commit beslist React welke DOM-wijzigingen werkelijk nodig zijn.
+</aside>
+
+Meer uitleg vind je in de officiële React-documentatie over [Render and Commit](https://react.dev/learn/render-and-commit), [State as a Snapshot](https://react.dev/learn/state-as-a-snapshot) en [Keeping Components Pure](https://react.dev/learn/keeping-components-pure).
 
 <aside className="courseCallout courseCallout--warning">
 
@@ -144,7 +238,7 @@ const Counter = () => {
 
 <strong className="courseCallout__title">Opmerking</strong>
 
-Wanneer je de updater functie oproept wordt de state niet onmiddellijk aangepast. **React verzamelt meerdere updates en voert deze samen uit (batching)**. Dit verloopt dus asynchroon en daardoor kan je ook niet onmiddellijk vertrouwen op de oude waarde van de state. Gebruik daarom indien nodig, de functionele vorm.
+Wanneer je een updaterfunctie oproept, verandert de statewaarde binnen de huidige render niet. **React verwerkt state-updates nadat de event handler klaar is en kan meerdere updates samen verwerken (batching).** Gebruik de functionele vorm wanneer de volgende waarde van een eerder geplande update afhangt.
 </aside>
 
 ## Wanneer state gebruiken
@@ -152,6 +246,163 @@ Wanneer je de updater functie oproept wordt de state niet onmiddellijk aangepast
 Gebruik **state** wanneer een **wijziging zichtbaar moet zijn in de gebruikersinterface na bijvoorbeeld een interactie**. Als een **wijziging een rerender moet veroorzaken**.
 
 Gebruik **gewone variabelen** voor **tijdelijke berekeningen** en **waarden die niet op het scherm getoond moeten worden**.
+
+## State liften
+
+State hoort bij de component waarin ze werd aangemaakt. Twee afzonderlijke `Counter`-components met elk hun eigen `useState` hebben daarom elk een onafhankelijke waarde:
+
+```tsx
+import { useState } from 'react';
+
+const Counter = () => {
+    const [counter, setCounter] = useState(1);
+
+    return (
+        <button onClick={() => setCounter(counter + 1)}>
+            Aantal: {counter}
+        </button>
+    );
+}
+
+const App = () => {
+    return (
+        <>
+            <Counter />
+            <Counter />
+        </>
+    );
+}
+```
+
+Als we op de eerste knop klikken, verandert de tweede teller niet. Iedere `Counter` bewaart namelijk zijn eigen state.
+
+Soms moeten verschillende child-components wel dezelfde waarde tonen en aanpassen. Dan verplaatsen we de state naar hun **dichtstbijzijnde gemeenschappelijke parent**. Dat noemen we **state liften**. De parent wordt de enige bron van waarheid en geeft de huidige waarde en een functie via props door.
+
+<AnnotatedCodeBlock>
+
+```tsx
+import { useState } from 'react';
+
+interface CounterProps {
+    counter: number;
+    onIncrease: () => void;
+}
+
+const Counter = ({ counter, onIncrease }: CounterProps) => {
+    return (
+        <button onClick={onIncrease}>
+            Aantal: {counter}
+        </button>
+    );
+}
+
+const App = () => {
+    const [counter, setCounter] = useState(1); // [!note De gedeelde state staat in de gemeenschappelijke parent.]
+
+    const handleIncrease = () => {
+        setCounter(previousCounter => previousCounter + 1);
+    };
+
+    return (
+        <>
+            <Counter counter={counter} onIncrease={handleIncrease} />
+            <Counter counter={counter} onIncrease={handleIncrease} />
+        </>
+    );
+}
+```
+
+</AnnotatedCodeBlock>
+
+De gegevensstroom blijft ook hier één richting volgen:
+
+```text
+App (bezit de state)
+├── counter ──────────▶ Counter
+├── onIncrease ───────▶ Counter
+├── counter ──────────▶ Counter
+└── onIncrease ───────▶ Counter
+```
+
+De child stuurt dus geen data of props omhoog. De parent geeft een callbackfunctie naar beneden door via de `onIncrease`-prop. Wanneer de child die functie oproept, past de parent zijn state aan. Daarna rendert de parent opnieuw en geeft hij de nieuwe `counter`-waarde via props aan beide children door.
+
+### Geef alleen door wat een child nodig heeft
+
+Een child hoeft niet automatisch zowel de statewaarde als een functie te ontvangen. Als een knop de huidige waarde niet toont of gebruikt, geven we alleen een callbackprop door. De parent kan de korte callback rechtstreeks inline schrijven.
+
+<AnnotatedCodeBlock>
+
+```tsx
+import { useState } from 'react';
+
+interface IncreaseButtonProps {
+    onIncrease: () => void;
+}
+
+const IncreaseButton = ({ onIncrease }: IncreaseButtonProps) => {
+    return <button onClick={onIncrease}>Verhoog met 1</button>;
+}
+
+const Counter = () => {
+    const [counter, setCounter] = useState(1);
+
+    // [!note De child heeft counter niet nodig en krijgt daarom alleen een callbackprop.]
+    return (
+        <>
+            <p>Aantal: {counter}</p>
+            <IncreaseButton
+                onIncrease={() => setCounter(previousCounter => previousCounter + 1)}
+            />
+        </>
+    );
+}
+```
+
+</AnnotatedCodeBlock>
+
+In deze ene regel komen drie verschillende functies voor:
+
+```tsx
+onIncrease={() => setCounter(previousCounter => previousCounter + 1)}
+```
+
+- `setCounter` is de **setterfunctie** die `useState` teruggeeft;
+- `previousCounter => previousCounter + 1` is de **functionele updater** waarmee React de volgende state berekent;
+- `() => setCounter(...)` is de **event callback** die pas wordt uitgevoerd wanneer de child ze oproept.
+
+We geven meestal een betekenisvolle callback zoals `onIncrease`, `onReset` of `onMovieSelect` door en niet rechtstreeks de volledige `setCounter`. Zo hoeft de child niet te weten dat de parent intern `useState` gebruikt en bepaalt de parent zelf hoe de actie de state verandert.
+
+```tsx
+interface ResetButtonProps {
+    onReset: () => void;
+}
+
+const ResetButton = ({ onReset }: ResetButtonProps) => {
+    return <button onClick={onReset}>Reset</button>;
+}
+
+const Counter = () => {
+    const [counter, setCounter] = useState(1);
+
+    return (
+        <>
+            <p>Aantal: {counter}</p>
+            <ResetButton onReset={() => setCounter(0)} />
+        </>
+    );
+}
+```
+
+De `ResetButton` ontvangt de waarde van `counter` niet, want hij heeft die niet nodig om zijn verantwoordelijkheid uit te voeren. Props zijn dus geen vast pakket: iedere child ontvangt alleen de waarden en callbacks die hij werkelijk gebruikt.
+
+Meer uitleg vind je in de officiële React-documentatie over [event handlers doorgeven via props](https://react.dev/learn/responding-to-events#passing-event-handlers-as-props) en [state delen tussen components](https://react.dev/learn/sharing-state-between-components).
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">State liften of Context?</strong>
+
+Gebruik eerst state lifting wanneer enkele nabijgelegen components dezelfde state nodig hebben. Context wordt pas nuttig wanneer een waarde door veel tussenliggende componentlagen moet worden doorgegeven die de waarde zelf niet gebruiken. Context vervangt state lifting niet: ook bij Context moet een component nog steeds eigenaar zijn van de state.
+</aside>
 
 ## Typen van de state
 
@@ -375,7 +626,7 @@ const geselecteerd = students.find(s => s.id === geselecteerdId);
 
 <strong className="courseCallout__title">Belangrijk</strong>
 
-Bij duplicatie moet je bij elke wijziging **alle kopieën** mee aanpassen. Vergeet je er eentje, dan tonen verschillende delen van je UV plots andere data.
+Bij duplicatie moet je bij elke wijziging **alle kopieën** mee aanpassen. Vergeet je er eentje, dan tonen verschillende delen van je UI plots andere data.
 </aside>
 
 ### Vermijd diep geneste state
@@ -389,7 +640,306 @@ State die diep genest is, is lastig om immutable aan te passen (denk aan alle sp
 Een goede vuistregel: kan je een stukje state **afleiden** uit andere state of props? Zet het dan niet in state. Hoe minder state een component heeft, hoe minder er kan misgaan.
 </aside>
 
+## Debuggen met React Developer Tools
 
+React Developer Tools voegt in de browser twee panelen toe: **Components** en **Profiler**. In het Components-paneel kan je de componentboom onderzoeken en voor de geselecteerde component de actuele props, state en hooks bekijken.
 
+Dit is nuttiger dan alleen willekeurige `console.log`-instructies toevoegen. Je kan bijvoorbeeld controleren:
 
+1. welke component eigenaar is van een statewaarde;
+2. welke props een child werkelijk ontvangt;
+3. of een component opnieuw rendert na een interactie;
+4. welke Context een component leest;
+5. waar in de componentboom een onverwachte waarde ontstaat.
 
+De Profiler helpt onderzoeken welke components renderen en hoeveel tijd dat kost. Gebruik hem wanneer je een werkelijk prestatieprobleem merkt; een rerender is op zichzelf geen fout.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Development en Strict Mode</strong>
+
+In development kan Strict Mode bepaalde componentfuncties extra uitvoeren om onzuivere code zichtbaar te maken. Trek daarom niet alleen uit een `console.log` de conclusie dat productie exact hetzelfde doet. Bekijk de state, componentboom en oorzaak van een render in React Developer Tools.
+
+</aside>
+
+## Oefeningen
+
+### Een teller uitbreiden
+
+Voeg aan deze teller twee mogelijkheden toe: verlaag de score zonder onder nul te gaan en zet de score terug op nul. Gebruik een functionele updater wanneer de nieuwe waarde van de vorige waarde afhangt.
+
+```jsx live noInline
+function ScoreCounter() {
+  const [score, setScore] = useState(0);
+
+  return (
+    <section>
+      <p>Score: {score}</p>
+      <button onClick={() => setScore((current) => current + 1)}>
+        Verhoog
+      </button>
+    </section>
+  );
+}
+
+render(<ScoreCounter />);
+```
+
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```tsx
+<button
+    type="button"
+    onClick={() => setScore(current => Math.max(0, current - 1))}
+>
+    Verlaag
+</button>
+<button type="button" onClick={() => setScore(0)}>
+    Reset
+</button>
+```
+
+Voor resetten is de vorige waarde niet nodig. Voor verlagen berekent de updater de nieuwe waarde wel uit de meest recente geplande waarde.
+
+</details>
+
+### Een object immutabel aanpassen
+
+Maak de naam aanpasbaar met een button zonder het bestaande `student`-object rechtstreeks te muteren. Gebruik de spreadsyntax om een nieuw object te maken.
+
+```jsx live noInline
+function StudentCard() {
+  const [student, setStudent] = useState({
+    name: "Ada",
+    age: 20
+  });
+
+  return (
+    <article>
+      <h3>{student.name}</h3>
+      <p>{student.age} jaar</p>
+      <button onClick={() => {}}>
+        Gebruik volledige naam
+      </button>
+    </article>
+  );
+}
+
+render(<StudentCard />);
+```
+
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```tsx
+onClick={() => {
+    setStudent(currentStudent => ({
+        ...currentStudent,
+        name: 'Ada Lovelace'
+    }));
+}}
+```
+
+De spread neemt de bestaande properties over. Daarna krijgt alleen `name` een nieuwe waarde. Het oorspronkelijke state-object wordt niet gewijzigd.
+
+</details>
+
+### Een item in een array aanpassen
+
+Pas de knop aan zodat alleen de gekozen taak van toestand verandert. Gebruik `map()` en maak voor die taak een nieuw object.
+
+```jsx live noInline
+const initialTasks = [
+  { id: 1, description: "Documentatie lezen", completed: false },
+  { id: 2, description: "Oefeningen maken", completed: true }
+];
+
+function TaskList() {
+  const [tasks, setTasks] = useState(initialTasks);
+
+  const toggleTask = (taskId) => {
+    // Pas hier de tasks-state immutabel aan.
+  };
+
+  return (
+    <ul>
+      {tasks.map((task) => (
+        <li key={task.id}>
+          {task.description}: {task.completed ? "klaar" : "niet klaar"}
+          <button onClick={() => toggleTask(task.id)}>Wissel</button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+render(<TaskList />);
+```
+
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```tsx
+const toggleTask = (taskId: number) => {
+    setTasks(currentTasks =>
+        currentTasks.map(task =>
+            task.id === taskId
+                ? { ...task, completed: !task.completed }
+                : task
+        )
+    );
+};
+```
+
+`map()` maakt een nieuwe array. Alleen voor het overeenkomende id maken we met spread een nieuw object; de andere objecten mogen ongewijzigd terugkomen.
+
+</details>
+
+### Bepaal waar de state hoort
+
+Twee sibling-components moeten dezelfde geselecteerde taal tonen. De ene component bevat de keuzeknoppen en de andere toont de begroeting. Teken de componentboom, plaats de state en noteer welke props nodig zijn.
+
+<details>
+<summary>Toon een mogelijke uitwerking</summary>
+
+```text
+LanguagePage (bezit language-state)
+├── LanguageSelector
+│   ├── language
+│   └── onLanguageChange
+└── Greeting
+    └── language
+```
+
+De state hoort in hun dichtstbijzijnde gemeenschappelijke parent `LanguagePage`. Beide children ontvangen alleen de props die ze nodig hebben. De selector krijgt daarnaast een callback waarmee hij een keuze kan melden.
+
+</details>
+
+### Herken overbodige state
+
+Een component bewaart `firstName`, `lastName` en `fullName` alle drie in state. Leg uit welk risico dit veroorzaakt en herschrijf de structuur conceptueel.
+
+<details>
+<summary>Toon het antwoord</summary>
+
+`fullName` kan uit de twee andere waarden worden afgeleid. Als die ook state is, kunnen de drie waarden elkaar tegenspreken. Bewaar alleen `firstName` en `lastName` en bereken tijdens iedere render:
+
+```tsx
+const fullName = `${firstName} ${lastName}`;
+```
+
+</details>
+
+## Check jezelf
+
+### Wat doet de setterfunctie van `useState`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+De setter wijzigt de statevariabele uit de huidige render niet onmiddellijk. Ze plaatst een update in de wachtrij en vraagt React om een nieuwe render.
+
+</details>
+
+### Welke drie fasen doorloopt een React-update?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Eerst wordt een render getriggerd. Daarna roept React components aan om nieuwe JSX te berekenen. Tijdens de commit past React alleen de noodzakelijke wijzigingen aan de DOM toe.
+
+</details>
+
+### Is iedere rerender ook een DOM-wijziging?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Nee. Een rerender betekent dat React opnieuw JSX berekent. Als het resultaat voor een bepaald DOM-element niet veranderde, hoeft React dat element tijdens de commit niet aan te passen.
+
+</details>
+
+### Waarom blijft een statewaarde binnen één render hetzelfde?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Iedere render ontvangt een snapshot van de state. Event handlers uit die render blijven diezelfde snapshot zien, ook nadat een setter een volgende render heeft aangevraagd.
+
+</details>
+
+### Wanneer gebruik je de functionele vorm van een state-update?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Wanneer de volgende waarde afhangt van de vorige waarde of van eerder geplande updates. Met `setCount(current => current + 1)` geeft React iedere updater de juiste waarde uit de updatewachtrij.
+
+</details>
+
+### Waarom mag je een object of array in state niet rechtstreeks muteren?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+State is een read-only snapshot. Bij rechtstreekse mutatie blijft bovendien dezelfde objectreferentie bestaan, waardoor React de wijziging niet betrouwbaar als nieuwe state kan behandelen. Maak een nieuw object of een nieuwe array.
+
+</details>
+
+### Wat betekent één bron van waarheid?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Voor ieder gegeven is één component eigenaar van de state. Andere components ontvangen de benodigde waarde via props. Zo ontstaan geen verschillende kopieën die uit elkaar kunnen lopen.
+
+</details>
+
+### Wanneer lift je state?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Wanneer meerdere components dezelfde veranderende waarde moeten tonen of beïnvloeden. Verplaats die state dan naar hun dichtstbijzijnde gemeenschappelijke parent.
+
+</details>
+
+### Moet een child altijd zowel de statewaarde als een callback ontvangen?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Nee. Geef alleen door wat de child gebruikt. Een knop die enkel een resetactie meldt, kan bijvoorbeeld alleen een `onReset`-callback ontvangen zonder de huidige statewaarde.
+
+</details>
+
+### Waarom bewaren we afgeleide waarden meestal niet in state?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Ze kunnen tijdens het renderen uit bestaande props of state worden berekend. Een extra statekopie kan verouderd raken en creëert onnodige updates en mogelijke tegenstrijdigheden.
+
+</details>
+
+### Waarvoor gebruik je het Components-paneel van React Developer Tools?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Om de React-componentboom te onderzoeken en de actuele props, state, hooks en gebruikte Context van een component te bekijken. Zo kan je volgen waar een onverwachte waarde ontstaat.
+
+</details>
+
+## Officiële bronnen
+
+- [State: A Component's Memory](https://react.dev/learn/state-a-components-memory)
+- [Render and Commit](https://react.dev/learn/render-and-commit)
+- [State as a Snapshot](https://react.dev/learn/state-as-a-snapshot)
+- [Queueing a Series of State Updates](https://react.dev/learn/queueing-a-series-of-state-updates)
+- [Updating Objects in State](https://react.dev/learn/updating-objects-in-state)
+- [Updating Arrays in State](https://react.dev/learn/updating-arrays-in-state)
+- [Sharing State Between Components](https://react.dev/learn/sharing-state-between-components)
+- [Choosing the State Structure](https://react.dev/learn/choosing-the-state-structure)
+- [React Developer Tools](https://react.dev/learn/react-developer-tools)

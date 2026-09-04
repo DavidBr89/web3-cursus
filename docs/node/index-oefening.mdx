@@ -1,0 +1,47 @@
+---
+title: "Classroom50-oefening: Node.js en Express"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Node.js en Express</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+Na [Node.js en Express](/node/) start je de backend van dezelfde Cinema App. Je bouwt eerst een minimale Node HTTP-server en daarna dezelfde basis met Express en TypeScript.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/node-express-intro/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat een minimaal TypeScriptproject met `src/`, een `tsconfig.json`, linting, formatting, `.gitignore` en `.env.example`. De serverbestanden, scripts en Expressconfiguratie vullen studenten zelf aan.
+
+## Opdrachten
+
+1. Vul `package.json` aan met development-, build- en startscripts.
+2. Maak een minimale Node HTTP-server met een JSON-healthroute voor de Cinema API en een 404-response.
+3. Bouw dezelfde twee responses met Express.
+4. Splits Expressconfiguratie en het openen van de poort over `app.ts` en `server.ts`.
+5. Lees en valideer `PORT` uit de serveromgeving met een veilige fallback.
+6. Voeg één asynchrone gesimuleerde operatie toe die lokale filmdata leest.
+7. Demonstreer afzonderlijk waarom een lange synchrone berekening andere requests vertraagt en verwijder die daarna.
+8. Voorzie een gecontroleerde shutdown van HTTP-server en gedeelde resources.
+
+## Oplevering
+
+Push de eerste backendmijlpaal van de Cinema App, een `.env.example` zonder secrets en een vergelijking van minstens drie taken die Express overneemt.
+
+## Wat moet je kunnen uitleggen?
+
+- runtime, taal en framework;
+- proces, poort en request;
+- event loop en blocking werk;
+- modules en dependencies;
+- waarom import van `app.ts` niet vanzelf een server opent.

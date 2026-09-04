@@ -1,0 +1,313 @@
+---
+title: "Testen (optioneel)"
+sidebar_position: 11
+hide_title: true
+---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["vitest","testingLibrary"]}>Testen (optioneel)</TechnologyTitle>
+
+## Optionele verdieping
+
+Dit hoofdstuk behoort niet tot de verplichte kern van de lessen. Je kan het gebruiken om belangrijke componenten uit oefeningen of je project automatisch te controleren. De voorbeelden introduceren **Vitest**, **React Testing Library** en **user-event**.
+
+Een goede componenttest controleert zichtbaar gedrag vanuit het standpunt van een gebruiker. Ze probeert niet te bewijzen welke interne state, hook of helperfunctie de component gebruikt.
+
+## Wat gebruiken we?
+
+- **Vitest** vindt en voert tests uit en biedt `test`, `expect` en mocks;
+- **React Testing Library** rendert React-components en laat de resulterende DOM onderzoeken;
+- **user-event** simuleert volledige gebruikersinteracties zoals klikken en typen;
+- **jest-dom** voegt leesbare DOM-assertions toe.
+
+Installeer de testdependencies in een Vite-project:
+
+```bash
+yarn add --dev vitest jsdom @testing-library/react @testing-library/dom @testing-library/jest-dom @testing-library/user-event
+```
+
+Voeg een script toe aan `package.json`:
+
+```json
+{
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run"
+  }
+}
+```
+
+## Configuratie
+
+Configureer een browserachtige testomgeving in `vite.config.ts`:
+
+```ts
+/// <reference types="vitest/config" />
+
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+  },
+});
+```
+
+Maak vervolgens `src/test/setup.ts`:
+
+```ts
+import '@testing-library/jest-dom/vitest';
+```
+
+Testbestanden krijgen meestal `.test.ts` of `.test.tsx` en mogen naast de code staan die ze controleren.
+
+## Een eerste componenttest
+
+Deze component toont een getal en verhoogt het na een klik:
+
+```tsx
+import { useState } from 'react';
+
+export const AttendeeCounter = () => {
+  const [count, setCount] = useState(0);
+
+  return (
+    <section>
+      <p>Aantal deelnemers: {count}</p>
+      <button type="button" onClick={() => setCount(current => current + 1)}>
+        Deelnemer toevoegen
+      </button>
+    </section>
+  );
+};
+```
+
+De test rendert de component, zoekt de knop zoals een gebruiker die herkent en voert een klik uit:
+
+```tsx
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { expect, test } from 'vitest';
+import { AttendeeCounter } from './AttendeeCounter';
+
+test('verhoogt het aantal na een klik', async () => {
+  const user = userEvent.setup();
+  render(<AttendeeCounter />);
+
+  await user.click(
+    screen.getByRole('button', { name: 'Deelnemer toevoegen' }),
+  );
+
+  expect(screen.getByText('Aantal deelnemers: 1')).toBeInTheDocument();
+});
+```
+
+De test controleert het waarneembare resultaat, niet de naam van de statevariabele of het aantal keren dat de setter werd uitgevoerd.
+
+## Zoeken zoals een gebruiker
+
+Geef de voorkeur aan toegankelijke queries:
+
+```tsx
+screen.getByRole('button', { name: 'Opslaan' });
+screen.getByLabelText('E-mailadres');
+screen.getByText('Geen resultaten gevonden');
+```
+
+`getByRole` controleert tegelijk of het juiste semantische element en de juiste toegankelijke naam bestaan. `data-testid` is een uitweg wanneer er geen zinvolle gebruikersgerichte query mogelijk is, niet de standaardkeuze.
+
+## Synchroon of asynchroon zoeken
+
+- `getBy...` verwacht dat het element nu bestaat en gooit anders onmiddellijk een fout;
+- `queryBy...` returnt `null` wanneer het element niet bestaat;
+- `findBy...` wacht op een element dat asynchroon verschijnt.
+
+```tsx
+expect(screen.queryByText('Bezig met laden...')).not.toBeInTheDocument();
+expect(await screen.findByText('Evenementen geladen')).toBeInTheDocument();
+```
+
+Gebruik `findBy...` voor UI die pas na een Promise, request of andere asynchrone update verschijnt.
+
+## Formulieren testen
+
+Met `userEvent` beschrijf je dezelfde acties als een gebruiker:
+
+```tsx
+test('toont een fout bij een ongeldig e-mailadres', async () => {
+  const user = userEvent.setup();
+  render(<RegistrationForm />);
+
+  await user.type(screen.getByLabelText('E-mailadres'), 'ongeldig');
+  await user.click(screen.getByRole('button', { name: 'Registreren' }));
+
+  expect(await screen.findByText('Geef een geldig e-mailadres in'))
+    .toBeInTheDocument();
+});
+```
+
+Test niet rechtstreeks de interne errors van React Hook Form. Controleer of de gebruiker de juiste melding ziet en of ongeldige data niet verzonden wordt.
+
+## Providers toevoegen
+
+Een component die Context gebruikt, moet in de test eveneens onder de provider staan:
+
+```tsx
+import type { PropsWithChildren } from 'react';
+import { render } from '@testing-library/react';
+
+const TestProviders = ({ children }: PropsWithChildren) => (
+  <ThemeProvider>{children}</ThemeProvider>
+);
+
+render(<ThemeButton />, { wrapper: TestProviders });
+```
+
+Je kan daarnaast apart controleren of de bewaakte custom hook buiten zijn provider de bedoelde fout veroorzaakt. Gebruik in gewone componenttests bij voorkeur dezelfde publieke Provider als de applicatie.
+
+## Routes testen
+
+Gebruik een geheugenrouter zodat een test niet afhankelijk is van de echte browsergeschiedenis:
+
+```tsx
+import { MemoryRouter } from 'react-router';
+
+render(
+  <MemoryRouter initialEntries={['/events/42']}>
+    <AppRoutes />
+  </MemoryRouter>,
+);
+```
+
+Controleer vervolgens het scherm, de links en het navigatiegedrag. Test geen interne routerimplementatie.
+
+## Requests nabootsen
+
+Een test hoort niet afhankelijk te zijn van een echte externe server. Voor eenvoudige geïsoleerde functies kan Vitest een module mocken. Voor componenten en volledige flows is **Mock Service Worker (MSW)** vaak duidelijker: MSW onderschept HTTP-requests, onafhankelijk van het gebruik van `fetch` of Axios.
+
+Definieer per test relevante serverreacties en controleer minstens:
+
+- loading;
+- succes met data;
+- een leeg resultaat;
+- een verwachte fout.
+
+Test niet alleen de ideale situatie. De vier UI-toestanden uit het hoofdstuk Data fetching zijn net de plaatsen waar regressies vaak zichtbaar worden.
+
+## Wat testen we wel en niet?
+
+Test vooral gedrag dat belangrijk is voor de gebruiker of het domein:
+
+- een actie verandert zichtbare informatie;
+- validatie verhindert ongeldige invoer;
+- een foutmelding verschijnt wanneer een request faalt;
+- navigatie komt op de juiste pagina uit;
+- een component respecteert zijn toegankelijke naam en toestand.
+
+Vermijd tests die alleen controleren:
+
+- welke interne hook werd gebruikt;
+- hoe een lokale statevariabele heet;
+- welke private helper exact werd aangeroepen;
+- of Tailwind-classnamen letterlijk identiek blijven terwijl het uiterlijk en gedrag nog kloppen.
+
+## Plaats in de architectuur
+
+Bewaar een featuretest dicht bij de feature:
+
+```text
+features/
+└── events/
+    └── components/
+        ├── EventFilters.tsx
+        └── EventFilters.test.tsx
+```
+
+Gedeelde testconfiguratie, wrappers en MSW-setup kunnen onder `src/test` staan. Maak geen grote globale testmap waarin de relatie met productiecode verdwijnt.
+
+## Veelgemaakte fouten
+
+**Implementatiedetails testen**: Een refactor breekt dan de test terwijl het gebruikersgedrag gelijk blijft.
+
+**`fireEvent` als standaard gebruiken**: `userEvent` simuleert doorgaans realistischer volledige interacties.
+
+**Asynchrone interacties niet `await`en**: Daardoor controleert de test mogelijk te vroeg.
+
+**Alleen succes testen**: Loading-, lege en fouttoestanden behoren ook tot het gedrag.
+
+**Echte productie-API's aanspreken**: Tests worden traag, onvoorspelbaar en afhankelijk van externe data.
+
+## Oefeningen
+
+### Een interactie testen
+
+Schrijf een test voor een inklapbaar informatiepaneel. Controleer dat de inhoud eerst verborgen is, na één klik verschijnt en na een tweede klik opnieuw verdwijnt.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Gebruik `queryBy...` om de afwezigheid te controleren, zoek de knop met `getByRole`, klik via een `userEvent.setup()`-instance en controleer na iedere klik wat de gebruiker ziet.
+
+</details>
+
+### Een fouttoestand testen
+
+Laat een request naar een evenementenlijst mislukken en controleer dat de loadingboodschap verdwijnt en een begrijpelijke foutmelding verschijnt.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Laat MSW voor het endpoint een foutresponse teruggeven. Render de component met de nodige QueryClient-provider en gebruik `findBy...` om op de fout-UI te wachten. Gebruik voor iedere test een verse queryclient zodat caches niet lekken.
+
+</details>
+
+## Check jezelf
+
+### Waarom testen we zichtbaar gedrag in plaats van interne state?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Zichtbaar gedrag is het contract met de gebruiker. De interne implementatie mag veranderen zonder dat een correcte test daardoor onnodig breekt.
+
+</details>
+
+### Waarom krijgt `getByRole` meestal de voorkeur?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+De query zoekt zoals een gebruiker of toegankelijkheidstool het element herkent en controleert daardoor ook semantiek en de toegankelijke naam.
+
+</details>
+
+### Wanneer gebruik je `findBy...`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Wanneer het gezochte element pas na een asynchrone update verschijnt. De query wacht tot het element gevonden wordt of de timeout verstrijkt.
+
+</details>
+
+### Waarom bootsen we netwerkrequests na?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Zo blijven tests snel en voorspelbaar en kunnen succes-, lege en foutresponses bewust gereproduceerd worden zonder afhankelijk te zijn van een externe server.
+
+</details>
+
+## Officiële bronnen
+
+- [Vitest: Getting Started](https://vitest.dev/guide/)
+- [Vitest: Writing Tests](https://vitest.dev/guide/learn/writing-tests)
+- [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
+- [Testing Library: About Queries](https://testing-library.com/docs/queries/about/)
+- [Testing Library: user-event](https://testing-library.com/docs/user-event/intro/)
+- [Mock Service Worker](https://mswjs.io/docs/)

@@ -1,0 +1,251 @@
+---
+title: "Validatie en fouten"
+sidebar_position: 4
+hide_title: true
+---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["express"]}>Validatie en fouten</TechnologyTitle>
+
+## De grens van onze applicatie
+
+TypeScript controleert onze eigen broncode, maar een HTTP-request komt tijdens runtime van buitenaf. Daarom behandelen we `request.body`, `request.params` en `request.query` eerst als onbetrouwbare invoer.
+
+```json
+{
+  "title": 42,
+  "capacity": "heel veel"
+}
+```
+
+Een client kan deze JSON versturen, ook als onze frontend een perfect getypt formulier heeft. De backend valideert opnieuw.
+
+## Validatie als middleware
+
+Het geanalyseerde lesproject gebruikt `express-validator`. Regels kunnen rechtstreeks bij de route staan:
+
+```ts
+import { body } from 'express-validator';
+
+export const createEventValidation = [
+  body('title')
+    .trim()
+    .notEmpty().withMessage('Titel is verplicht')
+    .isLength({ max: 120 }).withMessage('Titel mag maximaal 120 tekens bevatten'),
+  body('capacity')
+    .isInt({ min: 1, max: 10_000 })
+    .withMessage('Capaciteit moet tussen 1 en 10000 liggen')
+    .toInt(),
+];
+```
+
+De validatieresultaten worden door een volgende middleware verwerkt:
+
+```ts
+import { matchedData, validationResult, type RequestHandler } from 'express-validator';
+
+export const handleValidationErrors: RequestHandler = (request, response, next) => {
+  const result = validationResult(request);
+
+  if (!result.isEmpty()) {
+    response.status(400).json({
+      message: 'Ongeldige invoer',
+      errors: result.array(),
+    });
+    return;
+  }
+
+  next();
+};
+```
+
+Koppel de functies in de juiste volgorde:
+
+```ts
+eventsRouter.post(
+  '/',
+  requireAuthentication,
+  createEventValidation,
+  handleValidationErrors,
+  createEvent,
+);
+```
+
+`matchedData(request)` kan daarna alleen gevalideerde en gesaniteerde velden ophalen. Een type assertion alleen blijft onvoldoende; de runtimecontrole moet eerst geslaagd zijn.
+
+## Syntactische en businessvalidatie
+
+Niet iedere regel hoort in dezelfde laag.
+
+- De validatielaag controleert vorm en eenvoudige grenzen: verplichte tekst, geldige datum, positief getal.
+- De servicelaag controleert businessregels: er zijn nog plaatsen, de inschrijfperiode is open, de gebruiker is nog niet ingeschreven.
+- De databank bewaakt invarianten zoals unieke velden en relaties.
+
+Dezelfde regel hoeft zo niet verspreid in controllers herhaald te worden.
+
+## Verwachte en onverwachte fouten
+
+Maak onderscheid tussen fouten die deel zijn van het API-contract en programmeer- of infrastructuurfouten.
+
+```ts
+export class AppError extends Error {
+  constructor(
+    public readonly statusCode: number,
+    message: string,
+    public readonly code?: string,
+  ) {
+    super(message);
+  }
+}
+```
+
+Een service kan een verwachte fout gooien:
+
+```ts
+const event = await prisma.event.findUnique({ where: { id: eventId } });
+
+if (!event) {
+  throw new AppError(404, 'Evenement niet gevonden', 'EVENT_NOT_FOUND');
+}
+```
+
+## Eén centrale error handler
+
+Error-handling middleware heeft vier parameters en staat na de routes:
+
+```ts
+import type { ErrorRequestHandler } from 'express';
+
+export const errorHandler: ErrorRequestHandler = (
+  error,
+  _request,
+  response,
+  _next,
+) => {
+  if (error instanceof AppError) {
+    response.status(error.statusCode).json({
+      message: error.message,
+      code: error.code,
+    });
+    return;
+  }
+
+  console.error(error);
+  response.status(500).json({ message: 'Er ging iets onverwacht fout' });
+};
+```
+
+Express 5 geeft een fout uit een `async` handler automatisch door aan de error middleware:
+
+```ts
+export const readEvent: RequestHandler = async (request, response) => {
+  const event = await eventService.findById(Number(request.params.eventId));
+  response.status(200).json(event);
+};
+```
+
+In oudere Express 4-projecten is daarvoor een wrapper of expliciete `try/catch` met `next(error)` nodig. Controleer dus de Express-versie van de startersrepository.
+
+## Geen technische details lekken
+
+Deze aanpak uit een vroege lesversie is geen geschikte eindoplossing:
+
+```ts
+catch (error) {
+  response.status(500).json(error);
+}
+```
+
+Een Prismafout, stacktrace of interne bestandsnaam kan gevoelige implementatiedetails bevatten. Log onverwachte fouten server-side en stuur naar de client een stabiele, beperkte response.
+
+Ook bij login geven we niet prijs of exact het e-mailadres of het wachtwoord fout was. Een algemene melding verkleint account enumeration.
+
+## Een 404-handler
+
+Wanneer geen route matcht, voegen we vóór de error handler een gewone middleware toe:
+
+```ts
+export const notFoundHandler: RequestHandler = (request, response) => {
+  response.status(404).json({
+    message: `Route ${request.method} ${request.path} bestaat niet`,
+  });
+};
+```
+
+Een onbekende route verschilt van een bestaande `GET /events/:id`-route waarvoor het gevraagde event niet bestaat. Beide kunnen 404 opleveren, maar op een andere plaats.
+
+## Veelgemaakte fouten
+
+**Alleen frontendvalidatie uitvoeren**: Een aanvaller hoeft het formulier niet te gebruiken.
+
+**`as CreateInput` gebruiken als validatie**: Een assertion verandert geen runtimewaarde.
+
+**Alle fouten als 500 behandelen**: Ongeldige invoer en ontbrekende resources zijn verwachte clientgerichte fouten.
+
+**Ruwe errors terugsturen**: Dit lekt details en maakt het API-contract onvoorspelbaar.
+
+**Een fout loggen en daarna niets doen**: Het request blijft hangen of de client krijgt geen bruikbaar antwoord.
+
+## Oefeningen
+
+### Een input valideren
+
+Maak validatieregels voor een workshop met een titel, toekomstige startdatum en capaciteit van 1 tot 200. Geef per fout een begrijpelijke boodschap.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Trim en begrens de titel, valideer de datum als ISO 8601 en controleer daarna als businessregel of ze in de toekomst ligt. Gebruik `isInt({ min: 1, max: 200 })` en `toInt()` voor capaciteit.
+
+</details>
+
+### Fouten classificeren
+
+Bepaal passende statuscodes voor: ongeldige capaciteit, onbekende workshop, dubbele inschrijving, niet ingelogd, geen beheerdersrol en onbereikbare databank.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Gebruik respectievelijk 400, 404, 409, 401, 403 en 500. Leg vooral uit welk deel van het contract iedere code beschrijft.
+
+</details>
+
+## Check jezelf
+
+### Waarom volstaat TypeScript niet voor requestvalidatie?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Types bestaan niet tijdens runtime en een externe client is niet verplicht onze TypeScripttypes te volgen. De server moet de ontvangen waarden werkelijk controleren.
+
+</details>
+
+### Waarom staat error middleware als laatste?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Fouten uit eerdere middleware en routes moeten door de keten bij deze handler kunnen aankomen. Express herkent haar bovendien aan de vier parameters.
+
+</details>
+
+### Wat is het verschil tussen een onbekende route en een onbekende resource?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Bij een onbekende route bestaat het methode-padcontract niet. Bij een onbekende resource bestaat de route wel, maar vindt de business- of datalaag geen record voor de identifier.
+
+</details>
+
+## Officiële bronnen
+
+- [express-validator](https://express-validator.github.io/docs/)
+- [Express 5: Error Handling](https://expressjs.com/en/5x/guide/error-handling/)
+- [Express: Writing middleware](https://expressjs.com/en/guide/writing-middleware.html)
+- [OWASP: Input Validation Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
+- [OWASP: Error Handling Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html)
+
+[Volgende: databanken met Prisma](/node/prisma).

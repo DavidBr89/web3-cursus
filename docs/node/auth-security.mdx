@@ -1,0 +1,408 @@
+---
+title: "Authenticatie en beveiliging"
+sidebar_position: 6
+hide_title: true
+---
+
+import useBaseUrl from "@docusaurus/useBaseUrl";
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["jwt"]}>Authenticatie en beveiliging</TechnologyTitle>
+
+## Authenticatie en autorisatie
+
+Deze begrippen beantwoorden verschillende vragen:
+
+- **authenticatie**: wie is deze gebruiker?
+- **autorisatie**: mag deze gebruiker deze actie uitvoeren?
+
+Een geldige login geeft niet automatisch toegang tot iedere resource. De backend controleert autorisatie bij iedere beveiligde actie, ook wanneer de frontend de knop al verbergt.
+
+<div className="courseImageCentered">
+  <img
+    src={useBaseUrl("/img/securepassword.jpg")}
+    alt="Comic over misleidende regels voor een zogenaamd veilig wachtwoord"
+  />
+</div>
+
+## Registreren: een wachtwoord opslaan
+
+Installeer de libraries die in de lesflow gebruikt worden:
+
+```bash
+yarn add bcrypt jsonwebtoken helmet express-rate-limit
+yarn add --dev @types/bcrypt @types/jsonwebtoken
+```
+
+Wachtwoorden worden nooit als platte tekst opgeslagen en ook niet versleuteld om later terug te ontsleutelen. We bewaren een trage, salted hash.
+
+Het lesproject gebruikt bcrypt:
+
+```ts
+import bcrypt from 'bcrypt';
+
+const passwordHash = await bcrypt.hash(input.password, 12);
+
+await prisma.user.create({
+  data: {
+    email: input.email.toLowerCase(),
+    firstName: input.firstName,
+    lastName: input.lastName,
+    password: passwordHash,
+  },
+});
+```
+
+De costfactor bepaalt hoeveel werk het hashen vraagt. Kies die via actuele veiligheidsrichtlijnen en meet of de server de gekozen waarde aankan. Schrijf nooit zelf een hashingalgoritme en gebruik geen snelle algemene hash zoals SHA-256 voor wachtwoorden.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">bcrypt in de cursus</strong>
+
+OWASP geeft voor nieuwe systemen de voorkeur aan Argon2id. We behandelen bcrypt omdat het in het bestaande lesproject zit en het fundamentele model duidelijk toont. Gebruik een onderhouden library, een geschikte costfactor en houd rekening met de inputlimieten van bcrypt.
+
+</aside>
+
+## Inloggen: vergelijken, niet ontsleutelen
+
+Bij login zoeken we de gebruiker intern inclusief hash en laten we bcrypt vergelijken:
+
+```ts
+const user = await prisma.user.findUnique({
+  where: { email: input.email.toLowerCase() },
+});
+
+const passwordMatches = user
+  ? await bcrypt.compare(input.password, user.password)
+  : false;
+
+if (!user || !passwordMatches) {
+  throw new AppError(401, 'Ongeldige inloggegevens');
+}
+```
+
+Gebruik dezelfde algemene fout voor een onbekend e-mailadres en een fout wachtwoord. Anders kan een aanvaller geldige accounts verzamelen.
+
+## Een sessie over meerdere requests
+
+HTTP-requests zijn afzonderlijk. Na login heeft de client daarom een controleerbaar bewijs nodig bij latere requests. Veel applicaties gebruiken een server-side sessie-id of een ondertekend token.
+
+Het bestaande lesproject gebruikt een JWT in een cookie:
+
+```text
+login slaagt
+    ↓
+server ondertekent token met user-id
+    ↓
+server plaatst token in HttpOnly-cookie
+    ↓
+browser stuurt cookie bij volgend request
+    ↓
+authmiddleware verifieert handtekening en claims
+```
+
+Een JWT is **ondertekend**, niet standaard versleuteld. Iedereen die het token bezit kan de payload lezen. Zet er alleen minimale identificerende claims in, nooit wachtwoorden of secrets.
+
+## Een token maken
+
+```ts
+import jwt from 'jsonwebtoken';
+
+type AuthTokenPayload = {
+  sub: string;
+  role: 'USER' | 'ADMIN';
+};
+
+const jwtSecret = process.env.JWT_SECRET;
+
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET ontbreekt');
+}
+
+const token = jwt.sign(
+  { sub: String(user.id), role: user.role } satisfies AuthTokenPayload,
+  jwtSecret,
+  { expiresIn: '1h' },
+);
+```
+
+Het secret wordt één keer bij het starten gevalideerd. Gebruik in productie een sterke, willekeurige secret uit secret management en roteer sleutels volgens het gekozen tokenontwerp.
+
+## Een veilige cookie
+
+```ts
+response.cookie('access_token', token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge: 60 * 60 * 1000,
+  path: '/',
+});
+```
+
+- `httpOnly` verhindert dat gewone browser-JavaScript de cookie leest;
+- `secure` verstuurt ze in productie alleen via HTTPS;
+- `sameSite` helpt cross-site requests beperken;
+- `maxAge` stemt de cookieduur af op de tokensessie;
+- `path` bepaalt voor welke paden de browser de cookie meestuurt.
+
+Een HttpOnly-cookie verkleint token­diefstal via JavaScript, maar maakt XSS niet onschadelijk. Cookiegebaseerde authenticatie vereist ook een bewuste CSRF-strategie. Cookie-instellingen hangen af van de echte frontend/backenddomeinen en deployment.
+
+## Authenticatiemiddleware
+
+De stub uit de vroege lesversie logt alleen en roept `next()` aan. Een echte middleware moet het token ophalen, verifiëren en gecontroleerde authinformatie toevoegen:
+
+```ts
+import jwt, { type JwtPayload } from 'jsonwebtoken';
+import type { RequestHandler } from 'express';
+
+type VerifiedAuthPayload = JwtPayload & {
+  sub: string;
+  role: 'USER' | 'ADMIN';
+};
+
+export const requireAuthentication: RequestHandler = (
+  request,
+  response,
+  next,
+) => {
+  const token = request.cookies.access_token;
+
+  if (typeof token !== 'string') {
+    response.status(401).json({ message: 'Authenticatie vereist' });
+    return;
+  }
+
+  try {
+    const payload = jwt.verify(token, jwtSecret) as VerifiedAuthPayload;
+
+    if (typeof payload.sub !== 'string' ||
+        (payload.role !== 'USER' && payload.role !== 'ADMIN')) {
+      response.status(401).json({ message: 'Ongeldig token' });
+      return;
+    }
+
+    request.auth = {
+      userId: Number(payload.sub),
+      role: payload.role,
+    };
+    next();
+  } catch {
+    response.status(401).json({ message: 'Ongeldig of verlopen token' });
+  }
+};
+```
+
+De type assertion na `verify` is niet voldoende als runtimecontrole; daarom controleren we relevante claims werkelijk. In een uitgebreider project kan een schemasysteem die verificatie centraliseren.
+
+## Autorisatiemiddleware
+
+Na authenticatie kan een tweede guard een rol controleren:
+
+```ts
+export const requireAdmin: RequestHandler = (request, response, next) => {
+  if (request.auth?.role !== 'ADMIN') {
+    response.status(403).json({ message: 'Onvoldoende rechten' });
+    return;
+  }
+
+  next();
+};
+```
+
+Een rol is niet altijd voldoende. Voor ownership controleert de service bijvoorbeeld of `request.auth.userId` eigenaar is van de te wijzigen resource.
+
+```ts
+eventsRouter.delete(
+  '/:eventId',
+  requireAuthentication,
+  requireAdmin,
+  deleteEvent,
+);
+```
+
+## De huidige gebruiker
+
+Een endpoint zoals `GET /api/auth/me` laat de frontend na herladen controleren wie ingelogd is:
+
+```ts
+export const readCurrentUser: RequestHandler = async (request, response) => {
+  const user = await prisma.user.findUnique({
+    where: { id: request.auth!.userId },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+    },
+  });
+
+  response.status(200).json(user);
+};
+```
+
+De non-null assertion is hier alleen verdedigbaar wanneer de route aantoonbaar achter `requireAuthentication` staat. Een getypeerde authrequest of helper kan die invariant explicieter maken.
+
+## Uitloggen
+
+Bij een cookie met token verwijdert logout de cookie met dezelfde relevante opties:
+
+```ts
+response.clearCookie('access_token', {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  path: '/',
+});
+
+response.status(204).send();
+```
+
+Een stateless access token blijft op zichzelf geldig tot het vervalt. Voor onmiddellijke server-side intrekking zijn een sessiestore, denylist of korte access tokens met een doordachte refreshflow nodig. Voeg zo'n complexere flow alleen toe wanneer de requirements dat vragen.
+
+## Securitymiddleware
+
+Helmet stelt verschillende defensieve HTTP-headers in:
+
+```ts
+import helmet from 'helmet';
+
+app.use(helmet());
+```
+
+Rate limiting beperkt geautomatiseerde pogingen op gevoelige endpoints:
+
+```ts
+import { rateLimit } from 'express-rate-limit';
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+});
+
+authRouter.post('/login', loginLimiter, loginValidation, login);
+```
+
+Deze maatregelen zijn lagen, geen volledige beveiliging. Gebruik daarnaast HTTPS, veilige dependencies, invoervalidatie, autorisatie, logging zonder secrets en correcte deploymentconfiguratie.
+
+## Frontend en cookies
+
+Wanneer frontend en backend verschillende origins gebruiken, moeten beide kanten credentials toestaan:
+
+```ts
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
+}));
+```
+
+```ts
+export const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true,
+});
+```
+
+De backend blijft de autoriteit. Context in React kan de zichtbare gebruiker delen, maar bewijst niets aan de server.
+
+## Veelgemaakte fouten
+
+**Wachtwoorden of hashes terugsturen**: Selecteer veilige responsevelden aan de databankgrens.
+
+**Een JWT als versleutelde kluis behandelen**: De payload is leesbaar; zet er minimale claims in.
+
+**Alleen frontendroutes beschermen**: Iedere backendactie controleert zelf authenticatie en autorisatie.
+
+**Een user-id uit de requestbody vertrouwen**: Leid de identiteit af uit het geverifieerde token of de sessie.
+
+**Alle mislukte auth als 403 behandelen**: Gebruik 401 bij ontbrekende of ongeldige authenticatie en 403 bij onvoldoende rechten.
+
+**CORS als securityguard zien**: Niet-browserclients zijn er niet door geblokkeerd.
+
+**Secrets loggen**: Log nooit wachtwoorden, volledige tokens of gevoelige cookies.
+
+## Oefeningen
+
+### Een authflow tekenen
+
+Teken de volledige stroom voor registratie, login en een beveiligd profielrequest. Noteer waar validatie, hashing, tokencreatie, cookie-instellingen en autorisatie plaatsvinden.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Registratie valideert input en hasht vóór opslag. Login vergelijkt met de hash en zet na succes een HttpOnly-cookie. Het profielrequest gaat eerst door authenticatiemiddleware; de controller gebruikt alleen de gecontroleerde user-id en selecteert geen passwordhash.
+
+</details>
+
+### Eigenaarschap controleren
+
+Een ingelogde gebruiker wil een eigen reservatie verwijderen. Bepaal waarom alleen `requireAuthentication` niet volstaat en waar je ownership controleert.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Authenticatie bewijst alleen de identiteit. De service leest de reservatie en vergelijkt haar `userId` met `request.auth.userId`, tenzij een expliciete beheerdersregel geldt. Bij een bekende maar niet toegelaten gebruiker past 403.
+
+</details>
+
+## Check jezelf
+
+### Wat is het verschil tussen hashing en encryptie?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Encryptie is met de juiste sleutel omkeerbaar. Passwordhashing is bewust eenrichtingsverkeer: bij login vergelijken we het kandidaatwachtwoord met de opgeslagen hash.
+
+</details>
+
+### Waarom gebruiken loginfouten dezelfde boodschap?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Zo verraadt de API niet of een e-mailadres bestaat. Dat verkleint de mogelijkheid om geldige accounts te verzamelen.
+
+</details>
+
+### Is een JWT-payload geheim?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Nee. Een gewone JWT is ondertekend zodat wijzigingen detecteerbaar zijn, maar de payload kan gelezen worden. Bewaar er geen secrets of gevoelige data in.
+
+</details>
+
+### Wat voegt `httpOnly` toe?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Browser-JavaScript kan de cookie niet rechtstreeks lezen. Dat is een nuttige verdedigingslaag, maar voorkomt niet alle gevolgen van XSS en vervangt geen CSRF-maatregelen.
+
+</details>
+
+### Waarom blijft backendautorisatie nodig wanneer React een knop verbergt?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Een gebruiker kan rechtstreeks een HTTP-request maken of frontendcode aanpassen. Alleen de backend kan de beschermde resource werkelijk afdwingen.
+
+</details>
+
+## Officiële bronnen
+
+- [OWASP: Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+- [OWASP: Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+- [OWASP: Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
+- [OWASP: JSON Web Token Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html)
+- [MDN: Secure cookie configuration](https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/Cookies)
+- [Helmet](https://helmetjs.github.io/)
+- [express-rate-limit](https://express-rate-limit.mintlify.app/)
+
+[Volgende: terug naar het project](/project/).

@@ -1,0 +1,59 @@
+---
+title: "Classroom50-oefening: State"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>State</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+In [State](./state) zag je hoe een component informatie onthoudt en hoe een update trigger, render en commit doorloopt. Je maakt het filmaanbod uit de vorige mijlpaal interactief, voorlopig nog zonder backend.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/react-state/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Leerdoelen
+
+Je kunt state een duidelijke eigenaar geven, functionele updates gebruiken, objecten en arrays immutabel aanpassen, afgeleide data herkennen en state liften.
+
+## Situatie
+
+Een bezoeker filtert lokale filmdata, markeert favorieten en kiest voorlopig een aantal tickets. De keuzes hoeven na herladen nog niet bewaard te blijven.
+
+## Starterscode
+
+De Classroom50-repository bevat de afgewerkte UI-mijlpaal met componenten, types, lokale filmdata en Tailwindconfiguratie. Je bouwt daarop verder; je hoeft de vorige opdracht niet opnieuw te maken.
+
+## Opdrachten
+
+1. Houd een zoekterm, gekozen genre en instelling “alleen actieve films” in state bij.
+2. Leid de zichtbare films tijdens het renderen af uit de brondata en filters.
+3. Houd favoriete film-id’s bij en voeg of verwijder ze zonder arrays te muteren.
+4. Voorkom dubbele favoriete id’s.
+5. Voeg een ticketteller toe waarvan meerdere snelle updates correct op de vorige waarde voortbouwen.
+6. Lift gedeelde state naar de dichtstbijzijnde parent van filmlijst en samenvatting.
+7. Geef een child component alleen een actiecallback wanneer die de actuele waarde niet nodig heeft.
+8. Voorzie een resetactie voor de filters en ticketkeuze.
+
+## Onderzoeksvraag
+
+Voeg tijdelijk gerichte logs toe en beschrijf voor één klik de trigger-, render- en commitfase. Verwijder overbodige logs vóór de oplevering.
+
+## Oplevering
+
+Push de volgende werkende mijlpaal van de Cinema App en een korte `README` waarin je de state-eigenaar, één functionele update en één afgeleide waarde motiveert.
+
+## Wat moet je kunnen uitleggen?
+
+- waarom gewone variabelen geen UI-update veroorzaken;
+- waarom state een snapshot is;
+- welke referenties bij een update veranderen;
+- waarom de samenvatting geen afzonderlijke statekopie is;
+- waarom en tot waar je state liftte.

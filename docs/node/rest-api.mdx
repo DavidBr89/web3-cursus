@@ -1,0 +1,364 @@
+---
+title: "REST API"
+sidebar_position: 3
+hide_title: true
+---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["bruno"]}>REST API en Bruno</TechnologyTitle>
+
+## Resources en endpoints
+
+Een REST API stelt resources beschikbaar via voorspelbare URL's en gebruikt HTTP-methodes om de bedoeling van een request uit te drukken.
+
+| Actie | Methode en pad | Gebruikelijke succescode |
+| --- | --- | --- |
+| lijst lezen | `GET /api/events` | `200 OK` |
+| één item lezen | `GET /api/events/:eventId` | `200 OK` |
+| item maken | `POST /api/events` | `201 Created` |
+| item gedeeltelijk aanpassen | `PATCH /api/events/:eventId` | `200 OK` |
+| item verwijderen | `DELETE /api/events/:eventId` | `204 No Content` |
+
+Gebruik zelfstandige naamwoorden in meervoud. De HTTP-methode zegt wat er met de resource gebeurt; paden zoals `/getAllEvents` en `/deleteEvent` dupliceren die betekenis.
+
+## Statuscodes zijn deel van het contract
+
+Een frontend gebruikt niet alleen de JSON-body, maar ook de statuscode:
+
+- `200` voor een geslaagde read of update;
+- `201` wanneer een resource aangemaakt is;
+- `204` bij succes zonder responsebody;
+- `400` voor syntactisch of inhoudelijk ongeldige invoer;
+- `401` wanneer geldige authenticatie ontbreekt;
+- `403` wanneer de identiteit gekend is maar geen toestemming heeft;
+- `404` wanneer de resource niet bestaat;
+- `409` bij een conflict, zoals een reeds bestaand uniek e-mailadres;
+- `500` voor een onverwachte serverfout.
+
+Stuur bij `204` geen JSON-body meer:
+
+```ts
+response.status(204).send();
+```
+
+## Responses bewust vormgeven
+
+Stuur niet automatisch ieder databankrecord integraal terug. Een API-response is een publiek contract.
+
+```ts
+type UserResponse = {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+};
+```
+
+Een wachtwoordhash hoort nooit in `UserResponse`. Een hash is niet hetzelfde als een veilig openbaar wachtwoord; bij een datalek helpt iedere gelekte hash een aanvaller offline gokken.
+
+Met Prisma kan je alleen veilige velden selecteren:
+
+```ts
+const users = await prisma.user.findMany({
+  select: {
+    id: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+  },
+});
+```
+
+## Filters en paginatie
+
+Gebruik queryparameters voor optionele selectie van een collectie:
+
+```text
+GET /api/events?search=react&page=2&pageSize=20
+```
+
+De backend valideert de parameters en bepaalt grenzen. Laat een client niet onbeperkt miljoenen records opvragen.
+
+Een response kan data en metadata scheiden:
+
+```json
+{
+  "items": [],
+  "meta": {
+    "page": 2,
+    "pageSize": 20,
+    "total": 87
+  }
+}
+```
+
+## Lagen en verantwoordelijkheden
+
+We gebruiken een kleine, begrijpelijke architectuur:
+
+```text
+route → validatiemiddleware → controller → service → Prisma
+                                              ↓
+                                      databankrecord
+                                              ↓
+controller → HTTP-response
+```
+
+- **route** koppelt methode, pad en middleware;
+- **controller** vertaalt HTTP naar invoer voor een use case en vormt de response;
+- **service** bevat businessregels en coördineert databankacties;
+- **Prisma** verzorgt getypeerde databasequeries.
+
+Niet iedere eenvoudige feature vereist onmiddellijk een repositorylaag. Voeg een abstractie toe wanneer ze een echte verantwoordelijkheid heeft, niet omdat een mapdiagram dat voorschrijft.
+
+## Feature-first backendstructuur
+
+Zoals bij React kan code per feature gegroepeerd worden:
+
+```text
+src/
+├── app.ts
+├── config/
+├── lib/
+│   └── prisma.ts
+├── middleware/
+│   ├── error-handler.ts
+│   └── require-authentication.ts
+└── features/
+    └── events/
+        ├── event.routes.ts
+        ├── event.controller.ts
+        ├── event.service.ts
+        ├── event.schema.ts
+        └── event.types.ts
+```
+
+De oude lesbackend met globale `routes` en `controllers` is een begrijpelijk startpunt. Zodra meerdere resources groeien, houdt feature-first structurering alles rond dezelfde use case bij elkaar.
+
+## CORS is geen autorisatie
+
+CORS bepaalt welke browserorigins responses mogen lezen. Het beschermt een API niet tegen Postman, scripts of server-to-serverrequests.
+
+```ts
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
+}));
+```
+
+Bij cookies moet de frontend credentials meesturen en moet de backend een concrete toegelaten origin configureren. `origin: '*'` kan niet gecombineerd worden met credentials.
+
+Autorisatie blijft afzonderlijke serverlogica op iedere beveiligde actie.
+
+## API's uitproberen met Bruno
+
+Tijdens het bouwen willen we de Express-backend kunnen aanspreken voordat de React-frontend klaar is. In deze cursus gebruiken we **Bruno** als API-client en als lokaal alternatief voor Postman.
+
+```text
+Bruno
+  ↓ zelf samengesteld HTTP-request
+Express API
+  ↓
+statuscode + headers + JSON-body
+```
+
+Bruno vervangt de frontend niet. Het laat ons methode, URL, headers, body, cookies, statuscode en response geïsoleerd controleren. Daardoor kunnen we beter bepalen of een fout in het request, de backend of de latere frontendintegratie zit.
+
+### Een collection bij het project
+
+Een Bruno-collection wordt als leesbare bestanden bewaard en kan samen met de backend in Git staan:
+
+```text
+backend/
+├── bruno/
+│   ├── environments/
+│   ├── auth/
+│   └── events/
+├── prisma/
+└── src/
+```
+
+Bewaar requests in herkenbare folders per resource of use case. Commit de requestbestanden en veilige voorbeeldconfiguratie, maar geen persoonlijke tokens of productiegeheimen.
+
+### Een request uitvoeren
+
+Start de Expressserver en maak bijvoorbeeld deze request:
+
+```text
+GET http://localhost:3000/api/health
+```
+
+Controleer niet alleen de JSON-body, maar ook de statuscode, responseheaders, responsetijd en eventuele cookies.
+
+Voor een POST-request kies je JSON als bodytype:
+
+```http
+POST /api/events
+Content-Type: application/json
+```
+
+```json
+{
+  "title": "TypeScript Workshop",
+  "capacity": 30
+}
+```
+
+Voer ook bewust een foutief scenario uit:
+
+```json
+{
+  "title": "",
+  "capacity": -4
+}
+```
+
+De tweede request hoort geen `201 Created` te krijgen. Een collection met alleen succesvolle requests controleert maar een klein deel van het contract.
+
+### Environments en variabelen
+
+Maak een lokale environment met een gedeelde basis-URL:
+
+```text
+baseUrl = http://localhost:3000/api
+```
+
+Gebruik die daarna in alle requests:
+
+```text
+GET {{baseUrl}}/events
+GET {{baseUrl}}/events/42
+GET {{baseUrl}}/events?search=typescript&page=1
+```
+
+Dezelfde collection kan zo later een andere testomgeving gebruiken zonder ieder request te wijzigen.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Geen secrets committen</strong>
+
+Een gewone Bruno-environment kan in Git terechtkomen. Commit alleen niet-gevoelige waarden zoals een lokale basis-URL. Bewaar tokens en API-keys in secretvariabelen of lokaal genegeerde bestanden.
+
+</aside>
+
+### Cookies en authenticatie controleren
+
+Wanneer een loginresponse een cookie zet, kan Bruno die cookie bewaren voor volgende requests. Voer de volledige flow uit:
+
+1. registreer een testgebruiker;
+2. log in met correcte credentials;
+3. controleer status en `Set-Cookie`;
+4. vraag een beveiligd endpoint op;
+5. log uit;
+6. probeer hetzelfde beveiligde endpoint opnieuw.
+
+Test ook verkeerde credentials, een ontbrekende cookie en onvoldoende rechten. `HttpOnly` betekent dat browser-JavaScript de cookie niet kan lezen; een HTTP-client zoals Bruno mag de header uiteraard wel tonen.
+
+### CORS en Bruno
+
+Een request kan in Bruno slagen en in de browser toch door CORS worden tegengehouden. CORS is namelijk browserbeleid; Bruno is geen browser. Een geslaagde Bruno-request bewijst daarom dat het endpoint antwoordt, maar nog niet dat de browserintegratie correct geconfigureerd is.
+
+### Welke requests bewaren we?
+
+Voorzie bij een resource minstens:
+
+- de basis-CRUD-requests;
+- een ongeldige body;
+- een onbekend id;
+- relevante 401- en 403-scenario's;
+- een gedeelde `baseUrl` zonder secrets;
+- duidelijke requestnamen.
+
+Bruno ondersteunt ook assertions op status en responsebody. Dat maakt een collection reproduceerbaarder, maar vervangt geen volledige geautomatiseerde backendtestsuite.
+
+### Wanneer helpen screenshots?
+
+Eén screenshot kan nuttig zijn waarop tegelijk de collection, methode, URL, requesttabs, statuscode en JSON-response zichtbaar zijn. Een tweede screenshot van de cookieweergave kan de loginflow verduidelijken. De stappen blijven daarnaast in tekst staan, zodat het hoofdstuk bruikbaar blijft wanneer de Bruno-interface verandert.
+
+## Oefeningen
+
+### Een resourcecontract ontwerpen
+
+Ontwerp voor cursussen vijf CRUD-endpoints. Noteer per endpoint methode, pad, succesvolle statuscode, mogelijke foutcodes en de responsevorm.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Gebruik een collectiepad `/api/courses` en een itempad `/api/courses/:courseId`. Kies 200 voor reads en update, 201 voor create en 204 voor delete. Voorzie minstens 400, 404 en waar nodig 401/403/409.
+
+</details>
+
+### Een veilige response
+
+Een query levert een account met `id`, `email`, `password`, `role` en `createdAt`. Bepaal welke velden een publieke profiellijst werkelijk nodig heeft en zorg dat de hash Prisma nooit verlaat.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Gebruik een Prisma-`select` met alleen de velden uit het responsecontract. Laat `password` niet eerst uitlezen om het achteraf te verwijderen: veilige selectie aan de databankgrens is duidelijker.
+
+</details>
+
+### Een Bruno-collection
+
+Maak voor de ontworpen resource een collection met CRUD-requests en minstens één 400-, 404-, 401- en 403-scenario waar dat relevant is. Gebruik een lokale `baseUrl`.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Groepeer requests per resource, gebruik `{{baseUrl}}`, geef ieder scenario een beschrijvende naam en controleer status en responsevorm. Bewaar geen persoonlijk token in de gedeelde collection.
+
+</details>
+
+## Check jezelf
+
+### Wat is het verschil tussen 401 en 403?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+401 betekent dat geldige authenticatie ontbreekt. 403 betekent dat de server de identiteit kent, maar deze gebruiker de actie niet mag uitvoeren.
+
+</details>
+
+### Waarom sturen we geen Prisma-record automatisch integraal terug?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Het databankmodel en publieke API-contract hebben verschillende verantwoordelijkheden. Een record kan interne of gevoelige velden bevatten die nooit aan een client getoond mogen worden.
+
+</details>
+
+### Beschermt CORS een endpoint tegen ongeautoriseerde requests?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Nee. CORS is browserbeleid voor het lezen van cross-originresponses. De backend moet authenticatie en autorisatie zelf afdwingen.
+
+</details>
+
+### Waarom kan een request in Bruno werken en in de browser door CORS mislukken?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+CORS wordt door browsers afgedwongen. Bruno is een zelfstandige HTTP-client en voert dat browserbeleid niet op dezelfde manier uit.
+
+</details>
+
+## Officiële bronnen
+
+- [MDN: HTTP request methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods)
+- [MDN: HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status)
+- [Express: Routing](https://expressjs.com/en/guide/routing.html)
+- [Express CORS middleware](https://expressjs.com/en/resources/middleware/cors.html)
+- [OWASP: REST Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html)
+- [Bruno downloaden](https://www.usebruno.com/downloads)
+- [Bruno Quick Start](https://docs.usebruno.com/introduction/quick-start)
+- [Bruno collections](https://docs.usebruno.com/get-started/bruno-basics/create-a-collection)
+- [Bruno environment variables](https://docs.usebruno.com/variables/environment-variables)
+
+[Volgende: validatie en fouten](/node/validation-errors).

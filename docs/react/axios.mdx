@@ -1,7 +1,12 @@
 ---
-title: "REST API-calls met Axios"
+title: "Axios"
 sidebar_position: 7
+hide_title: true
 ---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["axios"]}>Axios</TechnologyTitle>
 
 ## Waar staan we in het verhaal?
 
@@ -58,6 +63,58 @@ Axios biedt onder meer:
 ```shell
 yarn add axios
 ```
+
+## Filmgegevens ophalen via TMDB
+
+Voor de Cinema App gebruiken we [The Movie Database (TMDB)](https://www.themoviedb.org/) als externe bron voor filmmetadata. Iedere student maakt gratis een eigen TMDB-account en vraagt via de accountinstellingen toegang tot de API aan.
+
+TMDB ondersteunt voor versie 3 zowel een API-key als een API Read Access Token. In de lessen gebruiken we de toegewezen v3 API-key via een lokale Vite-variabele:
+
+```text title=".env"
+VITE_TMDB_API_KEY=jouw_lokale_testsleutel
+```
+
+Deel alleen de verwachte naam via Git:
+
+```text title=".env.example"
+VITE_TMDB_API_KEY=
+```
+
+Configureer een afzonderlijke Axios-instance voor TMDB:
+
+```ts
+import axios from 'axios';
+
+export const tmdbClient = axios.create({
+  baseURL: 'https://api.themoviedb.org/3',
+  params: {
+    api_key: import.meta.env.VITE_TMDB_API_KEY,
+  },
+});
+```
+
+Een lijst met populaire films komt bijvoorbeeld van het resourcepad `/movie/popular`. Zoeken gebeurt via `/search/movie` met onder meer `query`, `language` en `page` als queryparameters.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Schoolse testsleutel</strong>
+
+De TMDB-key staat in frontendcode en wordt dus zichtbaar in de browser. Binnen deze afgebakende cursusopdracht aanvaarden we dat bewust om iedere student rechtstreeks met TMDB te laten werken en de integratie te kunnen testen. Gebruik hiervoor alleen je eigen cursussleutel, commit je `.env` niet en behandel dit niet als een algemeen productiepatroon.
+
+</aside>
+
+TMDB-resultaten zijn externe data. Beschrijf de responsevorm apart en map alleen de velden die de eigen UI nodig heeft. Houd ook rekening met `null` bij bijvoorbeeld `poster_path`.
+
+Een poster-URL bestaat uit een afbeeldingsbasis, een formaat en het pad uit de response:
+
+```ts
+const getPosterUrl = (posterPath: string | null) => {
+  if (!posterPath) return undefined;
+  return `https://image.tmdb.org/t/p/w500${posterPath}`;
+};
+```
+
+De startersrepository vermeldt de vereiste TMDB-attributie en gebruikt alleen data en afbeeldingen volgens de voorwaarden van de dienst.
 
 Of met npm:
 
@@ -162,7 +219,16 @@ VITE_API_URL=http://localhost:3000/api
 
 <strong className="courseCallout__title">Belangrijk</strong>
 
-Variabelen met `VITE_` worden in de frontendbundle opgenomen. Plaats er dus nooit wachtwoorden, geheime API-keys of andere secrets in.
+Variabelen met `VITE_` worden tijdens het builden in de frontendbundle opgenomen en zijn daardoor zichtbaar voor iedereen die de applicatie in de browser opent. Een `.env`-bestand maakt zo'n waarde dus niet geheim. Plaats in een echte applicatie nooit wachtwoorden, private API-keys of andere secrets in `VITE_`-variabelen. Geheime sleutels horen op een backend of een andere vertrouwde serveromgeving; de frontend communiceert vervolgens met die server.
+</aside>
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Uitzondering voor de schoolse projecten</strong>
+
+Voor bepaalde oefeningen en projecten mag je een door ons gebruikte **test-API-key** toch via een lokale `.env`-variabele aan de frontend geven. We kiezen dit bewust zodat de lector de integratie op dezelfde manier kan starten en testen. Behandel deze sleutel nog steeds niet als een echt geheim: gebruik hem alleen voor de bedoelde testdienst en commit je persoonlijke `.env`-bestand niet, tenzij de opdracht uitdrukkelijk iets anders vermeldt.
+
+Deze uitzondering is een praktische afspraak voor de cursus, geen patroon voor productiecode. In een echte applicatie plaats je een geheime sleutel achter een backendendpoint en beperk je publieke sleutels waar mogelijk via rechten, toegelaten domeinen, quota en afzonderlijke testomgevingen.
 </aside>
 
 ## API-code per feature
@@ -363,19 +429,55 @@ Axios verstuurt het HTTP-request. Voor deze server-stateproblemen introduceren w
 
 Maak een Axios-instance met basis-URL, time-out en credentials. Plaats de URL in een Vite-omgevingsvariabele.
 
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Maak één infrastructuurbestand dat `axios.create` oproept met `baseURL: import.meta.env.VITE_API_URL`, een passende `timeout` en indien nodig `withCredentials: true`. Exporteer alleen de geconfigureerde instance zodat feature-API's dezelfde configuratie hergebruiken.
+
+</details>
+
 ### Movies API
 
 Schrijf afzonderlijke API-functies voor lijst, detail, aanmaken, wijzigen en verwijderen. Typeer input en response eerlijk.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Geef iedere endpointbewerking een eigen functie die de gedeelde client gebruikt en alleen `response.data` returnt. Gebruik afzonderlijke types voor een ontvangen object en voor create- of update-input wanneer hun velden niet exact gelijk zijn.
+
+</details>
 
 ### Foutscenario's
 
 Test een succesvolle response, `404`, `401`, serverfout, time-out en afgebroken request. Vertaal ze naar begrijpelijke applicatiefouten.
 
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Begin in `catch` met `axios.isAxiosError(error)`. Onderzoek daarna afzonderlijk `error.response`, `error.request`, `error.code` en annulering. Zet technische details op één centrale plaats om naar domeingerichte fouttypes of boodschappen en behandel een onbekende fout apart.
+
+</details>
+
 ### Wijzigingsvraag
 
 Voeg paginering en een zoekterm toe als queryparameters zonder handmatig een querystring samen te stellen.
 
-## Controlevragen
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Geef een `params`-object mee aan Axios:
+
+```tsx
+apiClient.get<Movie[]>('/movies', {
+    params: { page, query }
+});
+```
+
+Axios verzorgt de encoding. Neem alleen werkelijk aanwezige optionele waarden op wanneer de API onderscheid maakt tussen afwezig en leeg.
+
+</details>
+
+## Check jezelf
 
 - Welk probleem lost Axios op en welk probleem niet?
 - Waarom maken we een Axios-instance?
@@ -385,11 +487,15 @@ Voeg paginering en een zoekterm toe als queryparameters zonder handmatig een que
 - Waarom is een TypeScripttype geen runtimevalidatie?
 - Wanneer is een interceptor geschikt?
 
-## Officiële documentatie
+## Officiële bronnen
 
 - [Axios: introductie](https://axios-http.com/docs/intro)
 - [Axios API](https://axios-http.com/docs/api_intro)
 - [Axios: fouten afhandelen](https://axios-http.com/docs/handling_errors)
 - [Axios: interceptors](https://axios-http.com/docs/interceptors)
+- [TMDB: application authentication](https://developer.themoviedb.org/docs/authentication-application)
+- [TMDB: popular movies](https://developer.themoviedb.org/reference/movie-popular-list)
+- [TMDB: search movies](https://developer.themoviedb.org/reference/search-movie)
+- [TMDB: image basics](https://developer.themoviedb.org/docs/image-basics)
 
 [Volgende: server state beheren met TanStack Query](/react/query).

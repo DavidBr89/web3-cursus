@@ -1,0 +1,76 @@
+---
+title: "Classroom50-oefening: Authenticatie en beveiliging"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Authenticatie en beveiliging</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+Na [Authenticatie en beveiliging](./auth-security) voeg je accounts en rollen aan de Cinema App toe. Bezoekers beheren hun eigen reservaties; beheerders beheren vertoningen.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/express-auth-security/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de Cinema API met Prisma, migraties en seeddata uit de vorige mijlpaal. De authpackages zijn geïnstalleerd en `.env.example` noemt de vereiste variabelen zonder waarden; gebruikersroutes, cookies, guards en securitymiddleware bouwen studenten zelf.
+
+## Deel 1: accounts
+
+1. Valideer registratie en normaliseer het e-mailadres.
+2. Hash het wachtwoord met bcrypt vóór opslag.
+3. Voorkom dat wachtwoord of hash ooit in een response verschijnt.
+4. Vergelijk credentials bij login en gebruik één algemene foutmelding.
+5. Maak een kortlevend, minimaal JWT en plaats het in een correct geconfigureerde HttpOnly-cookie.
+6. Implementeer logout en `/api/auth/me`.
+
+## Deel 2: guards
+
+1. Type de verwachte tokenclaims en valideer ze tijdens runtime.
+2. Voeg gecontroleerde authinformatie toe aan `Express.Request` zonder `any`.
+3. Maak afzonderlijke authenticatie- en autorisatiemiddleware.
+4. Bescherm het beheren van vertoningen op rol en het bekijken of annuleren van een reservatie op ownership.
+5. Gebruik consequent 401 en 403.
+6. Voeg Helmet en gerichte rate limiting op login toe.
+7. Configureer CORS en credentials voor de meegeleverde testfrontend.
+
+## Bruno-scenario's
+
+Bewaar requests voor registratie, dubbele registratie, correcte en foutieve login, profiel met en zonder cookie, eigen en andermans reservatie, beheer van een vertoning en logout. Controleer dat responses nooit hashes, tokens in JSON of stacktraces lekken.
+
+## Deel 3: volledige Cinema App verbinden
+
+Gebruik de bestaande React-frontend als client voor de afgewerkte backend:
+
+1. behoud TMDB als bron voor zoeken en algemene filmmetadata;
+2. laad vertoningen en reservaties uit de eigen Express API;
+3. voeg registratie, login, huidig profiel en logout aan de frontend toe;
+4. deel de authstatus via de bestaande veilige Context en custom hook;
+5. verstuur cookies via de gedeelde Axios-instance;
+6. maak een reservatie via React Hook Form en een TanStack Query-mutation;
+7. invalideer na een reservatie de relevante vertoning- en reservatiequeries;
+8. toon afzonderlijk loading, unauthorized, forbidden, validation en onverwachte fouten;
+9. verberg beheerdersbediening in de UI én dwing dezelfde rechten op de backend af;
+10. controleer de volledige flow opnieuw met Bruno en vanuit de browser.
+
+## Oplevering
+
+Push de volledige Cinema App met React-frontend en Express/Prisma-backend, migraties, Bruno-collection en een diagram van login tot beveiligde reservatiecontroller. Secrets en persoonlijke environmentbestanden worden niet gecommit.
+
+## Wat moet je kunnen uitleggen?
+
+- authenticatie tegenover autorisatie;
+- hashing tegenover encryptie;
+- waarom een JWT-payload niet geheim is;
+- functies van `httpOnly`, `secure` en `sameSite`;
+- waarom user-id’s uit de body niet vertrouwd worden;
+- rolcontrole tegenover ownership;
+- welke aanval iedere beveiligingslaag probeert te beperken.

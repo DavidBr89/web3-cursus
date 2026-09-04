@@ -1,16 +1,23 @@
 ---
 title: Hooks
 sidebar_position: 2
+hide_title: true
 ---
 
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
+import AnnotatedCodeBlock from "@site/src/components/AnnotatedCodeBlock";
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["react"]}>Hooks</TechnologyTitle>
 
 ## Waar staan we in het verhaal?
 
 De bioscoopcomponents kunnen ondertussen reageren op events en state bijhouden. Naarmate ze meer gedrag krijgen, ontstaan nieuwe vragen. Hoe bewaren we een waarde zonder daarvoor een render te veroorzaken? Hoe voeren we code uit wanneer een component met een extern systeem moet synchroniseren? En hoe vermijden we dat dezelfde logica in verschillende components gekopieerd wordt?
 
 In het hoofdstuk over [state](./state) maakten we al kennis met onze eerste hook: `useState`. React biedt nog andere hooks voor specifieke noden. We gebruiken ze niet omdat ze bestaan, maar wanneer het probleem van een component erom vraagt.
+
+![The Three Horsemen of React Hell: typische problemen met useEffect, state en props](/img/react/threehorsemen.png)
 
 <aside className="courseCallout courseCallout--note">
 
@@ -140,7 +147,9 @@ Wanneer gebruik je `useReducer` in plaats van `useState`? Gebruik `useState` voo
 
 ## Ref hook: useRef
 
-Soms wil een component iets **onthouden** zonder dat een wijziging een rerender veroorzaakt. Daarvoor gebruiken we `useRef`. Een ref is een soort "doosje" met een `.current`-eigenschap waarin je een waarde kan bewaren die **behouden blijft tussen renders**, maar die — in tegenstelling tot state — **geen rerender triggert wanneer je ze aanpast**.
+Soms wil een component iets **onthouden** zonder dat een wijziging een rerender veroorzaakt. Daarvoor gebruiken we `useRef`. Een ref is een soort "doosje" met een `.current`-property waarin je een waarde kan bewaren die **behouden blijft tussen renders**, maar die — in tegenstelling tot state — **geen rerender triggert wanneer je ze aanpast**.
+
+Een ref is geschikt voor informatie die niet nodig is om JSX te berekenen, zoals een timer-id. Als een waarde zichtbaar is in de UI, hoort ze meestal wel in state.
 
 ```tsx
 import { useRef } from "react";
@@ -168,3 +177,478 @@ const Stopwatch = () => {
   );
 };
 ```
+
+### Een DOM-element benaderen
+
+De meest voorkomende toepassing van een ref is toegang krijgen tot een DOM-element dat React beheert. We maken eerst een ref met het juiste DOM-type en geven die daarna via de speciale `ref`-prop aan het element.
+
+```tsx
+import { useRef } from 'react';
+
+const SearchForm = () => {
+    const inputRef = useRef<HTMLInputElement | null>(null);
+
+    const handleFocus = () => {
+        inputRef.current?.focus();
+    };
+
+    return (
+        <>
+            <input ref={inputRef} type="search" />
+            <button type="button" onClick={handleFocus}>
+                Focus het zoekveld
+            </button>
+        </>
+    );
+}
+```
+
+De beginwaarde is `null`, omdat het inputelement tijdens de eerste render nog niet in de DOM bestaat. Tijdens de commit koppelt React het DOM-element aan `inputRef.current`. Daarna kan een event handler browsermethodes zoals `focus()` oproepen.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Lees een DOM-ref niet tijdens render</strong>
+
+Tijdens de renderfase is de DOM nog niet bijgewerkt. Gebruik een DOM-ref daarom meestal in een event handler of, wanneer synchronisatie met een extern systeem nodig is, in een Effect. Pas via een ref ook niet zelf inhoud aan die React vanuit JSX beheert.
+</aside>
+
+## Effect hook: useEffect
+
+Tijdens het renderen berekent een component alleen welke JSX zichtbaar moet zijn. Soms moet een component daarnaast **synchroniseren met een systeem buiten React**, bijvoorbeeld:
+
+- de titel van het browsertabblad aanpassen;
+- verbinding maken met een externe service;
+- een event listener op `window` registreren;
+- een videospeler of andere browser-API aansturen.
+
+Voor zulke synchronisatie bestaat de `useEffect`-hook. Een Effect draait niet tijdens de pure renderfase, maar nadat React de render heeft gecommit.
+
+```text
+Trigger ─▶ Render ─▶ Commit ─▶ Effect
+```
+
+### Een eerste Effect
+
+Een browservideo heeft methodes zoals `play()` en `pause()`, maar geen JSX-prop `isPlaying`. We gebruiken daarom een ref om het DOM-element te bereiken en een Effect om de browservideo te synchroniseren met de React-prop.
+
+<AnnotatedCodeBlock>
+
+```tsx
+import { useEffect, useRef } from 'react';
+
+interface VideoPlayerProps {
+    src: string;
+    isPlaying: boolean;
+}
+
+const VideoPlayer = ({ src, isPlaying }: VideoPlayerProps) => {
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+
+    useEffect(() => {  // [!note Synchroniseer na de commit met de browservideo.]
+        if (isPlaying) {
+            videoRef.current?.play();
+        } else {
+            videoRef.current?.pause();
+        }
+    }, [isPlaying]);  // [!note Voer opnieuw uit wanneer isPlaying verandert.]
+
+    return <video ref={videoRef} src={src} controls />;
+}
+```
+
+</AnnotatedCodeBlock>
+
+`useEffect` ontvangt hier twee argumenten:
+
+1. Een **setupfunctie** met de synchronisatielogica.
+2. Een **dependency array** met alle reactieve waarden uit de component die het Effect gebruikt.
+
+In dit voorbeeld is `isPlaying` een prop en dus een reactieve waarde. Wanneer ze verandert, commit React eerst de UI en voert het daarna het Effect opnieuw uit. `videoRef` hoeft niet in de dependency array: het ref-object heeft een stabiele identiteit.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Geen Effect wanneer JSX volstaat</strong>
+
+In React 19 kan je de documenttitel rechtstreeks met `<title>{pageTitle}</title>` renderen. Daarvoor is dus geen `useEffect` met `document.title` nodig. Gebruik een Effect alleen wanneer je werkelijk met iets buiten het declaratieve React-model moet synchroniseren.
+</aside>
+
+### Wanneer wordt een Effect uitgevoerd?
+
+De dependency array bepaalt wanneer React het Effect opnieuw moet uitvoeren:
+
+```tsx
+// Na iedere commit van deze component
+useEffect(() => {
+    // ...
+});
+
+// Na de eerste commit
+useEffect(() => {
+    // ...
+}, []);
+
+// Na de eerste commit en wanneer movieId verandert
+useEffect(() => {
+    // ...
+}, [movieId]);
+```
+
+Laat dependencies niet bewust weg om een Effect minder vaak te laten uitvoeren. Iedere prop, statevariabele en waarde uit de componentbody die in het Effect wordt gelezen, hoort in de dependency array. De React-linter helpt om ontbrekende dependencies te vinden.
+
+### Opruimen met een cleanupfunctie
+
+Sommige Effects starten iets dat later moet worden gestopt, zoals een verbinding, timer of event listener. De setupfunctie kan daarvoor een **cleanupfunctie** teruggeven.
+
+```tsx
+import { useEffect } from 'react';
+
+const CinemaPage = () => {
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                console.log('Sluit het filmdetail');
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
+    return <h1>Filmaanbod</h1>;
+}
+```
+
+React voert de cleanup uit:
+
+- voordat hetzelfde Effect opnieuw wordt uitgevoerd met gewijzigde dependencies;
+- en wanneer de component uit de UI verdwijnt.
+
+De cleanup moet ongedaan maken wat de setup deed. Na `addEventListener` hoort bijvoorbeeld `removeEventListener`; na verbinden hoort verbreken.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Extra uitvoering in Strict Mode</strong>
+
+In development kan React bij de eerste mount eenmaal extra `setup → cleanup → setup` uitvoeren. Dit is een controle die ontbrekende cleanup zichtbaar maakt. Dit gedrag vindt niet plaats in de productiebuild.
+</aside>
+
+### Wanneer heb je geen Effect nodig?
+
+Een Effect is een ontsnappingsroute om React met een extern systeem te synchroniseren. Gebruik geen Effect voor waarden die je tijdens het renderen kan berekenen.
+
+```tsx
+interface MovieProps {
+    title: string;
+    year: number;
+}
+
+const Movie = ({ title, year }: MovieProps) => {
+    // Geen state en geen Effect nodig: dit kan tijdens render berekend worden.
+    const label = `${title} (${year})`;
+
+    return <h2>{label}</h2>;
+}
+```
+
+Ook code die rechtstreeks door een gebruikersactie wordt veroorzaakt, hoort meestal in de event handler en niet in een Effect:
+
+```tsx
+const TicketButton = () => {
+    const handleClick = () => {
+        console.log('Ticket toegevoegd');
+    };
+
+    return <button onClick={handleClick}>Voeg ticket toe</button>;
+}
+```
+
+Gebruik als beslisregel:
+
+- **rendercode** om UI uit props en state te berekenen;
+- **event handlers** voor acties die door de gebruiker worden veroorzaakt;
+- **Effects** om na een commit met een extern systeem te synchroniseren.
+
+Meer uitleg vind je in de officiële React-documentatie over [Synchronizing with Effects](https://react.dev/learn/synchronizing-with-effects), [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect) en de [`useEffect`-referentie](https://react.dev/reference/react/useEffect).
+
+## Eigen hooks maken
+
+Wanneer verschillende components dezelfde stateful logica bevatten, kunnen we die logica verzamelen in een **custom hook**. Een custom hook is een gewone TypeScript-functie die zelf andere hooks mag gebruiken.
+
+Stel dat verschillende components een boolean moeten aan- en uitzetten. Zonder custom hook wordt dezelfde `useState`- en togglelogica telkens herhaald:
+
+```tsx
+const [isVisible, setIsVisible] = useState(false);
+
+const toggleVisibility = () => {
+    setIsVisible(currentValue => !currentValue);
+};
+```
+
+We kunnen deze logica hergebruiken met `useToggle`:
+
+```tsx
+import { useState } from 'react';
+
+interface UseToggleResult {
+    value: boolean;
+    toggle: () => void;
+    setValue: (value: boolean) => void;
+}
+
+export const useToggle = (initialValue = false): UseToggleResult => {
+    const [value, setValue] = useState(initialValue);
+
+    const toggle = () => {
+        setValue(currentValue => !currentValue);
+    };
+
+    return { value, toggle, setValue };
+};
+```
+
+Een component kan de hook daarna gebruiken zonder te weten hoe de state intern beheerd wordt:
+
+```tsx
+const ExtraInformation = () => {
+    const {
+        value: isVisible,
+        toggle: toggleVisibility
+    } = useToggle();
+
+    return (
+        <section>
+            <button type="button" onClick={toggleVisibility}>
+                {isVisible ? 'Verberg' : 'Toon'} informatie
+            </button>
+            {isVisible && <p>Hier staat extra informatie.</p>}
+        </section>
+    );
+}
+```
+
+### Naamgeving van een custom hook
+
+De naam moet met `use` beginnen, gevolgd door een hoofdletter, bijvoorbeeld `useToggle`, `useOnlineStatus` of `useWindowSize`. Dankzij deze conventie herkennen React en de linter dat de functie hooks kan oproepen en dus de Rules of Hooks moet volgen.
+
+Een gewone helperfunctie die geen hooks oproept, krijgt geen `use`-prefix:
+
+```tsx
+// Gewone berekening: dit hoeft geen hook te zijn.
+const formatName = (firstName: string, lastName: string) => {
+    return `${firstName} ${lastName}`;
+};
+```
+
+### Een custom hook deelt logica, geen state
+
+Iedere aanroep van een custom hook krijgt zijn **eigen onafhankelijke state**:
+
+```tsx
+const Page = () => {
+    const menu = useToggle();
+    const help = useToggle(true);
+
+    return (
+        <>
+            <button type="button" onClick={menu.toggle}>Menu</button>
+            {menu.value && <nav>Menu-inhoud</nav>}
+
+            <button type="button" onClick={help.toggle}>Help</button>
+            {help.value && <p>Helptekst</p>}
+        </>
+    );
+}
+```
+
+Het openen van het menu verandert de helpstate niet. De twee aanroepen hergebruiken dezelfde logica, maar maken elk hun eigen state aan. Als components werkelijk dezelfde state moeten delen, moet je die state nog steeds liften of via Context beschikbaar maken.
+
+### Wanneer maak je een custom hook?
+
+Maak een custom hook wanneer meerdere components dezelfde combinatie van hooks en bijbehorende logica nodig hebben, of wanneer die logica een duidelijke eigen verantwoordelijkheid vormt. Maak niet voor iedere korte `useState` automatisch een nieuwe hook. Een goede hook beschrijft een concreet doel en verbergt geen willekeurige code.
+
+## React Compiler en manuele memoization
+
+In deze cursus gebruiken we React Compiler. De compiler analyseert components en hooks en kan waarden en functies automatisch memoizen. Daarom voegen we niet preventief overal `useMemo`, `useCallback` of `React.memo` toe.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Geen standaardrecept meer</strong>
+
+Voor nieuwe cursuscode vertrouwen we standaard op React Compiler. `useMemo` en `useCallback` bestaan nog en kunnen in uitzonderlijke situaties als escape hatch gebruikt worden wanneer metingen of een specifieke integratie aantonen dat nauwkeurige controle nodig is. Ze zijn geen oplossing voor foutieve logica en horen niet rond iedere berekening of callback.
+</aside>
+
+<aside className="courseCallout courseCallout--danger">
+
+<strong className="courseCallout__title">Aandachtspunt voor het project</strong>
+
+Als `useMemo` of `useCallback` in je project staat, moet je **duidelijk en concreet kunnen uitleggen waarom**. Je moet kunnen aantonen welk probleem je oplost, waarom React Compiler hier niet volstaat en wat er gebeurt wanneer je de manuele memoization verwijdert.
+
+“AI stelde dit voor”, “dit is een best practice” of “dit maakt React sneller” is geen geldige motivatie. Voeg deze hooks niet preventief toe en neem suggesties van AI of autocomplete nooit kritiekloos over.
+</aside>
+
+Meer uitleg vind je in de officiële documentatie over [React Compiler](https://react.dev/learn/react-compiler) en [memoization met TypeScript](https://react.dev/learn/typescript#usememo).
+
+## Oefeningen
+
+### Een DOM-ref gebruiken
+
+Maak een input en een button. Zorg dat een klik op de button het inputveld focus geeft. Type de ref correct en houd rekening met de beginwaarde `null`.
+
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```tsx
+const inputRef = useRef<HTMLInputElement | null>(null);
+
+const handleFocus = () => {
+    inputRef.current?.focus();
+};
+
+return (
+    <>
+        <input ref={inputRef} />
+        <button type="button" onClick={handleFocus}>Focus</button>
+    </>
+);
+```
+
+</details>
+
+### Setup en cleanup koppelen
+
+Registreer in een Effect een `keydown`-listener op `window` en verwijder exact dezelfde listener opnieuw wanneer de component verdwijnt.
+
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```tsx
+useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+        console.log(event.key);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+}, []);
+```
+
+Dit is een native browser-event en daarom gebruiken we hier `KeyboardEvent`, niet `React.KeyboardEvent`. Het React-type gebruiken we voor handlers die via JSX-props zoals `onKeyDown` worden doorgegeven.
+
+</details>
+
+### Herken een overbodig Effect
+
+Een component bewaart `firstName` en `lastName` in state en gebruikt een Effect om `fullName` in een derde statevariabele te plaatsen. Herschrijf dit zonder Effect.
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Bereken de waarde rechtstreeks tijdens het renderen:
+
+```tsx
+const fullName = `${firstName} ${lastName}`;
+```
+
+`fullName` is volledig afgeleid uit bestaande state en synchroniseert niet met een extern systeem.
+
+</details>
+
+### Logica naar een custom hook verplaatsen
+
+Twee components bevatten elk een booleanstate en dezelfde functie om die boolean om te keren. Verplaats die herhaalde logica naar `useToggle` en gebruik de hook in beide components.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Laat `useToggle(initialValue)` minstens de huidige boolean en een `toggle`-functie returnen. Vervang daarna in iedere component de lokale implementatie door een afzonderlijke aanroep. Controleer dat beide components nog steeds onafhankelijke state hebben.
+
+</details>
+
+## Check jezelf
+
+### Welke twee Rules of Hooks moet je steeds volgen?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Roep hooks alleen op het hoogste niveau op en alleen vanuit React-components of custom hooks. Plaats ze niet in condities, lussen, event handlers of gewone helperfuncties.
+
+</details>
+
+### Wat is het verschil tussen state en een ref?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Beide blijven tussen renders bewaard. Een state-update vraagt een nieuwe render aan; het wijzigen van `ref.current` niet. Gebruik state voor informatie die de JSX beïnvloedt en refs voor waarden buiten het renderresultaat.
+
+</details>
+
+### Wanneer vult React een DOM-ref in?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Tijdens de commit. Tijdens de eerste render bestaat het DOM-element nog niet en is `ref.current` daarom `null`.
+
+</details>
+
+### Waarvoor gebruik je een Effect?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Om een component na een commit te synchroniseren met een extern systeem, zoals een browser-API, verbinding, event listener of externe widget.
+
+</details>
+
+### Wanneer voert React de cleanup van een Effect uit?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Voor een nieuwe uitvoering van hetzelfde Effect met gewijzigde dependencies en wanneer de component uit de UI verdwijnt.
+
+</details>
+
+### Waarom mag je dependencies niet bewust verzwijgen?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Het Effect leest dan mogelijk verouderde props of state en synchroniseert niet opnieuw wanneer een gebruikte waarde verandert. De dependency array moet overeenkomen met de reactieve waarden die de Effectcode leest.
+
+</details>
+
+### Wat deelt een custom hook wel en niet?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Een custom hook deelt stateful logica. Iedere aanroep maakt echter onafhankelijke state aan; de state zelf wordt dus niet tussen aanroepen gedeeld.
+
+</details>
+
+### Waarom behandelen we `useMemo` en `useCallback` niet als standaardoptimalisatie?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+React Compiler kan waarden en functies automatisch memoizen. In nieuwe cursuscode vertrouwen we daarop en gebruiken we manuele memoization alleen als een gemeten of specifieke situatie extra controle vereist.
+
+</details>
+
+## Officiële bronnen
+
+- [Built-in React Hooks](https://react.dev/reference/react/hooks)
+- [Manipulating the DOM with Refs](https://react.dev/learn/manipulating-the-dom-with-refs)
+- [Synchronizing with Effects](https://react.dev/learn/synchronizing-with-effects)
+- [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect)
+- [Reusing Logic with Custom Hooks](https://react.dev/learn/reusing-logic-with-custom-hooks)
+- [React Compiler](https://react.dev/learn/react-compiler)

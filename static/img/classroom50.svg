@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Afstudeerhoed</title>
+  <path fill="#087d83" d="M3.8 24.2 29.4 12a6 6 0 0 1 5.2 0l25.6 12.2a3 3 0 0 1 0 5.4L34.6 41.8a6 6 0 0 1-5.2 0L3.8 29.6a3 3 0 0 1 0-5.4Z"/>
+  <path fill="#07536a" d="M15 34.5v10.2C15 50.9 22.6 56 32 56s17-5.1 17-11.3V34.5l-12.7 6a10 10 0 0 1-8.6 0L15 34.5Z"/>
+  <path fill="none" stroke="#082c3b" stroke-linecap="round" stroke-width="4" d="M58 29v15"/>
+  <circle cx="58" cy="48" r="4" fill="#082c3b"/>
+</svg>

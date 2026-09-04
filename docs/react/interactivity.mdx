@@ -1,17 +1,703 @@
 ---
 title: "Interactiviteit"
 sidebar_position: 4
+hide_title: true
 ---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["react"]}>Interactiviteit</TechnologyTitle>
 
 ## Waar staan we in het verhaal?
 
-Met state kan onze bioscoopapplicatie een gekozen genre, favoriete film of aantal tickets onthouden. Er verandert alleen nog niets zolang de bezoeker geen actie kan uitvoeren. Nu verbinden we knoppen, invoervelden en andere browser-events met de functies die onze state aanpassen.
+Met components en props kunnen we een UI opdelen en data tonen. Met state kan een component informatie onthouden. Er verandert alleen nog niets zolang de gebruiker geen actie kan uitvoeren.
 
-Een klik op “Voeg ticket toe” verhoogt bijvoorbeeld niet zelf de state. De knop veroorzaakt een event, onze event handler beslist wat dat event betekent en de state-update zorgt daarna voor een nieuwe render.
+In dit hoofdstuk verbinden we browser-events met functies die onze state aanpassen. Daardoor ontstaat de volledige keten van een gebruikersactie tot een aangepaste interface:
 
-<aside className="courseCallout courseCallout--note">
+```text
+gebruikersactie
+      ↓
+browser-event
+      ↓
+event handler
+      ↓
+state-update
+      ↓
+trigger → render → commit
+      ↓
+aangepaste UI
+```
 
-<strong className="courseCallout__title">In opbouw</strong>
+Na dit hoofdstuk kan je:
 
-In dit hoofdstuk werken we deze stap verder uit met events, event handlers en gecontroleerde invoervelden.
+- event handlers schrijven en correct typen;
+- een functie doorgeven zonder ze tijdens het renderen uit te voeren;
+- event handlers via props doorgeven;
+- invoervelden controleren met state;
+- formuliergedrag afhandelen;
+- event propagation en standaard browsergedrag onderscheiden;
+- de UI declaratief laten reageren op een interactie.
+
+## Events en event handlers
+
+Een **event** is een gebeurtenis in de browser, zoals een klik, een wijziging in een invoerveld of het verzenden van een formulier. Een **event handler** is een functie die wordt uitgevoerd wanneer dat event plaatsvindt.
+
+React-events schrijven we in camelCase. Zo gebruiken we `onClick` in plaats van het HTML-attribuut `onclick`.
+
+```tsx
+const CounterButton = () => {
+    const handleClick = () => {
+        console.log('De knop werd aangeklikt');
+    };
+
+    return (
+        <button type="button" onClick={handleClick}>
+            Verhoog de score
+        </button>
+    );
+}
+```
+
+Volgens de conventie beginnen interne event handlers meestal met `handle`, gevolgd door het event of de actie: `handleClick`, `handleChange` of `handleIncrease`.
+
+### Een functie doorgeven, niet uitvoeren
+
+`onClick` verwacht een **functie** die React later kan uitvoeren. We geven daarom `handleClick` zonder ronde haakjes door.
+
+```tsx
+// Correct: de functie wordt doorgegeven.
+<button type="button" onClick={handleClick}>Verhoog</button>
+
+// Fout: de functie wordt onmiddellijk tijdens het renderen uitgevoerd.
+<button type="button" onClick={handleClick()}>Verhoog</button>
+```
+
+JavaScript tussen `{ }` wordt tijdens het renderen geëvalueerd. `handleClick()` roept de functie dus meteen aan. `handleClick` verwijst naar de functie, zodat React ze pas na een klik kan oproepen.
+
+### Een handler inline schrijven
+
+Een korte handler kan rechtstreeks in de JSX staan. Ook hier geven we een functie door en voeren we de actie niet onmiddellijk uit.
+
+```tsx
+const CounterButton = () => {
+    return (
+        <button
+            type="button"
+            onClick={() => console.log('De score wordt verhoogd')}
+        >
+            Verhoog de score
+        </button>
+    );
+}
+```
+
+Gebruik een aparte, betekenisvolle handler wanneer de logica meerdere regels bevat, op verschillende plaatsen wordt gebruikt of extra uitleg nodig heeft.
+
+## Het event-object typen met TypeScript
+
+React geeft automatisch een **event-object** mee aan een event handler. Daarin staat informatie over de gebeurtenis en het betrokken element. Wanneer de handler inline staat, kan TypeScript het type meestal zelf afleiden:
+
+```tsx
+<button
+    type="button"
+    name="increase-score"
+    onClick={(event) => {
+        console.log(event.currentTarget.name);
+    }}
+>
+    Verhoog
+</button>
+```
+
+Zodra we de handler in een aparte functie plaatsen, typen we het event-object expliciet. Enkele veelgebruikte React-eventtypes zijn:
+
+| Eventprop | React-type | Elementtype |
+|---|---|---|
+| `onClick` | `MouseEvent<T>` | bijvoorbeeld `HTMLButtonElement` |
+| `onChange` | `ChangeEvent<T>` | bijvoorbeeld `HTMLInputElement` |
+| `onSubmit` | `FormEvent<T>` | `HTMLFormElement` |
+| `onKeyDown` | `KeyboardEvent<T>` | bijvoorbeeld `HTMLInputElement` |
+| `onFocus` / `onBlur` | `FocusEvent<T>` | bijvoorbeeld `HTMLInputElement` |
+
+### Een getypt klikevent
+
+```tsx
+import type { MouseEvent } from 'react';
+
+const CounterButton = () => {
+    const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+        console.log(event.currentTarget.name);
+    };
+
+    return (
+        <button
+            type="button"
+            name="increase-score"
+            onClick={handleClick}
+        >
+            Verhoog
+        </button>
+    );
+}
+```
+
+`MouseEvent<HTMLButtonElement>` vertelt TypeScript dat dit een React-mouse-event is en dat de handler op een button staat. Daardoor weet TypeScript dat `event.currentTarget` een `HTMLButtonElement` is.
+
+Je kan hetzelfde type ook via de namespace van React schrijven:
+
+```tsx
+import type React from 'react';
+
+const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    console.log(event.currentTarget.name);
+};
+```
+
+Beide schrijfwijzen zijn correct. Let op de spelling: het type heet `MouseEvent`, niet `MousEvent`. In deze cursus importeren we het type meestal rechtstreeks met `import type`, zodat duidelijk is dat de import alleen voor TypeScript wordt gebruikt.
+
+<aside className="courseCallout courseCallout--tip">
+
+<strong className="courseCallout__title">Laat je editor helpen</strong>
+
+Schrijf de handler tijdelijk inline en plaats je muisaanwijzer boven `event`. Je editor toont dan welk React-eventtype en elementtype verwacht worden. Daarna kan je de handler naar een aparte functie verplaatsen en dat type expliciet noteren.
 </aside>
+
+### `target` en `currentTarget`
+
+- `event.currentTarget` is het element waarop de huidige event handler staat;
+- `event.target` is het diepste element waarop de interactie begon.
+
+Voor een getypte handler gebruiken we meestal `currentTarget`, omdat React en TypeScript precies weten welk element dat is.
+
+```tsx
+import type { MouseEvent } from 'react';
+
+const OpenButton = () => {
+    const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+        console.log(event.currentTarget.value);
+    };
+
+    return (
+        <button type="button" value="42" onClick={handleClick}>
+            Open details
+        </button>
+    );
+}
+```
+
+Gebruik `SyntheticEvent` alleen wanneer er geen specifieker React-eventtype beschikbaar is. Een specifiek type geeft betere typecontrole en autocomplete.
+
+## Van event naar state-update
+
+Een event handler kan een state-update aanvragen. Daarna doorloopt React opnieuw de fases trigger, render en commit uit het statehoofdstuk.
+
+```tsx
+import { useState, type MouseEvent } from 'react';
+
+const ScoreCounter = () => {
+    const [score, setScore] = useState(0);
+
+    const handleIncrease = (event: MouseEvent<HTMLButtonElement>) => {
+        console.log(`Geklikt op ${event.currentTarget.name}`);
+        setScore(currentScore => currentScore + 1);
+    };
+
+    return (
+        <>
+            <p>Score: {score}</p>
+            <button
+                type="button"
+                name="increase-score"
+                onClick={handleIncrease}
+            >
+                Verhoog
+            </button>
+        </>
+    );
+}
+```
+
+Het volledige proces is:
+
+```text
+klik op de button
+→ React roept handleIncrease(event) op
+→ setScore(...) plaatst een state-update in de wachtrij
+→ React rendert ScoreCounter met de nieuwe state
+→ React commit de nodige tekstwijziging naar de DOM
+→ de browser toont de nieuwe score
+```
+
+De handler moet het event-object niet verplicht gebruiken. Als de actie geen informatie uit het event nodig heeft, schrijven we eenvoudiger:
+
+```tsx
+const handleIncrease = () => {
+    setScore(currentScore => currentScore + 1);
+};
+```
+
+## Event handlers doorgeven via props
+
+Een parent-component kan bepalen wat er moet gebeuren en de handler via een prop aan een child doorgeven. Volgens de conventie begint de naam van zo'n callbackprop met `on`, zoals `onIncrease`.
+
+```tsx
+import { useState, type MouseEvent } from 'react';
+
+interface IncreaseButtonProps {
+    onIncrease: () => void;
+}
+
+const IncreaseButton = ({ onIncrease }: IncreaseButtonProps) => {
+    const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+        console.log(`Actie: ${event.currentTarget.name}`);
+        onIncrease();
+    };
+
+    return (
+        <button
+            type="button"
+            name="increase-score"
+            onClick={handleClick}
+        >
+            Verhoog
+        </button>
+    );
+}
+
+const ScoreBoard = () => {
+    const [score, setScore] = useState(0);
+
+    const handleIncrease = () => {
+        setScore(currentScore => currentScore + 1);
+    };
+
+    return (
+        <>
+            <p>Score: {score}</p>
+            <IncreaseButton onIncrease={handleIncrease} />
+        </>
+    );
+}
+```
+
+De gegevensstroom blijft één richting volgen:
+
+```text
+ScoreBoard
+    │ onIncrease via een prop
+    ▼
+IncreaseButton
+    │ roept onIncrease() op na een klik
+    ▼
+handler in ScoreBoard past de state aan
+```
+
+De child stuurt geen props omhoog. Hij meldt alleen dat een betekenisvolle actie plaatsvond door de callback op te roepen. De parent blijft eigenaar van de state en beslist wat die actie betekent.
+
+Als de child informatie moet meegeven, nemen we die op als parameter van de callback:
+
+```tsx
+interface TaskButtonProps {
+    taskId: number;
+    onComplete: (taskId: number) => void;
+}
+
+const TaskButton = ({ taskId, onComplete }: TaskButtonProps) => {
+    return (
+        <button
+            type="button"
+            onClick={() => onComplete(taskId)}
+        >
+            Markeer als klaar
+        </button>
+    );
+}
+```
+
+De inline handler is hier nodig omdat we `taskId` als argument willen meegeven wanneer er geklikt wordt.
+
+## Gecontroleerde invoervelden
+
+Een invoerveld is **gecontroleerd** wanneer React-state bepaalt welke waarde het momenteel toont. Een tekstveld krijgt daarvoor een `value` en een `onChange`-handler.
+
+```tsx
+import { useState, type ChangeEvent } from 'react';
+
+const SearchProducts = () => {
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(event.currentTarget.value);
+    };
+
+    return (
+        <>
+            <label htmlFor="product-search">Zoek een product</label>
+            <input
+                id="product-search"
+                type="search"
+                value={searchTerm}
+                onChange={handleChange}
+            />
+            <p>Je zoekt naar: {searchTerm}</p>
+        </>
+    );
+}
+```
+
+Bij iedere toetsaanslag gebeurt het volgende:
+
+```text
+state
+  │ value
+  ▼
+input
+  │ onChange met een ChangeEvent<HTMLInputElement>
+  ▼
+handleChange
+  │ setSearchTerm(...)
+  ▼
+nieuwe state en render
+```
+
+Een gecontroleerd tekstveld met `value` heeft een `onChange` nodig die de state onmiddellijk bijwerkt. Anders blijft het veld read-only. Initialiseer de state als een string, bijvoorbeeld met `useState('')`, en wissel niet later tussen `undefined` en een string.
+
+### Een checkbox controleren
+
+Een checkbox gebruikt `checked` en leest `event.currentTarget.checked`. De waarde is een boolean.
+
+```tsx
+import { useState, type ChangeEvent } from 'react';
+
+const AvailabilityFilter = () => {
+    const [availableOnly, setAvailableOnly] = useState(false);
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setAvailableOnly(event.currentTarget.checked);
+    };
+
+    return (
+        <label>
+            <input
+                type="checkbox"
+                checked={availableOnly}
+                onChange={handleChange}
+            />
+            Toon alleen beschikbare producten
+        </label>
+    );
+}
+```
+
+Gebruik bij een checkbox dus niet `event.currentTarget.value` om te bepalen of hij aangevinkt is.
+
+### Een select controleren
+
+Bij een select gebruiken we opnieuw `value`, maar het elementtype van het change-event is nu `HTMLSelectElement`.
+
+```tsx
+import { useState, type ChangeEvent } from 'react';
+
+const CategoryFilter = () => {
+    const [category, setCategory] = useState('');
+
+    const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
+        setCategory(event.currentTarget.value);
+    };
+
+    return (
+        <label>
+            Categorie
+            <select value={category} onChange={handleChange}>
+                <option value="">Alle categorieën</option>
+                <option value="books">Boeken</option>
+                <option value="games">Spellen</option>
+            </select>
+        </label>
+    );
+}
+```
+
+## Formulieren afhandelen
+
+Een formulier heeft in de browser standaardgedrag: bij het verzenden probeert de browser een nieuwe pagina te laden. In een React-handler kunnen we dat voorkomen met `preventDefault()`.
+
+```tsx
+import {
+    useState,
+    type ChangeEvent,
+    type FormEvent
+} from 'react';
+
+const ProductSearchForm = () => {
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(event.currentTarget.value);
+    };
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        console.log(`Zoeken naar ${searchTerm}`);
+    };
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <label htmlFor="search-term">Product</label>
+            <input
+                id="search-term"
+                name="searchTerm"
+                value={searchTerm}
+                onChange={handleChange}
+            />
+            <button type="submit">Zoeken</button>
+        </form>
+    );
+}
+```
+
+We behandelen het submit-event op het `<form>` en niet alleen het click-event van de knop. Daardoor werkt het formulier ook wanneer de gebruiker bijvoorbeeld op Enter drukt.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Het type van een button</strong>
+
+Een `<button>` binnen een formulier is standaard een submitknop. Gebruik `type="submit"` wanneer de knop het formulier moet verzenden en `type="button"` voor andere acties.
+</aside>
+
+Deze basis heb je later nodig bij React Hook Form. Validatie, meerdere formuliervelden en serverfouten behandelen we in dat afzonderlijke hoofdstuk.
+
+## Event propagation
+
+De meeste React-events **propageren** of **bubbelen** omhoog. Wanneer een button binnen een element met een eigen click-handler staat, kan daardoor zowel de handler van de button als die van het omringende element worden uitgevoerd.
+
+```tsx
+import type { MouseEvent } from 'react';
+
+const Toolbar = () => {
+    const handleToolbarClick = (event: MouseEvent<HTMLDivElement>) => {
+        console.log(`Klik in ${event.currentTarget.className}`);
+    };
+
+    const handleAddToCart = (event: MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        console.log('Toegevoegd aan winkelmandje');
+    };
+
+    return (
+        <div className="toolbar" onClick={handleToolbarClick}>
+            <button type="button" onClick={handleAddToCart}>
+                Voeg product toe
+            </button>
+        </div>
+    );
+}
+```
+
+`event.stopPropagation()` voorkomt hier dat het click-event verder doorloopt naar de handler van de toolbar. Dit voorbeeld demonstreert propagation; gebruik voor een echte gebruikersactie steeds een passend interactief element, zoals een button of link.
+
+### `stopPropagation()` is niet `preventDefault()`
+
+- `event.stopPropagation()` verhindert dat handlers hoger in de React-boom hetzelfde event verwerken;
+- `event.preventDefault()` verhindert standaardgedrag van de browser, zoals een formulier verzenden en de pagina herladen.
+
+Gebruik propagation niet als standaardmanier om components te laten communiceren. Expliciete callbackprops maken de gegevensstroom meestal gemakkelijker te volgen.
+
+## Declaratief reageren op interacties
+
+In React beschrijven we hoe de UI eruitziet voor de huidige state. Een handler past de state aan; de volgende render berekent de nieuwe UI. We wijzigen de DOM niet zelf.
+
+```tsx
+import { useState } from 'react';
+
+const FollowButton = () => {
+    const [isFollowing, setIsFollowing] = useState(false);
+
+    const handleToggleFollow = () => {
+        setIsFollowing(currentValue => !currentValue);
+    };
+
+    return (
+        <button
+            type="button"
+            aria-pressed={isFollowing}
+            onClick={handleToggleFollow}
+        >
+            {isFollowing ? 'Ontvolgen' : 'Volgen'}
+        </button>
+    );
+}
+```
+
+Schrijf dus geen code die zelf met `document.querySelector()` de tekst of CSS-klasse van de button wijzigt. `isFollowing` is de bron van waarheid en de JSX beschrijft beide toestanden.
+
+Gebruik waar mogelijk echte interactieve HTML-elementen. Een `<button>` ondersteunt automatisch toetsenbordbediening en focus. Maak geen klikbare `div` als een button de juiste betekenis heeft. Verbind invoervelden ook steeds met een zichtbaar `<label>`.
+
+## Alles samen: een interactieve takenlijst
+
+In dit voorbeeld komen props, getypte events, state, conditioneel renderen en lijsten samen. Dezelfde denkstappen kan je later toepassen op andere soorten gegevens.
+
+```tsx
+import { useState, type ChangeEvent } from 'react';
+
+interface Task {
+    id: number;
+    description: string;
+    category: string;
+    isCompleted: boolean;
+}
+
+interface TaskItemProps {
+    task: Task;
+    onComplete: (taskId: number) => void;
+}
+
+const TaskItem = ({ task, onComplete }: TaskItemProps) => {
+    return (
+        <li>
+            <span>{task.description}</span>
+            {!task.isCompleted && (
+                <button
+                    type="button"
+                    onClick={() => onComplete(task.id)}
+                >
+                    Markeer als klaar
+                </button>
+            )}
+        </li>
+    );
+}
+
+const TaskList = () => {
+    const [tasks, setTasks] = useState<Task[]>([
+        { id: 1, description: 'TypeScript herhalen', category: 'school', isCompleted: false },
+        { id: 2, description: 'Boodschappen doen', category: 'home', isCompleted: true }
+    ]);
+    const [category, setCategory] = useState('');
+
+    const handleCategoryChange = (event: ChangeEvent<HTMLSelectElement>) => {
+        setCategory(event.currentTarget.value);
+    };
+
+    const handleComplete = (taskId: number) => {
+        setTasks(currentTasks =>
+            currentTasks.map(task =>
+                task.id === taskId
+                    ? { ...task, isCompleted: true }
+                    : task
+            )
+        );
+    };
+
+    const visibleTasks = category === ''
+        ? tasks
+        : tasks.filter(task => task.category === category);
+
+    return (
+        <section>
+            <label>
+                Categorie
+                <select value={category} onChange={handleCategoryChange}>
+                    <option value="">Alle categorieën</option>
+                    <option value="school">School</option>
+                    <option value="home">Thuis</option>
+                </select>
+            </label>
+
+            {visibleTasks.length === 0 ? (
+                <p>Geen taken gevonden.</p>
+            ) : (
+                <ul>
+                    {visibleTasks.map(task => (
+                        <TaskItem
+                            key={task.id}
+                            task={task}
+                            onComplete={handleComplete}
+                        />
+                    ))}
+                </ul>
+            )}
+        </section>
+    );
+}
+```
+
+Volg bijvoorbeeld een klik op “Markeer als klaar”:
+
+1. `TaskItem` ontvangt een taak en callback via props.
+2. De click-handler roept `onComplete(task.id)` op.
+3. `handleComplete` in `TaskList` ontvangt het id.
+4. `setTasks` maakt immutabel een nieuwe array met één aangepaste taak.
+5. React rendert `TaskList` en zijn children opnieuw.
+6. Tijdens de commit past React alleen de nodige DOM-inhoud aan.
+
+`visibleTasks` is afgeleide data en hoeft daarom geen aparte state te zijn. De waarde wordt tijdens iedere render berekend uit `tasks` en `category`.
+
+## Veelgemaakte fouten
+
+**Een handler uitvoeren in plaats van doorgeven**:
+
+```tsx
+<button onClick={handleClick()}>Klik</button> // Fout
+<button onClick={handleClick}>Klik</button>   // Correct
+```
+
+**Een verkeerd elementtype gebruiken**:
+
+```tsx
+const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    console.log(event.currentTarget.disabled);
+};
+```
+
+Het generieke type moet overeenkomen met het element waarop de handler staat.
+
+**`value` zonder `onChange` gebruiken**: het gecontroleerde invoerveld kan dan niet aangepast worden.
+
+**Bij een checkbox `value` lezen**: gebruik `event.currentTarget.checked` om de boolean te lezen.
+
+**Een submitknop gebruiken voor een gewone actie**: geef buttons binnen een formulier expliciet `type="button"` of `type="submit"`.
+
+**`preventDefault` en `stopPropagation` verwarren**: het eerste voorkomt browsergedrag; het tweede stopt event propagation.
+
+**De DOM rechtstreeks aanpassen**: wijzig state en laat React de nieuwe UI berekenen.
+
+## Oefening
+
+Bouw een kleine interactieve interface rond een zelfgekozen lijst van gegevens:
+
+1. Voeg een tekstveld, checkbox of select toe met een correct getypt `ChangeEvent`.
+2. Laat een parent de state beheren en geef een betekenisvolle callback door aan een child.
+3. Geef de child alleen de props die hij werkelijk nodig heeft.
+4. Toon conditioneel een lege toestand wanneer geen gegevens aan de gekozen voorwaarde voldoen.
+5. Leg voor één interactie de volledige keten van event tot commit uit.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Een mogelijke componentboom is:
+
+```text
+ItemPage (bezit items en filterstate)
+├── ItemFilter
+└── ItemList
+    └── ItemCard
+```
+
+- `ItemFilter` ontvangt de huidige filterwaarde en een getypte callback.
+- `ItemPage` berekent de zichtbare items tijdens het renderen.
+- `ItemCard` ontvangt één item en alleen de callback voor zijn eigen actie.
+- Een change-handler voor een checkbox gebruikt `ChangeEvent<HTMLInputElement>` en leest `event.currentTarget.checked`.
+- Bij een lege gefilterde array rendert de pagina een melding in plaats van de lijst.
+
+De keten na een wijziging is: browser-event → getypte handler → setter → render met nieuwe state → commit van de noodzakelijke DOM-wijzigingen.
+
+</details>
+
+## Officiële bronnen
+
+- [Responding to Events](https://react.dev/learn/responding-to-events)
+- [Using TypeScript with React](https://react.dev/learn/typescript#typing-dom-events)
+- [React `<input>` reference](https://react.dev/reference/react-dom/components/input)
+- [React `<select>` reference](https://react.dev/reference/react-dom/components/select)
+- [Sharing State Between Components](https://react.dev/learn/sharing-state-between-components)

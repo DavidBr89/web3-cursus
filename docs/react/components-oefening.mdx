@@ -1,0 +1,74 @@
+---
+title: "Classroom50-oefening: UI beschrijven"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>UI beschrijven</ClassroomExerciseTitle>
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+## Waarom deze oefening?
+
+In [Beschrijven van de UI](./components) leerde je een interface opdelen in components, gegevens doorgeven met props en lijsten en varianten declaratief renderen. In deze eerste mijlpaal bouw je de statische basis van de **Cinema App**. Je gebruikt nog geen state of event handlers.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/react-ui/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span>
+  <span>Assignment accepteren</span>
+  <span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Leerdoelen
+
+Na deze opdracht kun je een componentboom ontwerpen, props correct typeren, composition via `children` toepassen, lijsten met stabiele keys renderen en conditionele UI uit data afleiden.
+
+## Situatie
+
+De startersrepository bevat getypte data voor films, genres en vertoningen. Iedere volgende React-opdracht bouwt verder op deze Cinema App. Wanneer een nieuwe Classroom50-repository gebruikt wordt, bevat de starter minstens het verwachte resultaat van de vorige mijlpaal.
+
+## Starterscode
+
+De Classroom50-repository bevat een Vite React-TypeScriptproject, Tailwindconfiguratie, lege componentbestanden en lokale filmdata in een vereenvoudigde TMDB-vorm. Je kan de centrale data en types ook afzonderlijk downloaden:
+
+<a className="downloadLink" href={useBaseUrl('/files/react-ui-starter.ts')} download>
+  <span className="downloadLink__icon" aria-hidden="true">↓</span>
+  <span>Filmdata en types downloaden</span>
+  <span className="downloadLink__meta">TS</span>
+</a>
+
+De voorbeeldposterpaths zijn geen echte afbeeldingen. De repository bevat lokale placeholders; echte TMDB-afbeeldingen worden pas bij Data fetching gebruikt.
+
+## Opdrachten
+
+1. Teken vóór het coderen de componentboom in de `README`.
+2. Bouw een `PageHeader`, `MovieList`, `MovieCard`, `MovieMetadata` en een herbruikbare `Badge`.
+3. Geef filmgegevens via correct getypte props van parent naar child.
+4. Render de collectie met `map` en kies een stabiele key uit de data.
+5. Toon conditioneel leeftijdsinformatie, genres en de status van een film.
+6. Toon een passende lege toestand wanneer er geen films zijn.
+7. Gebruik `children` voor minstens één layoutcomponent.
+8. Vermijd gedupliceerde JSX en muteer de startdata niet.
+
+Gebruik Tailwind voor een verzorgde responsive layout, maar de beoordeling focust op de componentgrenzen en gegevensstroom.
+
+## Randgevallen
+
+Controleer minstens een ontbrekende optionele beschrijving, een film met meerdere genres, een lege lijst en twee films met dezelfde titel maar verschillende id’s.
+
+## Oplevering
+
+Push de werkende React-app, de componentboom en een korte motivatie voor minstens twee componentgrenzen. Commit en push regelmatig.
+
+## Wat moet je kunnen uitleggen?
+
+- welke component eigenaar is van de lijst;
+- waarom props alleen van parent naar child stromen;
+- waarom je gekozen keys stabiel zijn;
+- welke UI je berekent in plaats van bewaart;
+- wanneer je composition verkoos boven extra props.

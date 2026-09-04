@@ -1,7 +1,12 @@
 ---
-title: "Formulieren met React Hook Form"
+title: "Formulieren"
 sidebar_position: 6
+hide_title: true
 ---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["reactHookForm","zod"]}>Formulieren</TechnologyTitle>
 
 ## Waar staan we in het verhaal?
 
@@ -877,23 +882,58 @@ De pagina bepaalt de paginastructuur. Het formulier beheert formuliergedrag, het
 
 Maak een getypeerd loginformulier met e-mailadres en wachtwoord. Beide velden zijn verplicht en het wachtwoord bevat minstens acht tekens. Toon toegankelijke foutmeldingen en voorkom dubbel verzenden.
 
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Definieer één formulierwaarde-type of leid het af uit een Zod-schema. Geef `defaultValues` aan `useForm`, verbind beide inputs met `register`, toon fouten met `role="alert"` en koppel `aria-invalid`. Gebruik `handleSubmit` rond de eigen submitfunctie en schakel de knop uit tijdens `isSubmitting`.
+
+</details>
+
 ### Registratieformulier
 
 Voeg naam, e-mailadres, wachtwoord, wachtwoordbevestiging en een akkoord-checkbox toe. Controleer dat beide wachtwoorden gelijk zijn en dat de gebruiker akkoord ging.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Beschrijf de veldregels in het schema en gebruik `refine` voor de vergelijking van beide wachtwoorden. Laat het foutpad naar het bevestigingsveld wijzen. Valideer de checkbox als een waarde die expliciet `true` moet zijn.
+
+</details>
 
 ### Filmformulier
 
 Maak een formulier met titel, beschrijving, releasejaar, genre en rating. Converteer jaar en rating naar numbers en geef alle velden zinvolle beginwaarden.
 
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Geef ieder veld een passende beginwaarde. Registreer numerieke inputs met `valueAsNumber: true` of gebruik schema-coercion, maar kies één duidelijke conversieplaats. Controleer in het uiteindelijke type dat jaar en rating werkelijk `number` zijn.
+
+</details>
+
 ### Serverfouten
 
 Simuleer dat een e-mailadres al bestaat. Koppel die fout met `setError` aan het e-mailveld. Simuleer daarnaast een algemene netwerkfout onderaan het formulier.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Gebruik voor de veldfout `setError('email', { type: 'server', message: ... })`. Plaats de algemene fout onder een rootpad zoals `setError('root.server', ...)` en render `errors.root?.server` onder het formulier. Laat de submitfunctie de fout expliciet opvangen.
+
+</details>
 
 ### Wijzigingsvraag
 
 Gebruik hetzelfde filmformulier om een bestaande film te bewerken. Vul de bestaande data als beginwaarden in en reset het formulier wanneer een andere film gekozen wordt.
 
-## Controlevragen
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Zet de gekozen data om naar de vorm van de formuliervelden. Geef ze als beginwaarden door en gebruik `reset(mappedValues)` wanneer het geselecteerde record verandert. Houd API-data en formulierdata als afzonderlijke verantwoordelijkheden en voorkom dat oude dirty state naar een ander record meeverhuist.
+
+</details>
+
+## Check jezelf
 
 - Welke eigenschappen geeft `register` conceptueel aan een input?
 - Waarom plaatsen we `handleSubmit` rond onze eigen submitfunctie?
@@ -904,7 +944,7 @@ Gebruik hetzelfde filmformulier om een bestaande film te bewerken. Vul de bestaa
 - Welk probleem lossen `FormProvider` en `useFormContext` op?
 - Waarom moet de backend de invoer opnieuw valideren?
 
-## Officiële documentatie
+## Officiële bronnen
 
 - [React Hook Form: Get Started](https://react-hook-form.com/get-started)
 - [React Hook Form: useForm](https://react-hook-form.com/docs/useform)
@@ -916,6 +956,4 @@ Gebruik hetzelfde filmformulier om een bestaande film te bewerken. Vul de bestaa
 - [React Hook Form Resolvers](https://github.com/react-hook-form/resolvers)
 - [Zod-documentatie](https://zod.dev/)
 
-## Architectuurreferentie
-
-- [Bulletproof React](https://github.com/alan2207/bulletproof-react)
+[Later in deze leerlijn plaatsen we deze keuzes in een volledige feature-first projectstructuur.](/react/architecture)

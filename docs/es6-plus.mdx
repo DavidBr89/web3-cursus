@@ -1,14 +1,33 @@
 ---
 title: "Verdiepende concepten"
 sidebar_position: 2
+hide_title: true
 ---
 
 import AnnotatedCodeBlock from "@site/src/components/AnnotatedCodeBlock";
 import JavaScriptPlayground from "@site/src/components/JavaScriptPlayground";
+import useBaseUrl from "@docusaurus/useBaseUrl";
+
+<header className="technologyTitle">
+  <a
+    className="technologyTitle__logoLink"
+    href="https://developer.mozilla.org/en-US/docs/Web/JavaScript"
+    aria-label="Open de JavaScript-documentatie op MDN"
+  >
+    <img
+      className="technologyTitle__logo"
+      src={useBaseUrl("/img/es6+/es6-logo.png")}
+      alt=""
+    />
+  </a>
+  <h1>JavaScript: verdiepende concepten</h1>
+</header>
 
 ## Doel
 
 In Web 2 hebben jullie allemaal de basisconcepten in JavaScript gezien. In dit onderdeel gaan we deze kennis verdiepen ter voorbereiding op het werken met React. Je krijgt ook inzicht in belangrijke concepten en moderne programmeerpraktijken in JS en leert waarom we oudere concepten, zoals het gebruik van het var-keyword, niet meer toepassen.
+
+![JavaScript-meme](/img/es6+/jsmeme.jpg)
 
 <aside className="courseCallout courseCallout--warning">
 
@@ -911,6 +930,26 @@ function controleerLeeftijd(leeftijdBezoeker) {
 controleerLeeftijd(14);
 ```
 
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```javascript
+function controleerLeeftijd(leeftijdBezoeker) {
+  const minimumLeeftijd = 16;
+
+  if (leeftijdBezoeker < minimumLeeftijd) {
+    console.log("De bezoeker is te jong voor deze film.");
+    return;
+  }
+
+  console.log(`Deze film is toegelaten vanaf ${minimumLeeftijd} jaar.`);
+}
+```
+
+De variabele staat nu in de function scope en is daardoor in de volledige functie beschikbaar.
+
+</details>
+
 ### Volgorde van asynchrone code
 
 Voorspel de volgorde van de uitvoer zonder de code eerst uit te voeren. Controleer je antwoord daarna in de [JavaScript Visualizer](https://www.jsv9000.app).
@@ -928,6 +967,22 @@ Promise.resolve().then(() => {
 
 console.log("Bioscooppagina opgebouwd");
 ```
+
+<details>
+<summary>Toon het antwoord</summary>
+
+De uitvoer is:
+
+```text
+Start
+Bioscooppagina opgebouwd
+Filmgegevens verwerkt
+Beschikbare plaatsen opgehaald
+```
+
+Eerst loopt de synchrone code. Daarna wordt de Promise-callback uit de microtask queue verwerkt en ten slotte de timer uit de task queue.
+
+</details>
 
 ### Filmgegevens omzetten met `map()`
 
@@ -949,6 +1004,17 @@ console.log(filmOverzichten);
 
 </JavaScriptPlayground>
 
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```javascript
+const filmOverzichten = films.map(
+  (film) => `${film.titel} - ${film.speelduur} minuten`
+);
+```
+
+</details>
+
 ### Films filteren met `filter()`
 
 Pas de regel met `korteFilms` aan. Gebruik `filter()` om enkel de films te behouden die maximaal 150 minuten duren. De oorspronkelijke array mag niet aangepast worden.
@@ -968,6 +1034,15 @@ console.log(korteFilms);
 ```
 
 </JavaScriptPlayground>
+
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```javascript
+const korteFilms = films.filter((film) => film.speelduur <= 150);
+```
+
+</details>
 
 ### Asynchrone bewerkingen samen afwachten
 
@@ -990,7 +1065,25 @@ const laadFilmPagina = async () => {
 laadFilmPagina();
 ```
 
-## Controlevragen
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```javascript
+const laadFilmPagina = async () => {
+  const [film, vertoningen] = await Promise.all([
+    wacht({ id: 1, titel: "The Matrix" }, 1000),
+    wacht(["14:30", "17:30", "20:30"], 1000)
+  ]);
+
+  console.log(film, vertoningen);
+};
+```
+
+Beide Promises worden aangemaakt voordat `Promise.all()` wacht. De totale wachttijd is daardoor ongeveer die van de traagste bewerking, niet de som van beide wachttijden.
+
+</details>
+
+## Check jezelf
 
 ### Wat is het verschil tussen block scope en function scope?
 
@@ -1120,3 +1213,12 @@ Het `finally`-blok wordt altijd uitgevoerd: zowel wanneer de bewerking slaagt al
 Een oudere request kan trager zijn en pas eindigen nadat een nieuwere request al klaar is. Wanneer beide resultaten dezelfde data aanpassen, kan het oude resultaat daardoor de nieuwste waarde overschrijven.
 
 </details>
+
+## Officiële bronnen
+
+- [MDN JavaScript Guide](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide)
+- [MDN: functies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions)
+- [MDN: arraymethodes](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)
+- [MDN: Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
+- [MDN: async functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
+- [MDN: JavaScript execution model](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Execution_model)

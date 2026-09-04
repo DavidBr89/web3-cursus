@@ -1,7 +1,12 @@
 ---
-title: "Server state met TanStack Query"
+title: "TanStack Query"
 sidebar_position: 8
+hide_title: true
 ---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["tanstack"]}>TanStack Query</TechnologyTitle>
 
 ## Waar staan we in het verhaal?
 
@@ -354,23 +359,58 @@ TanStack Query is gericht op asynchrone data waarvan de server de eigenaar is.
 
 Laad de filmlijst via een bestaande Axios-functie. Toon afzonderlijke pending-, fout-, lege en succestoestanden.
 
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Roep de bestaande API-functie aan als `queryFn`. Behandel eerst `isPending`, daarna `isError`, vervolgens `data.length === 0` en render pas daarna de lijst. Zo krijgt iedere mogelijke toestand precies één duidelijke UI.
+
+</details>
+
 ### Query keys
 
 Voeg zoeken en paginering toe. Bewijs met de Devtools of logging dat iedere combinatie haar eigen cache-entry krijgt.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Neem iedere requestafhankelijke variabele op in de key, bijvoorbeeld `['movies', 'list', { query, page }]`. Geef dezelfde waarden aan de `queryFn`. Wijzig daarna zoekterm en pagina en controleer in de Devtools dat de keys afzonderlijke entries vormen.
+
+</details>
 
 ### Detailquery
 
 Maak een query-options factory voor lijsten en details. Stel een passende `staleTime` in en motiveer de gekozen duur.
 
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Maak één `movieQueries`-object met een gemeenschappelijke basiskey en functies `list(params)` en `detail(id)` die `queryOptions(...)` returnen. Kies `staleTime` volgens hoe snel de brondata wijzigt; de motivatie is belangrijker dan één universeel getal.
+
+</details>
+
 ### Mutation
 
 Voeg een film toe met React Hook Form, Zod, Axios en `useMutation`. Invalideer daarna de lijst en voorkom dubbel verzenden.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Gebruik de bestaande createfunctie als `mutationFn`. Roep `mutate` vanuit de gevalideerde submit-handler aan, schakel de submitbutton uit met `mutation.isPending` en invalideer in `onSuccess` alle relevante lijstkeys. Toon `mutation.error` in een fouttoestand.
+
+</details>
 
 ### Wijzigingsvraag
 
 Voeg verwijderen toe. Zorg dat detail- en lijstdata na succes niet verouderd blijven.
 
-## Controlevragen
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Maak een mutation die het id ontvangt. Invalideer na succes minstens de lijstkeys en verwijder of invalideer de detailkey van het verwijderde item. Navigeer weg van een detailpagina die niet langer bestaat.
+
+</details>
+
+## Check jezelf
 
 - Wat is het verschil tussen client state en server state?
 - Welke verantwoordelijkheid heeft Axios en welke TanStack Query?
@@ -380,7 +420,7 @@ Voeg verwijderen toe. Zorg dat detail- en lijstdata na succes niet verouderd bli
 - Waarom invalidëren we queries na een mutation?
 - Waarom kopiëren we querydata meestal niet naar `useState`?
 
-## Officiële documentatie
+## Officiële bronnen
 
 - [TanStack Query: overzicht](https://tanstack.com/query/latest/docs/framework/react/overview)
 - [TanStack Query: installatie](https://tanstack.com/query/latest/docs/framework/react/installation)
@@ -389,3 +429,5 @@ Voeg verwijderen toe. Zorg dat detail- en lijstdata na succes niet verouderd bli
 - [TanStack Query: query keys](https://tanstack.com/query/latest/docs/framework/react/guides/query-keys)
 - [TanStack Query: mutations](https://tanstack.com/query/latest/docs/framework/react/guides/mutations)
 - [TanStack Query: invalidatie](https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation)
+
+[Volgende: de applicatie structureren](/react/architecture).

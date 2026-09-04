@@ -1,0 +1,51 @@
+---
+title: "Classroom50-oefening: Routing"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>Routing</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+In [Routing](./router) leerde je URL's koppelen aan schermen, layouts en datafuncties. Je geeft het filmaanbod, filmdetails, favorieten en reservatieflow elk een deelbare plaats in de Cinema App.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/react-routing/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de vorige Cinema App-mijlpaal en een geïnstalleerde, maar nog niet geconfigureerde React Router. De bestaande schermcomponenten en lokale detaildata zijn aanwezig; jij ontwerpt de routeboom en datafuncties.
+
+## Opdrachten
+
+1. Configureer een Data Router met rootlayout, startpagina, filmaanbod, favorieten en contactpagina.
+2. Gebruik `Link`, `NavLink` en `Outlet` op hun passende plaats.
+3. Maak `/movies/:movieId` en valideer de TMDB-filmidentifier uit de routeparameter.
+4. Laad voorlopig lokale detaildata via een loader en gooi een 404 voor een onbekend id.
+5. Voorzie een root Error Boundary en een specifiekere boundary voor het filmaanbod.
+6. Voeg een action toe voor een voorlopig reservatieverzoek en toon pending UI.
+7. Bewaar zoekterm, genre en pagina als search parameters zodat een gedeelde URL dezelfde selectie toont.
+8. Voeg een catch-all route voor onbekende paden toe.
+
+## Randgevallen
+
+Test rechtstreeks herladen op een detail-URL, terug/vooruit, een ongeldige parameter, een ontbrekende cursus en een loaderfout.
+
+## Oplevering
+
+Push de Cinema App en teken de routeboom met layouts, loaders, actions en boundaries.
+
+## Wat moet je kunnen uitleggen?
+
+- URL-state tegenover lokale state;
+- indexroute en layoutroute;
+- loader tegenover Effect;
+- 404-resource tegenover catch-all route;
+- waarom de dichtstbijzijnde Error Boundary gekozen wordt.

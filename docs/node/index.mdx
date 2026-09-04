@@ -1,0 +1,361 @@
+---
+title: "Node.js en Express"
+sidebar_position: 1
+hide_title: true
+---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["node","express"]}>Node.js en Express</TechnologyTitle>
+
+## Waarom bouwen we ook een backend?
+
+Onze React-applicatie draait in de browser. Ze kan een interface tonen en requests versturen, maar mag niet rechtstreeks verbinden met een databank of geheime sleutels beheren. Daarvoor hebben we code nodig die in een vertrouwde serveromgeving draait.
+
+```text
+React in de browser
+        ↓ HTTP-request
+Express API op Node.js
+        ↓ Prisma-query
+MySQL-databank
+        ↓
+JSON-response naar React
+```
+
+De backend vormt de grens tussen onbetrouwbare invoer van buitenaf en onze data. Hij valideert requests, past businessregels toe, controleert wie een actie mag uitvoeren en geeft alleen geschikte gegevens terug.
+
+## Wat is Node.js?
+
+Node.js is een JavaScript-runtime buiten de browser. Dezelfde taal en veel van dezelfde moderne syntax blijven bruikbaar, maar de omgeving verschilt:
+
+- er is geen DOM of `window`;
+- Node kan bestanden, processen en netwerkverbindingen beheren;
+- code draait op de server en kan omgevingsvariabelen lezen;
+- private configuratie kan hier wel geheim blijven;
+- één Node-proces verwerkt veel I/O asynchroon via de event loop.
+
+Node.js is dus geen framework en ook geen programmeertaal. Het is de runtime waarin onze servercode uitgevoerd wordt.
+
+## Waarom Node.js in deze cursus?
+
+De studenten kennen JavaScript en TypeScript al vanuit de frontend. Met Node.js kunnen we die kennis hergebruiken en tegelijk leren welke verantwoordelijkheden bij een backend horen.
+
+We gebruiken Node.js om:
+
+- een HTTP-server uit te voeren;
+- JSON-requests uit React te ontvangen;
+- met Prisma gegevens in MySQL te lezen en wijzigen;
+- wachtwoorden veilig te hashen;
+- authenticatie en autorisatie af te dwingen;
+- secrets buiten de frontend te bewaren.
+
+## Wat voegt Express toe?
+
+Node kan zelf een HTTP-server maken, maar dan moeten we veel infrastructuur handmatig afhandelen. Express biedt een kleine laag rond Node HTTP met routes en middleware.
+
+```ts
+import express from 'express';
+
+const app = express();
+
+app.get('/api/health', (_request, response) => {
+  response.status(200).json({ status: 'ok' });
+});
+
+app.listen(3000, () => {
+  console.log('API beschikbaar op http://localhost:3000');
+});
+```
+
+Express ontvangt een request, zoekt een passende route en voert de bijhorende middleware en handler uit.
+
+```text
+request
+  ↓
+algemene middleware
+  ↓
+router
+  ↓
+routegebonden middleware
+  ↓
+controller
+  ↓
+response of error middleware
+```
+
+## Node HTTP tegenover Express
+
+Onder Express blijft de ingebouwde Node HTTP-server actief. Zonder Express ziet een minimale server er ongeveer zo uit:
+
+```ts
+import { createServer } from 'node:http';
+
+const server = createServer((request, response) => {
+  if (request.method === 'GET' && request.url === '/api/health') {
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify({ status: 'ok' }));
+    return;
+  }
+
+  response.writeHead(404);
+  response.end();
+});
+
+server.listen(3000);
+```
+
+Hier moeten we zelf methode en URL vergelijken, headers instellen en JSON omzetten. Express neemt die herhaling over, maar de HTTP-concepten blijven dezelfde. Een Express-`Request` en `Response` bouwen verder op de request- en responseobjecten van Node.
+
+## Wat gebeurt wanneer je de server start?
+
+Bij `app.listen(...)` begint Node niet telkens een volledig nieuw programma per request. Eén proces blijft actief en luistert op een poort:
+
+```text
+proces start
+   ↓
+modules en configuratie laden
+   ↓
+server luistert op een poort
+   ↓
+request ontvangen → handler uitvoeren → response sturen
+   ↓
+blijven luisteren naar volgende requests
+```
+
+Modulecode op het hoogste niveau wordt normaal bij het laden uitgevoerd. Plaats daar configuratie en het opbouwen van de applicatie, maar geen requestgebonden mutable state die per ongeluk tussen gebruikers gedeeld wordt.
+
+## De rode draad
+
+De Classroom50-opdracht onder ieder theorieblok bouwt dezelfde **Cinema App-backend** verder uit. TMDB blijft de externe bron voor algemene filmmetadata. Onze eigen Express/Prisma-backend wordt verantwoordelijk voor gebruikers, vertoningen, reservaties en rechten. In de laatste mijlpaal verbinden we deze backend opnieuw met de bestaande React-frontend.
+
+De backend groeit in stappen:
+
+1. **Routes en middleware:** we begrijpen hoe een request door Express reist.
+2. **REST API:** endpoints krijgen voorspelbare URL's, methodes en statuscodes en worden met Bruno uitgevoerd zonder afhankelijk te zijn van de frontend.
+3. **Validatie en fouten:** externe invoer wordt gecontroleerd en fouten krijgen één consistente vorm.
+4. **Prisma:** de API bewaart en leest relationele data via een getypeerde client.
+5. **Authenticatie en beveiliging:** wachtwoorden, cookies, tokens en rechten worden veilig behandeld.
+
+De bestaande receptenbackend uit de lessen toont al een vroege versie van deze lagen met `app.ts`, routers, controllers, middleware en Prisma. In deze leerlijn bouwen we dat patroon verder uit en corrigeren we bewust enkele onveilige tussenstappen.
+
+## Node.js en asynchrone I/O
+
+Databankqueries en netwerkverkeer kosten tijd. Node wacht daar niet blokkerend op, maar werkt met Promises:
+
+```ts
+const events = await prisma.event.findMany();
+```
+
+`await` blokkeert niet het volledige Node-proces. Het pauzeert de huidige async functie terwijl Node ander werk kan verwerken. CPU-intensief werk is een ander verhaal: een lange synchrone berekening kan de event loop wel blokkeren.
+
+De concepten uit moderne asynchrone JavaScript blijven dus essentieel voor Express.
+
+## TypeScript op de server
+
+TypeScript helpt ons de contracten tussen routes, services en databankcode te beschrijven. Het valideert echter geen binnenkomende JSON tijdens runtime.
+
+```ts
+type CreateEventInput = {
+  title: string;
+  capacity: number;
+};
+```
+
+Een client kan nog steeds `{ "capacity": "veel" }` versturen. Daarom combineren we compile-time types later met runtimevalidatie.
+
+## Een project opzetten
+
+Maak een leeg project en installeer Express met de nodige TypeScripttypes:
+
+```bash
+yarn init -y
+yarn add express cors cookie-parser dotenv
+yarn add --dev typescript tsx @types/node @types/express @types/cors @types/cookie-parser
+```
+
+Initialiseer TypeScript:
+
+```bash
+yarn tsc --init
+```
+
+Gebruik een `src`-map voor broncode en laat TypeScript onder meer strikte typecontrole uitvoeren. Met `tsx` kunnen we TypeScript tijdens development rechtstreeks starten en wijzigingen opvolgen:
+
+```json
+{
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  }
+}
+```
+
+Het geanalyseerde oudere lesproject gebruikt `ts-node` met `nodemon`. Dat vervult dezelfde developmentrol. Voor een nieuwe startersrepository gebruiken we één actuele, eenvoudige toolchain en houden we development en gecompileerde productiecode uit elkaar.
+
+## Modules en package.json
+
+Ieder bestand is een module met expliciete imports en exports:
+
+```ts
+// event.service.ts
+export const findAllEvents = async () => {
+  return prisma.event.findMany();
+};
+```
+
+```ts
+// event.controller.ts
+import { findAllEvents } from './event.service';
+```
+
+Node ondersteunt zowel ECMAScript Modules als het oudere CommonJS-systeem. De instellingen in `package.json` en `tsconfig.json` moeten bij elkaar passen. Meng niet willekeurig `import`/`export` met `require`/`module.exports` omdat online voorbeelden verschillende generaties gebruiken.
+
+`package.json` beschrijft daarnaast scripts en dependencies. Packages die de draaiende server nodig heeft horen onder `dependencies`; ontwikkeltools en typepackages horen onder `devDependencies`.
+
+## Splits app en server
+
+Een kleine maar nuttige scheiding is:
+
+```ts
+// src/app.ts
+import express from 'express';
+
+export const app = express();
+app.use(express.json());
+app.use('/api/events', eventsRouter);
+```
+
+```ts
+// src/server.ts
+import { app } from './app';
+
+const port = Number(process.env.PORT ?? 3000);
+
+app.listen(port, () => {
+  console.log(`API luistert op http://localhost:${port}`);
+});
+```
+
+`app.ts` configureert de Express-applicatie; `server.ts` verbindt haar met een netwerkpoort. Dat maakt de app later eenvoudiger te testen zonder bij een import onmiddellijk een echte server te starten.
+
+## Blocking en non-blocking werk
+
+Asynchrone database- en netwerk-I/O past goed bij Node. Vermijd lange synchrone operaties in een requesthandler:
+
+```ts
+// De Promise geeft de event loop ruimte terwijl de databank antwoordt.
+const events = await prisma.event.findMany();
+```
+
+Een zware synchrone lus, grote synchrone bestandsbewerking of duur CPU-algoritme houdt daarentegen het proces bezig. Andere requests moeten dan wachten. Gebruik asynchrone Node-API's en verplaats werkelijk CPU-intensief werk indien nodig naar een worker of aparte service.
+
+## Het proces gecontroleerd afsluiten
+
+Een server kan een stopsignaal ontvangen tijdens development of deployment. Stop dan met nieuwe verbindingen en sluit infrastructuur gecontroleerd af:
+
+```ts
+const server = app.listen(port);
+
+const shutdown = () => {
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+```
+
+Voor beginners is vooral het mentale model belangrijk: een Prisma Client blijft tijdens de levensduur van het serverproces beschikbaar en wordt niet na ieder request afgesloten.
+
+## Secrets en omgevingsvariabelen
+
+Serverconfiguratie lezen we via `process.env`:
+
+```ts
+const port = Number(process.env.PORT ?? 3000);
+```
+
+Een server-side `.env` kan bijvoorbeeld een database-URL of tokensleutel bevatten. Anders dan een `VITE_`-variabele wordt deze waarde niet automatisch naar de browser gebundeld.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Niet committen</strong>
+
+Een lokaal `.env`-bestand met echte secrets hoort in `.gitignore`. Commit wel een `.env.example` met alleen de verwachte namen en veilige voorbeeldwaarden.
+
+</aside>
+
+## Wat de backend nooit mag vertrouwen
+
+Alles uit een request is externe invoer:
+
+- `request.body`;
+- routeparameters;
+- queryparameters;
+- headers en cookies;
+- een user-id die de frontend meestuurt.
+
+TypeScript maakt deze waarden niet betrouwbaar. De server valideert invoer en leidt de identiteit van een ingelogde gebruiker af uit een gecontroleerde sessie of token, nooit uit een vrij aanpasbare bodyproperty.
+
+## Check jezelf
+
+### Is Node.js een framework?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Nee. Node.js is een JavaScript-runtime buiten de browser. Express is het webframework dat we boven op Node gebruiken.
+
+</details>
+
+### Waarom mag React niet rechtstreeks met MySQL verbinden?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Frontendcode en credentials zijn zichtbaar en aanpasbaar in de browser. Een backend bewaakt de databankverbinding, valideert invoer en controleert rechten.
+
+</details>
+
+### Maakt een TypeScript-interface requestdata geldig?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Nee. Types verdwijnen tijdens runtime. Data van buitenaf moet de backend werkelijk valideren voordat ze als een vertrouwd type gebruikt wordt.
+
+</details>
+
+### Waarom splitsen we `app.ts` en `server.ts`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+`app.ts` bouwt de Expressapplicatie, terwijl `server.ts` de netwerkpoort opent. Andere code kan de app daardoor importeren zonder automatisch een luisterende server te starten.
+
+</details>
+
+### Waarom kan synchrone CPU-intensieve code andere requests vertragen?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+JavaScriptwerk draait op de event-loopthread. Zolang een lange synchrone taak die thread bezet, kan Node geen andere JavaScript-handlers uitvoeren.
+
+</details>
+
+## Officiële bronnen
+
+- [Node.js: Introduction to Node.js](https://nodejs.org/en/learn/getting-started/introduction-to-nodejs)
+- [Node.js: The event loop](https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick)
+- [Node.js: Environment Variables](https://nodejs.org/api/environment_variables.html)
+- [Node.js: Modules](https://nodejs.org/api/modules.html)
+- [Node.js: Don't block the event loop](https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop)
+- [Node.js: HTTP](https://nodejs.org/api/http.html)
+- [Express: Getting Started](https://expressjs.com/en/starter/installing.html)
+- [Express: Hello world](https://expressjs.com/en/starter/hello-world.html)
+
+[Volgende: routes en middleware](/node/routes-middleware).

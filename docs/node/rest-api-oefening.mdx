@@ -1,0 +1,54 @@
+---
+title: "Classroom50-oefening: REST API en Bruno"
+sidebar_label: "Oefening"
+hide_title: true
+---
+
+import ClassroomExerciseTitle from "@site/src/components/ClassroomExerciseTitle";
+
+<ClassroomExerciseTitle>REST API en Bruno</ClassroomExerciseTitle>
+
+## Waarom deze oefening?
+
+Na [REST API](./rest-api) ontwerp en implementeer je het HTTP-contract voor de eigen bioscoopdata. Met Bruno voer je normale en foutieve scenario’s uit los van de React-frontend.
+
+<aside className="courseCallout courseCallout--info">
+<strong className="courseCallout__title">Classroom50</strong>
+<a className="assignmentAcceptLink" href="https://classroom50.org/HoGent-web3/web-3/assignments/express-rest/accept" target="_blank" rel="noopener noreferrer">
+  <span className="assignmentAcceptLink__icon" aria-hidden="true">↗</span><span>Assignment accepteren</span><span className="assignmentAcceptLink__meta">Classroom50</span>
+</a>
+</aside>
+
+## Starterscode
+
+De Classroom50-repository bevat de vorige Express-mijlpaal en een lege Bruno-collection met lokale `baseUrl`-environment. Persoonlijke environmentwaarden staan in `.gitignore`; studenten ontwerpen zelf het API-contract en de requests.
+
+## Deel 1: contract
+
+1. Beschrijf endpoints voor films, vertoningen en reservaties met methode, pad, input, succescode en foutcodes.
+2. Gebruik resourcegerichte paden zonder werkwoorden.
+3. Voorzie zoeken en paginatie voor films en filter vertoningen op film en datum.
+4. Definieer afzonderlijke input-, interne en responsevormen.
+5. Zorg dat interne velden de API-response niet verlaten.
+6. Configureer CORS voor één meegegeven frontendorigin en leg uit waarom dit geen autorisatie is.
+
+## Deel 2: Bruno
+
+1. Bewaar de collection in de repository.
+2. Gebruik `{{baseUrl}}` uit een lokale environment.
+3. Voorzie requests voor iedere CRUD-operatie.
+4. Voeg scenario’s toe voor 400, 404, 401 en 403 waar relevant.
+5. Controleer statuscode en minstens één belangrijk responseveld met assertions.
+6. Commit geen secrets of persoonlijke tokens.
+
+## Oplevering
+
+Push de Cinema API, contracttabel en Bruno-collection. De lector moet de server kunnen starten en alle requests in een logische volgorde kunnen uitvoeren.
+
+## Wat moet je kunnen uitleggen?
+
+- methode en statuscode per operatie;
+- 401 tegenover 403;
+- resourcepad tegenover actiepad;
+- waarom Bruno anders met CORS omgaat dan een browser;
+- waarom een werkende collection geen volledige testsuite is.

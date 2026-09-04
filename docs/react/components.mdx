@@ -1,9 +1,13 @@
 ---
 title: "Beschrijven van de UI"
 sidebar_position: 2
+hide_title: true
 ---
 
 import AnnotatedCodeBlock from "@site/src/components/AnnotatedCodeBlock";
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["react"]}>Beschrijven van de UI</TechnologyTitle>
 
 ## Waar staan we in het verhaal?
 
@@ -11,17 +15,43 @@ Onze eerste bioscooppagina kan volledig in `App.tsx` geschreven worden. Zodra me
 
 Daarom beginnen we de applicatie op te delen. Een filmkaart wordt een `FilmCard`, de navigatie wordt een `Navigation` en een volledige lijst wordt een `FilmList`. Zo krijgt ieder herkenbaar deel van de interface één duidelijke plaats.
 
+Die components vormen samen een **componentboom**. Een component kan andere components gebruiken en wordt dan hun **parent**. De gebruikte components zijn de **children** van die parent.
+
+```text
+App
+├── Navigation
+└── FilmList
+    ├── FilmCard
+    └── FilmCard
+```
+
+In deze boom geeft een parent gegevens via props door aan zijn children. Zo stroomt de data in één richting: van boven naar beneden. Verder in dit hoofdstuk bouwen we deze onderdelen stap voor stap op.
+
 ## Components
 
 React applicaties zijn opgebouwd uit **components**. Een **component is een onderdeel van de user interface** (UI) dat zijn eigen logica en uiterlijk bevat. Een component kan zo klein zijn als een knop, maar ook zo groot als een volledige pagina. Components zijn dus bouwblokken voor onze applicatie die markup, CSS en JavaScript combineren. 
 
-Een component is eigenlijk een JavaScript functie die markup returnt. 
+Een component is een JavaScript-functie die JSX teruggeeft. Er is een verschil tussen de **definitie** van een component en het **gebruiken** ervan:
+
+```tsx
+// Dit is de definitie van de component.
+const MyButton = () => {
+    return <button>Ik ben een knop!</button>;
+}
+
+// Met deze JSX gebruiken we de component.
+const App = () => {
+    return <MyButton />;
+}
+```
+
+React-components beginnen steeds met een hoofdletter. Daardoor weet React dat `<MyButton />` naar onze eigen component verwijst. Een naam met een kleine letter, zoals `<button>`, wordt als een ingebouwd HTML-element behandeld.
 
 <aside className="courseCallout courseCallout--note">
 
 <strong className="courseCallout__title">Opmerking</strong>
 
-Een nieuwe component wordt steeds aangemaakt in een aparte file met een nieuwe extensie namelijk `.tsx`. **Naamgeving van components in React verloopt steeds via PasCal-casing**.
+Een nieuwe component schrijven we in deze cursus steeds in een apart bestand met de extensie `.tsx`. **De naam van een component schrijven we in PascalCase**.
 </aside>
 
 ```tsx
@@ -41,11 +71,9 @@ Om een nieuwe component aan te maken kunnen we gebruik maken van een snippet nam
 
 ![](/img/react/rafce.png)
 
-Components (kleine onderdelen, dus geen volledige pagina's) zetten we in de `components` map in de `src` map. Merk hier op dat we via PasCal-casing werken voor onze component en de `.tsx` extensie. Na de snippet krijgen we deze component terug:
+Kleinere, herbruikbare components zetten we in deze cursus in de map `src/components`. Volledige pagina's krijgen later een eigen map. Merk op dat we PascalCase gebruiken voor de componentnaam en de extensie `.tsx` voor het bestand. Na de snippet krijgen we deze component terug:
 
 ```tsx
-import React from 'react';
-
 const MyButton = () => {
     return (
          <div>MyButton</div>
@@ -55,11 +83,13 @@ const MyButton = () => {
 export default MyButton;
 ```
 
-Merk hier op dat we meestal: 
+Met de moderne JSX-transform hoef je `React` niet bovenaan ieder componentbestand te importeren. Je importeert wel de functies en types uit React die je zelf gebruikt, zoals later `useState` of `PropsWithChildren`.
 
-- Een `import` statement hebben om andere components of andere components/files te kunnen gebruiken in deze file. 
-- Een JavaScript functie met een return waarin JSX teruggegeven wordt.
-- Een `export` statement hebben waarin onze eigen component geëxporteerd wordt zodanig dat we deze kunnen hergebruiken in andere components.
+Merk op dat een componentbestand meestal:
+
+- `import`-statements kan hebben om code uit andere bestanden te gebruiken;
+- een JavaScript-functie bevat die JSX teruggeeft;
+- een `export`-statement bevat waarmee de component in andere bestanden gebruikt kan worden.
 
 ## Importeren en exporteren
 
@@ -71,6 +101,15 @@ De kracht van componenten zit in hun herbruikbaarheid: je kan componenten maken 
 
 **Binnen deze cursus verwachten we dat elke component in een afzonderlijk bestand wordt ondergebracht**. Dit zorgt voor een duidelijke structuur, betere leesbaarheid en herbruikbaarheid van code.
 </aside>
+
+Dit is een afspraak binnen de cursus en geen technische regel van React. Een stuk UI verdient vooral een eigen component wanneer het:
+
+- op meerdere plaatsen terugkomt;
+- een eigen, duidelijke verantwoordelijkheid heeft;
+- zelfstandig kan veranderen;
+- of de parent-component te groot en onleesbaar maakt.
+
+Maak dus niet automatisch van iedere `div` een nieuwe component. Een componentgrens hoort de structuur van de interface duidelijker te maken.
 
 Met `export` maken iets beschikbaar vanuit een bestand. Met `import` gebruiken we die code in een ander bestand. Het exporteren kan op twee manieren gebeuren nl. via een `default export` en via een `named export`.
 
@@ -140,18 +179,18 @@ Default exports en named exports kunnen gecombineerd worden in één bestand.
 
 <strong className="courseCallout__title">Belangrijk</strong>
 
-In het `return` statement wordt in een React component HTML achtige syntax teruggegeven. Maar opgelet dit is geen HTML maar JSX wat eigenlijk JavaScript is achter de schermen is.
+In het `return`-statement van een React-component geven we HTML-achtige syntax terug. Dit is geen HTML, maar JSX. Tijdens het bouwen van de applicatie wordt JSX omgezet naar JavaScript.
 </aside>
 
 ## JSX
 
-**JSX is een syntax uitbreiding voor JavaScript waarmee je HTML-achtige markup kan schrijven binnen een JavaScript bestand**. Er bestaan andere manieren om onze componenten te beschrijven in React, maar JSX is de meest simpelste manier.
+**JSX is een syntaxuitbreiding voor JavaScript waarmee je HTML-achtige markup kan schrijven binnen een JavaScript-bestand**. Er bestaan andere manieren om components te beschrijven, maar JSX is binnen React de gebruikelijkste manier.
 
 <aside className="courseCallout courseCallout--note">
 
 <strong className="courseCallout__title">Opmerking</strong>
 
-**JSX** trekt dus heel hard op HTML maar weet dus **dat dit eigenlijk geen HTML is maar JavaScript achter de schermen**! Er is gekozen voor deze aanpak omdat heel veel web ontwikkelaars al reeds ervaring hadden met de HTML syntax. Hierbij is het dan ook toegelaten om inline css en inline JS te schrijven.
+**JSX lijkt sterk op HTML, maar wordt omgezet naar JavaScript.** Daardoor kunnen we de structuur van de UI en de JavaScript-waarden die erin voorkomen dicht bij elkaar schrijven.
 </aside>
 
 ### Regels
@@ -212,7 +251,25 @@ Daarom worden veel attributen in camelCase geschreven. Bijvoorbeeld `onClick` in
 
 ## JavaScript in JSX
 
-Zoals al meerdere malen vermeld laat JSX je toe om HTML-achtige markup te schrijven binnen een JS bestand, waardoor de weergavelogica en de inhoud op dezelfde plaats kunnen staan. Soms wil je in die markup een stuk JS-logica gebruiken of een dynamische waarde van een variabele tonen. **In dat geval kan je `{ }` accolades gebruiken in JSX om JS code in te voegen**.
+JSX laat je toe om HTML-achtige markup binnen een JavaScript-bestand te schrijven. Soms wil je daarin een dynamische waarde tonen. **Met `{ }` voeg je een JavaScript-expressie toe aan JSX.** Een expressie is code die één waarde oplevert, zoals een variabele, een berekening of de returnwaarde van een functie.
+
+```tsx
+const person = {
+    name: "John Doe",
+    age: 20
+};
+
+const Profile = () => {
+    return (
+        <section>
+            <h2>{person.name}</h2>
+            <p>Volgend jaar is {person.age + 1} jaar oud.</p>
+        </section>
+    );
+}
+```
+
+Statements zoals `if`, `for` en `const` leveren zelf geen waarde op en kunnen daarom niet rechtstreeks tussen de accolades staan. Je plaatst ze boven de `return`, of gebruikt in JSX een expressie zoals een ternary. Dat zien we verder bij conditioneel renderen.
 
 ```tsx
 const Avatar = () => {
@@ -242,6 +299,10 @@ const TodoList = () => {
 export default TodoList;
 ```
 
+### Renderen is UI berekenen
+
+Wanneer React een component rendert, roept React de componentfunctie aan om te berekenen welke JSX op het scherm hoort te staan. Dezelfde props moeten daarom telkens hetzelfde resultaat opleveren. Wijzig geen props en voer tijdens het renderen geen acties uit zoals een request versturen of de DOM handmatig aanpassen. In de volgende hoofdstukken leren we hoe veranderingen en interacties wel worden verwerkt.
+
 ### Het gebruik van dubbele accolades
 
 **Naast `string`, `number` en andere JS-expressies kan je in JSX ook objecten doorgeven**. Objecten worden in JS ook weergegeven door accolades. **Wanneer je dus een JS object wilt doorgeven in JSX, moet je het object daarom in een extra paar accolades plaatsen `{{ }}`**. Je kan dit ook zien bijvoorbeeld bij inline CSS in JSX.
@@ -269,6 +330,34 @@ export default TodoList;
 
 React components gebruiken **props** om met elkaar te communiceren. Elke parent-component kan informatie/data doorgeven aan zijn **child-components** door hen props mee te geven. Props lijken op HTML-attributen, maar je kan **eender welke JS-waarde mee doorgeven, zoals objecten, arrays maar ook functies**.
 
+Props zorgen voor een gegevensstroom van boven naar beneden:
+
+```text
+Profile (parent)
+└── Avatar (child)
+    ├── person
+    └── size
+```
+
+`Profile` bepaalt in dit voorbeeld de waarden. `Avatar` ontvangt ze en gebruikt ze om de juiste afbeelding te beschrijven.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Props stromen maar in één richting</strong>
+
+Een parent kan props doorgeven aan een child, maar een child kan geen props terugsturen naar zijn parent. Daarom spreken we over een **eenrichtingsgegevensstroom**: van parent naar child. Een child kan later wel een functie oproepen die de parent via een prop heeft doorgegeven. Die functie kan vervolgens de state van de parent aanpassen.
+</aside>
+
+```text
+Profile (parent)
+    │
+    │ person en size via props
+    ▼
+Avatar (child)
+```
+
+Wanneer meerdere components dezelfde veranderende waarde nodig hebben, plaatsen we die state meestal in hun dichtstbijzijnde gemeenschappelijke parent. Dit noemen we **state liften**. We werken dit uit in het hoofdstuk over [state](./state#state-liften).
+
 ### Stap 1: Props doorgeven aan een child component
 
 We gaan props (data) doorgeven aan een component. In het onderstaande voorbeeld geven we twee props door namelijk een object (person) en een number (size).
@@ -290,7 +379,7 @@ export default Profile;
 
 ### Stap 2: Props lezen uit de child component
 
-Props kan je uitlezen uit de child component door de `props` die binnenkomen in de component tussen de haakjes. Eigenlijk krijgt elke React component props mee binnen, we gebruiken deze niet altijd dus scrhijven dit ook niet altijd.
+Props kan je in de child-component uitlezen via het `props`-object tussen de haakjes van de componentfunctie. Iedere React-component ontvangt zo'n object. Wanneer een component geen props nodig heeft, hoeven we geen parameter te schrijven.
 
 
 <AnnotatedCodeBlock>
@@ -408,7 +497,7 @@ const Profile = ({ person, size, isSepia }: ProfileProps) => {
     );
 }
 
-export default Avatar;
+export default Profile;
 ```
 
 In bepaalde situaties kan het handiger zijn om niet altijd opnieuw deze props volledig te moeten schrijven en kan je gebruik maken van de spread operator om de props "uit te spreiden".
@@ -443,7 +532,7 @@ const Profile = (props: ProfileProps) => {
     );
 }
 
-export default Avatar;
+export default Profile;
 ```
 
 </AnnotatedCodeBlock>
@@ -566,7 +655,7 @@ const Item = ({name, isPacked}: ItemProps) => {
 
 <strong className="courseCallout__title">Opmerking</strong>
 
-**Je kan een `if/else` statement gebruiken in de body van een component maar niet rechtstreeks in de JSX.**
+**Je kan een `if/else`-statement gebruiken in de body van een component, maar niet rechtstreeks tussen de accolades in JSX.** Een `if/else` is een statement en levert niet zelf één waarde op.
 </aside>
 
 ### Conditioneel niets renderen met `null`
@@ -684,7 +773,7 @@ const listItems = numbers.map(n => <li>{ n }</li>);
 
 </AnnotatedCodeBlock>
 
-Als je nu in de console kijkt in de browser krijg je wel volgende foutmelding. **Als we de map methode gebruiken moeten we verplicht een speciale `key` prop meegeven aan het eerste child element in de map body**.
+Als je nu in de console van de browser kijkt, krijg je een foutmelding. **Wanneer we met `map()` JSX maken, moeten we een speciale `key`-prop meegeven aan het bovenste JSX-element dat iedere iteratie teruggeeft**.
 
 ![](/img/react/key.png)
 
@@ -731,10 +820,16 @@ We krijgen nog steeds de fout in de console over dat elke child een unieke key m
 
 <strong className="courseCallout__title">Opmerking</strong>
 
-**JSX elementen die in een `map()` gebruikt worden als eerste child moeten een `key` prop hebben**.
+**Het bovenste JSX-element dat rechtstreeks door iedere iteratie van `map()` wordt teruggegeven, moet een `key`-prop hebben**.
 </aside>
 
 Keys laten weten aan React welk element uit een array overeenkomt met welke component, zodat React deze later kan herkennen. Dit wordt belangrijk wanneer elementen in een array kunnen veranderen van plaats, toegevoegd of verwijderd worden. 
+
+Een key moet uniek zijn tussen de elementen in **dezelfde lijst**. De waarde hoeft dus niet uniek te zijn binnen de volledige applicatie. React gebruikt `key` zelf: een component ontvangt deze waarde niet tussen zijn gewone props. Heeft de component het id ook nodig, dan geef je het afzonderlijk door:
+
+```tsx
+<Person key={person.id} personId={person.id} name={person.name} />
+```
 
 <aside className="courseCallout courseCallout--tip">
 
@@ -788,3 +883,295 @@ const List = () => {
 
 **Gebruik zo weinig mogelijk of zelfs niet de index van een element in de array als `key`. Dit is niet aan te raden omdat de volgorde van elementen kan wijzigen wanneer items toegevoegd worden, verwijderd of herschikt**. Het gebruiken van een index als `key` kan hierdoor leiden tot moeilijk te vinden bugs. **Genereer ook geen dynamische `keys`** met bijvoorbeeld `Math.random()`, in dit geval zullen de keys steeds veranderen bij elke render waardoor React alle componenten en DOM-elementen telkens opnieuw moet aanmaken, dit zorgt voor een tragere applicatie. Gebruik daarom altijd een **stabiele en unieke identifier uit je data als `key`**.
 </aside>
+
+### Een lijst filteren
+
+Soms willen we niet alle gegevens tonen. Met `filter()` selecteren we eerst de gewenste personen. Daarna zet `map()` die gegevens om naar JSX. Beide methodes maken een nieuwe array en wijzigen `people` niet.
+
+```tsx
+const chemists = people.filter(person => person.profession === 'chemist');
+
+const ChemistList = () => {
+    return (
+        <ul>
+            {chemists.map(person => (
+                <li key={person.id}>{person.name}</li>
+            ))}
+        </ul>
+    );
+}
+```
+
+### Een lege lijst opvangen
+
+Een lege array veroorzaakt geen fout: `map()` geeft opnieuw een lege array terug en React toont geen lijstitems. Voor de gebruiker is een duidelijke melding meestal beter. We combineren hier conditioneel renderen met het renderen van een lijst:
+
+```tsx
+interface PersonListProps {
+    people: {
+        id: number;
+        name: string;
+        profession: string;
+    }[];
+}
+
+const PersonList = ({ people }: PersonListProps) => {
+    if (people.length === 0) {
+        return <p>Geen personen gevonden.</p>;
+    }
+
+    return (
+        <ul>
+            {people.map(person => (
+                <li key={person.id}>{person.name}</li>
+            ))}
+        </ul>
+    );
+}
+```
+
+Dit voorbeeld toont de volledige gegevensstroom: de parent geeft de array door via de `people`-prop, `PersonList` kiest bij een lege array een andere UI en `map()` maakt voor iedere persoon een lijstitem met een stabiele key.
+
+## Oefeningen
+
+### Een component configureerbaar maken
+
+Onderstaande badge toont voor iedere persoon dezelfde rol. Voeg een `role`-prop toe aan `ProfileBadge` en geef Ada en Grace elk een andere rol. Toon de rol in een extra paragraaf. Je kan de code onmiddellijk in de live editor aanpassen.
+
+```jsx live noInline
+function ProfileBadge({ name, isOnline }) {
+  return (
+    <article>
+      <h3>{name}</h3>
+      <p>{isOnline ? "Online" : "Offline"}</p>
+    </article>
+  );
+}
+
+function App() {
+  return (
+    <section>
+      <ProfileBadge name="Ada" isOnline={true} />
+      <ProfileBadge name="Grace" isOnline={false} />
+    </section>
+  );
+}
+
+render(<App />);
+```
+
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+In een echt `.tsx`-bestand typen we de props ook expliciet:
+
+```tsx
+interface ProfileBadgeProps {
+    name: string;
+    role: string;
+    isOnline: boolean;
+}
+
+const ProfileBadge = ({ name, role, isOnline }: ProfileBadgeProps) => {
+    return (
+        <article>
+            <h3>{name}</h3>
+            <p>{role}</p>
+            <p>{isOnline ? 'Online' : 'Offline'}</p>
+        </article>
+    );
+}
+```
+
+Iedere instantie kan nu met dezelfde componentdefinitie andere gegevens tonen.
+
+</details>
+
+### Een lijst filteren en renderen
+
+Pas `visiblePeople` aan zodat alleen de wetenschappers met het beroep `chemist` worden getoond. Behoud de stabiele key en wijzig de oorspronkelijke array niet.
+
+```jsx live noInline
+const people = [
+  { id: 1, name: "Marie Curie", profession: "chemist" },
+  { id: 2, name: "Katherine Johnson", profession: "mathematician" },
+  { id: 3, name: "Mario Molina", profession: "chemist" }
+];
+
+function PeopleList() {
+  const visiblePeople = people;
+
+  return (
+    <ul>
+      {visiblePeople.map((person) => (
+        <li key={person.id}>
+          {person.name} — {person.profession}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+render(<PeopleList />);
+```
+
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```tsx
+const visiblePeople = people.filter(
+    person => person.profession === 'chemist'
+);
+```
+
+`filter()` maakt een nieuwe array. Daarna zet `map()` ieder overgebleven object om naar JSX.
+
+</details>
+
+### Zelf een componentboom ontwerpen
+
+Een pagina bevat een titel, een profielkaart en in die profielkaart een avatar en contactgegevens. Teken eerst de componentboom en bepaal daarna welke props iedere verbinding nodig heeft. Motiveer ook welke markup je bewust niet in een aparte component zou plaatsen.
+
+<details>
+<summary>Toon een mogelijke uitwerking</summary>
+
+```text
+App
+├── PageHeader
+└── ProfileCard
+    ├── Avatar
+    └── ContactDetails
+```
+
+`App` kan het profielobject aan `ProfileCard` geven. `ProfileCard` geeft alleen de afbeeldingsgegevens aan `Avatar` en alleen de contactgegevens aan `ContactDetails`. Een puur decoratieve `div` zonder eigen verantwoordelijkheid hoeft geen component te worden.
+
+</details>
+
+### Compositie met `children`
+
+Maak een herbruikbare `Panel`-component die via `children` zowel een korte melding als een lijst kan omringen. Type de props in een `.tsx`-bestand met `PropsWithChildren`.
+
+<details>
+<summary>Toon een mogelijke oplossing</summary>
+
+```tsx
+import type { PropsWithChildren } from 'react';
+
+interface PanelProps {
+    title: string;
+}
+
+const Panel = ({ title, children }: PropsWithChildren<PanelProps>) => {
+    return (
+        <section className="panel">
+            <h2>{title}</h2>
+            {children}
+        </section>
+    );
+}
+```
+
+De parent bepaalt de inhoud tussen `<Panel>` en `</Panel>`. `Panel` bepaalt alleen de gemeenschappelijke omlijsting.
+
+</details>
+
+## Check jezelf
+
+### Wat is het verschil tussen een componentdefinitie en een componentinstantie?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+De definitie is de functie die beschrijft welke JSX de component teruggeeft. Met JSX zoals `<ProfileBadge />` gebruikt de parent die definitie en maakt hij een instantie in de renderboom.
+
+</details>
+
+### Waarom moet de naam van een eigen component met een hoofdletter beginnen?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+React behandelt een JSX-naam met een kleine letter als een ingebouwd HTML-element. Een hoofdletter vertelt React dat de naam naar een eigen componentfunctie verwijst.
+
+</details>
+
+### In welke richting stromen props?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Props stromen van een parent naar zijn children. Een child wijzigt ontvangen props niet en stuurt geen props terug omhoog. Een parent kan wel een callbackprop doorgeven die de child na een interactie oproept.
+
+</details>
+
+### Waarom mag een component zijn props niet wijzigen?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Props zijn read-only snapshots die door de parent werden bepaald. Door ze niet te muteren blijft de component voorspelbaar: dezelfde props leveren dezelfde JSX op.
+
+</details>
+
+### Wanneer maak je van een stuk UI een aparte component?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Dat is zinvol wanneer het stuk UI herhaald wordt, een eigen verantwoordelijkheid heeft, zelfstandig verandert of de parent onleesbaar maakt. Niet iedere `div` heeft een eigen component nodig.
+
+</details>
+
+### Waarom kan een `if`-statement niet rechtstreeks tussen JSX-accolades staan?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Tussen JSX-accolades verwacht React een expressie die één waarde oplevert. Een `if` is een statement. Je kan de `if` boven de `return` plaatsen of in eenvoudige JSX een ternary gebruiken.
+
+</details>
+
+### Wanneer gebruik je `&&` en wanneer een ternary?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Gebruik `&&` wanneer je iets alleen bij een ware conditie wil tonen. Gebruik een ternary wanneer zowel de ware als de onware toestand elk andere output moeten tonen.
+
+</details>
+
+### Waarom heeft ieder rechtstreeks element uit `map()` een key nodig?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+De key geeft een item een stabiele identiteit binnen zijn lijst. React kan daardoor herkennen welk item werd toegevoegd, verwijderd of verplaatst en de juiste bestaande component en DOM-node behouden.
+
+</details>
+
+### Waarom zijn een array-index en `Math.random()` meestal slechte keys?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Een index kan na invoegen, verwijderen of herschikken naar een ander item verwijzen. `Math.random()` maakt bij iedere render een nieuwe key. Beide verbreken de stabiele identiteit waarop React rekent.
+
+</details>
+
+### Ontvangt een component zijn `key` als gewone prop?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Nee. React gebruikt `key` zelf. Als een child hetzelfde id nodig heeft, moet de parent het afzonderlijk doorgeven, bijvoorbeeld met `<Person key={person.id} personId={person.id} />`.
+
+</details>
+
+## Officiële bronnen
+
+- [React: Describing the UI](https://react.dev/learn/describing-the-ui)
+- [Your First Component](https://react.dev/learn/your-first-component)
+- [Passing Props to a Component](https://react.dev/learn/passing-props-to-a-component)
+- [Conditional Rendering](https://react.dev/learn/conditional-rendering)
+- [Rendering Lists](https://react.dev/learn/rendering-lists)
+- [Keeping Components Pure](https://react.dev/learn/keeping-components-pure)

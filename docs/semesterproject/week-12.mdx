@@ -14,6 +14,8 @@ Na deze week kun je authstatus centraal aanbieden, frontendroutes beschermen, se
 
 ## Authstatus centraal aanbieden
 
+We gebruiken hiervoor het veilige provider- en custom-hookpatroon uit het hoofdstuk [Context](/react/context). `useAuth` controleert centraal of een `AuthProvider` boven de consumer staat.
+
 ```tsx
 type AuthContextValue = {
   user: User | null;
@@ -82,5 +84,11 @@ Voeg één beveiligde wijzigingsactie toe, bijvoorbeeld de profielnaam aanpassen
 ## Eindreflectie
 
 Teken de volledige stroom `component -> hook/context -> HTTP -> middleware -> controller -> Prisma -> databank -> response`. Bespreek voor ieder onderdeel één foutscenario en hoe de gebruiker of server daarop reageert.
+
+## Theorie
+
+- [Context in React](/react/context)
+- [Validatie en foutafhandeling in Express](/node/validation-errors)
+- [Authenticatie en beveiliging](/node/auth-security)
 
 [Terug naar het overzicht](/semesterproject/).

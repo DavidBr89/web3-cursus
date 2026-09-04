@@ -1,0 +1,459 @@
+---
+title: "Context"
+sidebar_position: 5
+hide_title: true
+---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["react"]}>Context</TechnologyTitle>
+
+## Waar staan we in het verhaal?
+
+Met props geven we gegevens expliciet van een parent aan een child. Dat blijft meestal de duidelijkste oplossing. Soms heeft een waarde echter veel afstammelingen nodig, terwijl de tussenliggende components er zelf niets mee doen.
+
+Denk aan het actieve kleurthema van een evenementenplatform. `App` kent het thema en een knop diep in de componentboom gebruikt het, maar `Layout`, `Navigation` en `Toolbar` moeten de waarde alleen doorgeven:
+
+```text
+App
+└── Layout                 theme doorgeven
+    └── Navigation         theme doorgeven
+        └── Toolbar        theme doorgeven
+            └── ThemeButton theme gebruiken
+```
+
+Dat herhaald doorgeven heet vaak **prop drilling**. Context laat een component een waarde beschikbaar maken aan de volledige onderliggende componentboom, zonder die waarde als prop door iedere tussenlaag te sturen.
+
+## Welk probleem lost Context op?
+
+Zonder Context kan dezelfde informatie door verschillende niveaus reizen:
+
+```tsx
+type Theme = 'light' | 'dark';
+
+type LayoutProps = {
+  theme: Theme;
+};
+
+const Layout = ({ theme }: LayoutProps) => (
+  <Navigation theme={theme} />
+);
+
+const Navigation = ({ theme }: LayoutProps) => (
+  <Toolbar theme={theme} />
+);
+
+const Toolbar = ({ theme }: LayoutProps) => (
+  <ThemeButton theme={theme} />
+);
+```
+
+`Layout`, `Navigation` en `Toolbar` zijn hier alleen transportlagen. Context kan dat transport overnemen.
+
+```text
+ThemeProvider geeft een waarde
+              ↓
+       tussenlagen hoeven
+       de waarde niet te kennen
+              ↓
+ThemeButton leest de dichtstbijzijnde waarde
+```
+
+Context verandert de richting van data niet. De waarde komt nog steeds van een hoger geplaatste provider en stroomt naar afstammelingen. Een child schrijft dus niet rechtstreeks terug naar een parent. De provider kan wel een getypeerde functie aanbieden waarmee een child om een statewijziging vraagt.
+
+## Wanneer is Context geschikt?
+
+Context past bij informatie die veel components in dezelfde onderliggende boom nodig hebben, bijvoorbeeld:
+
+- een kleurthema;
+- de gekozen taal of locale;
+- de huidige gebruiker en toegelaten acties;
+- een gedeelde voorkeur;
+- functies van een samengesteld component, zoals bij formulierlibraries.
+
+Gebruik Context niet automatisch zodra twee components dezelfde waarde nodig hebben. Begin met props en state lifting. Context wordt vooral nuttig wanneer veel tussenlagen de props enkel doorgeven of wanneer een hele subtree dezelfde omgevingswaarde nodig heeft.
+
+## Context bestaat uit drie stappen
+
+We bouwen een veilig voorbeeld rond het thema van een evenementenapplicatie:
+
+1. het type en de Context aanmaken;
+2. een provider maken die de waarde bezit;
+3. de waarde via een custom hook lezen.
+
+## Stap 1: de Context correct typeren
+
+Maak `src/features/theme/context/theme-context.ts`:
+
+```ts
+import { createContext } from 'react';
+
+export type Theme = 'light' | 'dark';
+
+export type ThemeContextValue = {
+  theme: Theme;
+  changeTheme: (theme: Theme) => void;
+};
+
+export const ThemeContext = createContext<ThemeContextValue | undefined>(
+  undefined,
+);
+```
+
+Het type beschrijft het volledige contract van de Context:
+
+- `theme` is de huidige waarde;
+- `changeTheme` is de enige manier waarop consumers een ander thema aanvragen;
+- andere strings dan `'light'` en `'dark'` zijn niet toegelaten.
+
+Waarom gebruiken we `ThemeContextValue | undefined`? Er bestaat geen betekenisvolle contextwaarde wanneer er geen provider boven de component staat. `undefined` stelt die ontbrekende provider eerlijk voor. We verzinnen dus geen lege gebruiker, dummyfunctie of ander fallbackobject dat een configuratiefout verbergt.
+
+<aside className="courseCallout courseCallout--warning">
+
+<strong className="courseCallout__title">Geen stille standaardwaarde</strong>
+
+Een functie zoals `changeTheme: () => undefined` als standaardwaarde maakt foutieve code schijnbaar werkend. De knop reageert dan gewoon niet wanneer de provider ontbreekt. Met `undefined` kunnen we die fout onmiddellijk en duidelijk melden.
+
+</aside>
+
+`createContext` wordt buiten een component aangeroepen. Het Context-object stelt de verbinding voor; het bewaart zelf niet de veranderlijke state.
+
+## Stap 2: een Provider met state
+
+Maak `src/features/theme/context/ThemeProvider.tsx`:
+
+```tsx
+import { useState, type PropsWithChildren } from 'react';
+import { ThemeContext, type Theme } from './theme-context';
+
+export const ThemeProvider = ({ children }: PropsWithChildren) => {
+  const [theme, setTheme] = useState<Theme>('light');
+
+  const changeTheme = (nextTheme: Theme) => {
+    setTheme(nextTheme);
+  };
+
+  return (
+    <ThemeContext value={{ theme, changeTheme }}>
+      {children}
+    </ThemeContext>
+  );
+};
+```
+
+`PropsWithChildren` is een React-type dat hier de `children`-prop toevoegt. De provider is eigenaar van de state en biedt zowel de actuele waarde als een beperkte actie aan.
+
+Omdat deze cursus React 19 gebruikt, kan het Context-object rechtstreeks als provider gerenderd worden:
+
+```tsx
+<ThemeContext value={contextValue}>{children}</ThemeContext>
+```
+
+In oudere React-code zie je dezelfde bedoeling geschreven als `<ThemeContext.Provider value={...}>`.
+
+Plaats de provider hoog genoeg boven alle consumers die de waarde nodig hebben, maar niet automatisch rond de volledige applicatie:
+
+```tsx
+import { ThemeProvider } from './features/theme';
+
+root.render(
+  <ThemeProvider>
+    <App />
+  </ThemeProvider>,
+);
+```
+
+Een provider mag ook slechts één deel van de boom omvatten. Components buiten die subtree ontvangen zijn waarde niet.
+
+## Stap 3: veilig lezen met een custom hook
+
+Een component zou rechtstreeks `useContext(ThemeContext)` kunnen gebruiken. Het resultaat heeft dan wel het type `ThemeContextValue | undefined`, waardoor iedere consumer opnieuw dezelfde controle zou moeten schrijven.
+
+Centraliseer die controle in `src/features/theme/context/useTheme.ts`:
+
+```ts
+import { useContext } from 'react';
+import { ThemeContext } from './theme-context';
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+
+  if (context === undefined) {
+    throw new Error('useTheme moet binnen een ThemeProvider gebruikt worden');
+  }
+
+  return context;
+};
+```
+
+Deze custom hook doet twee belangrijke dingen:
+
+- hij bewaakt dat de Context werkelijk bestaat;
+- na de controle returnt hij `ThemeContextValue`, niet `ThemeContextValue | undefined`.
+
+Consumers krijgen daardoor een eenvoudige en volledig getypeerde API:
+
+```tsx
+import { useTheme } from '../context/useTheme';
+
+export const ThemeButton = () => {
+  const { theme, changeTheme } = useTheme();
+  const nextTheme = theme === 'light' ? 'dark' : 'light';
+
+  return (
+    <button type="button" onClick={() => changeTheme(nextTheme)}>
+      Gebruik het {nextTheme === 'light' ? 'lichte' : 'donkere'} thema
+    </button>
+  );
+};
+```
+
+Het eventobject is hier niet nodig, dus de inline handler hoeft geen parameter te ontvangen. Wanneer je het event wel gebruikt, type je het zoals in het hoofdstuk Interactiviteit, bijvoorbeeld `React.MouseEvent<HTMLButtonElement>`.
+
+## Waarom de controle in de custom hook hoort
+
+Zonder guard kan code de ontbrekende waarde negeren met een type assertion:
+
+```ts
+// Niet doen
+const ThemeContext = createContext({} as ThemeContextValue);
+```
+
+Dit vertelt TypeScript dat een geldig object bestaat terwijl dat tijdens runtime niet gegarandeerd is. De compiler wordt stilgemaakt, maar de applicatie wordt niet veiliger.
+
+Ook optional chaining lost de configuratiefout niet op:
+
+```tsx
+// Verbergt dat de provider ontbreekt
+const context = useContext(ThemeContext);
+context?.changeTheme('dark');
+```
+
+Een consumer zonder provider is meestal een programmeerfout. De custom hook laat die fout dicht bij de oorzaak en met een duidelijke boodschap ontstaan.
+
+## De dichtstbijzijnde Provider wint
+
+Een Context kan op verschillende niveaus opnieuw aangeboden worden:
+
+```tsx
+<ThemeContext value={lightTheme}>
+  <PublicArea />
+
+  <ThemeContext value={darkTheme}>
+    <PresentationArea />
+  </ThemeContext>
+</ThemeContext>
+```
+
+`PublicArea` leest `lightTheme`. Consumers binnen `PresentationArea` lezen `darkTheme`, omdat React vanaf de consumer omhoog zoekt naar de dichtstbijzijnde overeenkomende provider.
+
+Dit maakt Context geschikt voor waarden die per subtree kunnen verschillen. Het is niet noodzakelijk één globale singleton.
+
+## Context en rerenderen
+
+`useContext` leest niet alleen een waarde; de component abonneert zich ook op die Context. Wanneer de aangeboden `value` verandert, rendert React de consumers die deze Context lezen opnieuw.
+
+```text
+providerwaarde verandert
+          ↓
+React zoekt consumers van die Context
+          ↓
+consumers renderen met de nieuwe waarde
+          ↓
+React commit noodzakelijke DOM-wijzigingen
+```
+
+Een component die alleen als tussenlaag onder de provider staat maar de Context niet leest, hoeft geen contextconsumer te worden.
+
+Stop daarom niet alle applicatiestate in één groot contextobject. Iedere wijziging aan die aangeboden waarde kan veel consumers raken. Splits contexts volgens verantwoordelijkheid en houd vaak veranderende state zo lokaal mogelijk.
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Geen handmatige memoization als reflex</strong>
+
+Voeg niet automatisch `useMemo` of `useCallback` toe rond iedere contextwaarde. We gebruiken React Compiler en optimaliseren alleen wanneer een gemeten probleem en de werking ervan duidelijk uitgelegd kunnen worden. Een betere eerste vraag is vaak of de Context niet te veel verschillende verantwoordelijkheden bevat.
+
+</aside>
+
+## Context is geen vervanging voor alle state
+
+Context lost voornamelijk een **bereikprobleem** op: hoe krijgt een diepe consumer toegang tot een waarde? De provider heeft nog steeds state, een reducer of een andere bron nodig om veranderlijke gegevens te beheren.
+
+Vergelijk de verschillende keuzes:
+
+| Situatie | Meestal passende eigenaar |
+| --- | --- |
+| Eén component opent een lokaal menu | lokale `useState` |
+| Enkele nabije components delen een selectie | state liften |
+| De URL bepaalt een filter of detail | router/search parameters |
+| Veel afstammelingen gebruiken een thema | Context |
+| Data is eigendom van de server | TanStack Query |
+| Een formulier beheert invoer en validatie | React Hook Form |
+
+Serverresultaten integraal in Context kopiëren geeft vaak twee bronnen van waarheid: de querycache en de Context. Context en TanStack Query kunnen samen voorkomen, maar lossen een ander probleem op.
+
+## Context combineren met een reducer
+
+Wanneer gedeelde client state meerdere samenhangende overgangen heeft, kan een provider intern `useReducer` gebruiken. Context maakt dan de actuele state en/of `dispatch` bereikbaar. Dit is vooral nuttig wanneer de mogelijke acties duidelijk beschreven kunnen worden.
+
+```ts
+type PreferencesAction =
+  | { type: 'themeChanged'; theme: Theme }
+  | { type: 'compactModeToggled' };
+```
+
+Gebruik dit niet omdat een context “professioneel” een reducer zou moeten hebben. Voor één eenvoudige waarde blijft `useState` duidelijker. De officiële React-documentatie behandelt deze uitbreiding apart bij het opschalen met reducer en Context.
+
+## Plaats in onze architectuur
+
+Een featuregebonden Context blijft bij zijn feature:
+
+```text
+src/
+└── features/
+    └── theme/
+        ├── components/
+        │   └── ThemeButton.tsx
+        ├── context/
+        │   ├── theme-context.ts
+        │   ├── ThemeProvider.tsx
+        │   └── useTheme.ts
+        └── index.ts
+```
+
+De publieke ingang kan alleen de onderdelen exporteren die andere delen nodig hebben:
+
+```ts
+export { ThemeProvider } from './context/ThemeProvider';
+export { useTheme } from './context/useTheme';
+```
+
+Exporteren van het ruwe Context-object is buiten de feature meestal niet nodig. Consumers gebruiken de bewaakte custom hook.
+
+Een provider die de volledige app configureert, kan vervolgens in `app/providers.tsx` samengesteld worden met andere providers.
+
+## Veelgemaakte fouten
+
+**Context te vroeg gebruiken**: Props of state lifting zijn voor enkele nabije components meestal explicieter.
+
+**Een betekenisloze fallbackwaarde verzinnen**: Dit verbergt dat een provider ontbreekt. Gebruik `undefined` en controleer in de custom hook.
+
+**`{} as ContextValue` gebruiken**: Een type assertion maakt een ongeldige runtimewaarde niet geldig.
+
+**De guard in iedere consumer herhalen**: Centraliseer de controle in één custom hook.
+
+**Alle globale state in één Context plaatsen**: Onafhankelijke verantwoordelijkheden raken gekoppeld en wijzigingen bereiken onnodig veel consumers.
+
+**Serverdata naar Context kopiëren**: TanStack Query beheert de levenscyclus van server state al.
+
+**De provider verkeerd plaatsen**: Een consumer kan alleen een provider boven zichzelf lezen, niet een provider die in dezelfde component lager wordt gerenderd.
+
+## Oefeningen
+
+### Taalvoorkeur delen
+
+Bouw voor een evenementenwebsite een getypeerde `LocaleContext` met de talen `'nl'`, `'fr'` en `'en'`. Voorzie een provider, een functie om de taal te wijzigen en een `useLocale`-hook die een duidelijke fout gooit buiten de provider.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Definieer een uniontype voor de talen en een contexttype met `locale` en `changeLocale`. Maak de Context als `LocaleContextValue | undefined`, bewaar de waarde met `useState<Locale>('nl')` in de provider en voer de `undefined`-controle één keer uit in `useLocale`.
+
+</details>
+
+### Props of Context?
+
+Bepaal voor elk geval of lokale state, state lifting, props of Context het meest geschikt is:
+
+1. één accordeonitem houdt bij of het openstaat;
+2. een formulier en zijn directe samenvatting delen één ingevoerde naam;
+3. alle knoppen in een diepe subtree gebruiken dezelfde visuele variant;
+4. een lijst met evenementen komt van een REST API.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Het accordeonitem kan lokale state gebruiken. De parent van formulier en samenvatting kan state bezitten en props doorgeven. Een omgevingswaarde voor een diepe subtree kan Context verantwoorden. Serverdata hoort eerder bij TanStack Query dan in een zelfgemaakte Context.
+
+</details>
+
+### Een onveilige Context verbeteren
+
+Onderzoek waarom deze definitie onveilig is en herschrijf ze:
+
+```ts
+const SettingsContext = createContext({} as SettingsContextValue);
+```
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Gebruik `createContext<SettingsContextValue | undefined>(undefined)`. Lees de waarde uitsluitend via een `useSettings`-hook, controleer daar `context === undefined` en gooi dan een fout die vermeldt welke provider ontbreekt.
+
+</details>
+
+## Check jezelf
+
+### Welk probleem lost Context in de eerste plaats op?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Context maakt een waarde beschikbaar aan diepe afstammelingen zonder dat iedere tussenliggende component die waarde als prop moet doorgeven. Het lost dus vooral bereik en prop drilling op.
+
+</details>
+
+### Stroomt data met Context plots van child naar parent?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Nee. De provider staat hoger in de boom en biedt een waarde aan afstammelingen. Een consumer kan wel een aangeboden callback uitvoeren waarmee de eigenaar van de state een update verwerkt.
+
+</details>
+
+### Waarom krijgt de Context het type `ContextValue | undefined`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Omdat er zonder provider geen geldige contextwaarde bestaat. Het type dwingt ons die mogelijke configuratiefout eerlijk af te handelen.
+
+</details>
+
+### Waarom lezen consumers de Context via een custom hook?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+De hook centraliseert het gebruik en controleert één keer of een provider bestaat. Na de guard ontvangen alle consumers een volledig `ContextValue` zonder herhaalde `undefined`-controles.
+
+</details>
+
+### Wanneer rendert een contextconsumer opnieuw?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Wanneer de waarde van de dichtstbijzijnde provider verandert, leest de consumer tijdens een nieuwe render de nieuwe contextwaarde.
+
+</details>
+
+### Waarom hoort serverdata meestal niet in een eigen Context?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Serverdata heeft een eigen levenscyclus met requests, loading, fouten, caching en invalidatie. TanStack Query beheert die verantwoordelijkheid; kopiëren naar Context creëert vaak een tweede bron van waarheid.
+
+</details>
+
+## Officiële bronnen
+
+- [React: Passing Data Deeply with Context](https://react.dev/learn/passing-data-deeply-with-context)
+- [React: `createContext`](https://react.dev/reference/react/createContext)
+- [React: `useContext`](https://react.dev/reference/react/useContext)
+- [React met TypeScript: `useContext`](https://react.dev/learn/typescript#usecontext)
+- [React: Scaling Up with Reducer and Context](https://react.dev/learn/scaling-up-with-reducer-and-context)
+
+[Volgende: routing](/react/router).

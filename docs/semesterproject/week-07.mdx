@@ -22,7 +22,9 @@ type FavoritesContextValue = {
   toggleFavorite: (movie: Movie) => void;
 };
 
-const FavoritesContext = createContext<FavoritesContextValue | null>(null);
+const FavoritesContext = createContext<FavoritesContextValue | undefined>(
+  undefined,
+);
 ```
 
 Gebruik Context niet automatisch voor alle state. State die maar één component nodig heeft, blijft lokaal.
@@ -32,7 +34,7 @@ Gebruik Context niet automatisch voor alle state. State die maar één component
 ```tsx
 export const useFavorites = () => {
   const context = useContext(FavoritesContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useFavorites moet binnen FavoritesProvider gebruikt worden");
   }
   return context;
@@ -56,7 +58,7 @@ Alle waarden waarvan het request afhangt, horen in de query key.
 
 ## Begeleide opdracht
 
-1. Verplaats de API-functies naar `src/api/movieApi.ts`.
+1. Verplaats de API-functies naar `src/features/movies/api/movieApi.ts`.
 1. Configureer de queryclient in `main.tsx`.
 1. Vervang handmatige requeststate door een query.
 1. Maak `FavoritesContext` en zijn provider.
@@ -82,6 +84,7 @@ Herlees [Server state met TanStack Query](/react/query) en leg uit waarom favori
 
 ## Bronnen
 
-- [Context en custom hooks](/react/hooks)
+- [Context](/react/context)
+- [Custom hooks](/react/hooks)
 
 [Volgende: formulieren en validatie](/semesterproject/week-08).

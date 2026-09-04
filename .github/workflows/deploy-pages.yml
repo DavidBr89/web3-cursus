@@ -28,7 +28,9 @@ jobs:
           cache: npm
 
       - name: Dependencies installeren
-        run: npm ci
+        # Papersaurus bevat een foutieve preinstall-check die npm weigert,
+        # hoewel npm in de officiële package-instructies ondersteund wordt.
+        run: npm ci --ignore-scripts
 
       - name: Docusaurus bouwen
         run: npm run build

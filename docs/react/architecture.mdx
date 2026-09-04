@@ -1,0 +1,383 @@
+---
+title: "Architectuur"
+sidebar_position: 9
+hide_title: true
+---
+
+import TechnologyTitle from "@site/src/components/TechnologyTitle";
+
+<TechnologyTitle technologies={["react"]}>Architectuur</TechnologyTitle>
+
+## Waar staan we in het verhaal?
+
+We kennen ondertussen de belangrijkste bouwstenen van onze React-applicatie: components, state, events, hooks, routes, formulieren en serverdata. Wanneer al die code zonder duidelijke afspraken rechtstreeks onder `src` terechtkomt, wordt het steeds moeilijker om te bepalen waar nieuwe code hoort en welke onderdelen van elkaar afhankelijk mogen zijn.
+
+In dit hoofdstuk maken we daarom een bewuste **architectuurkeuze**. We organiseren de applicatie voornamelijk per functionele feature. Code over bijvoorbeeld authenticatie blijft bij authenticatie en code over producten blijft bij producten.
+
+De aanpak is geïnspireerd door [Bulletproof React](https://github.com/alan2207/bulletproof-react), maar is geen officiële of verplichte React-architectuur. React schrijft geen vaste mappenstructuur voor. We gebruiken dit model omdat het voor een groeiend cursusproject duidelijke grenzen en voorspelbare plaatsen oplevert.
+
+![Museum of Meaningless Metrics](/img/meaninglessmetrics.jpeg)
+
+## Waarom niet alles per technisch type groeperen?
+
+Een kleine applicatie begint vaak zo:
+
+```text
+src/
+├── components/
+├── hooks/
+├── services/
+├── types/
+└── pages/
+```
+
+Deze indeling lijkt overzichtelijk, maar code die samen verandert raakt verspreid. Voor één wijziging aan authenticatie moet je mogelijk in vijf globale mappen zoeken. Bovendien worden globale mappen snel verzamelplaatsen waarin onduidelijk is wat werkelijk gedeeld wordt.
+
+Bij een **feature-first** structuur staat code die bij hetzelfde domein hoort dicht bij elkaar:
+
+```text
+src/
+├── app/
+├── components/
+├── features/
+├── lib/
+├── routes/
+├── types/
+└── main.tsx
+```
+
+De mapnaam vertelt hier niet alleen welk technisch soort bestand erin staat, maar vooral wie er eigenaar van is.
+
+## Onze basisstructuur
+
+Voor de oefeningen en het project gebruiken we deze structuur als vertrekpunt:
+
+```text
+src/
+├── app/
+│   ├── providers.tsx
+│   └── router.tsx
+├── components/
+│   └── ui/
+├── features/
+│   ├── auth/
+│   └── products/
+├── lib/
+│   └── api-client.ts
+├── routes/
+├── types/
+├── main.tsx
+└── vite-env.d.ts
+```
+
+Dit is een richting, geen lijst mappen die je vooraf allemaal leeg moet aanmaken. Voeg een map pas toe wanneer er code met die verantwoordelijkheid bestaat.
+
+### `app`
+
+`app` bevat configuratie die de volledige React-applicatie samenbrengt, zoals de router en globale providers.
+
+```tsx
+// src/app/providers.tsx
+import type { PropsWithChildren } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
+
+export const AppProviders = ({ children }: PropsWithChildren) => (
+  <QueryClientProvider client={queryClient}>
+    {children}
+  </QueryClientProvider>
+);
+```
+
+Featurelogica hoort hier niet. `app` verbindt onderdelen; het implementeert geen productcatalogus of loginflow.
+
+### `features`
+
+Een feature vertegenwoordigt herkenbare functionaliteit voor de gebruiker of het domein. Een feature mag intern opnieuw per verantwoordelijkheid worden verdeeld:
+
+```text
+features/
+└── products/
+    ├── api/
+    │   ├── getProducts.ts
+    │   └── productQueries.ts
+    ├── components/
+    │   ├── ProductCard.tsx
+    │   └── ProductList.tsx
+    ├── hooks/
+    │   └── useProductFilters.ts
+    ├── schemas/
+    │   └── productSchema.ts
+    ├── types/
+    │   └── product.ts
+    └── index.ts
+```
+
+Niet iedere feature heeft al deze submappen nodig. Een feature met één component hoeft niet kunstmatig zeven mappen te krijgen.
+
+### `components/ui`
+
+Hier staan werkelijk generieke UI-bouwstenen, zoals een `Button`, `Modal` of `Spinner`. Ze kennen geen product-, reservatie- of authenticatielogica.
+
+Een `ProductCard` is dus geen algemene UI-component: ze kent het productdomein en hoort bij `features/products`.
+
+### `routes`
+
+Een routecomponent vormt de grens tussen de router en de features. Ze leest routeparameters of zoekparameters, stelt features samen en blijft zo dun mogelijk.
+
+```tsx
+// src/routes/ProductsRoute.tsx
+import { ProductOverview } from '../features/products';
+
+const ProductsRoute = () => <ProductOverview />;
+
+export default ProductsRoute;
+```
+
+Een routebestand is niet de plaats voor een volledige API-laag, omvangrijke formulierlogica en tientallen presentational components.
+
+### `lib`
+
+`lib` bevat gedeelde infrastructuur en configuratie van externe libraries. Denk aan een geconfigureerde Axios-instance. Domeinspecifieke endpoints horen bij de feature die ze gebruikt.
+
+```ts
+// src/lib/api-client.ts
+import axios from 'axios';
+
+export const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+});
+```
+
+### Globale `types`
+
+Plaats een type standaard bij de feature die er eigenaar van is. De globale map `types` is alleen bedoeld voor types die werkelijk door verschillende, onafhankelijke delen van de applicatie gedeeld worden.
+
+Een globale `types`-map is dus geen opslagplaats voor ieder interfacebestand.
+
+## Colocation: code bewaren waar ze gebruikt wordt
+
+**Colocation** betekent dat nauw verwante code dicht bij elkaar staat. Een schema, formuliertype, submitfunctie en formuliercomponent voor dezelfde feature hoeven niet over de volledige applicatie verspreid te worden.
+
+Dit helpt omdat:
+
+- de eigenaar van code sneller zichtbaar is;
+- een feature eenvoudiger aangepast of verwijderd kan worden;
+- afhankelijkheden minder snel door de hele applicatie lekken;
+- namen binnen een feature kort en betekenisvol kunnen blijven.
+
+Colocation betekent niet dat alles in één bestand moet staan. Splits wanneer een bestand meerdere verantwoordelijkheden krijgt of een onderdeel zelfstandig leesbaar en testbaar wordt.
+
+## Een publieke ingang per feature
+
+Een `index.ts` kan bepalen welke onderdelen andere features of routes mogen gebruiken:
+
+```ts
+// src/features/products/index.ts
+export { default as ProductOverview } from './components/ProductOverview';
+export type { Product } from './types/product';
+```
+
+Een route importeert vervolgens via die publieke ingang:
+
+```tsx
+import { ProductOverview } from '../features/products';
+```
+
+Zo hoeft externe code de interne mappenstructuur van de feature niet te kennen. Exporteer niet automatisch ieder intern bestand: een publieke API is pas nuttig wanneer ze bewust klein blijft.
+
+## Richting van afhankelijkheden
+
+We hanteren als eenvoudig mentaal model:
+
+```text
+app en routes
+      ↓
+   features
+      ↓
+gedeelde UI en infrastructuur
+```
+
+- `app` en `routes` mogen features samenstellen;
+- een feature mag gedeelde UI en infrastructuur gebruiken;
+- gedeelde UI kent geen features;
+- `lib/api-client.ts` kent geen products of auth;
+- features importeren bij voorkeur niet rechtstreeks elkaars interne bestanden.
+
+Wanneer twee features dezelfde domeinlogica nodig hebben, beslis dan eerst wie de echte eigenaar is. Verplaats code niet onmiddellijk naar `shared`: twee keer gebruikt betekent nog niet automatisch algemeen herbruikbaar.
+
+## State krijgt een eigenaar
+
+De mappenstructuur bepaalt niet automatisch waar state hoort. Gebruik nog steeds de kleinste passende eigenaar:
+
+- lokale UI-state blijft in de component of wordt naar de dichtstbijzijnde gedeelde parent gelift;
+- formulierstate wordt door het formulier beheerd;
+- server state wordt via TanStack Query beheerd;
+- werkelijk applicatiebrede client state kan via context of een gerichte state-oplossing lopen.
+
+Kopieer serverdata niet zonder reden vanuit TanStack Query naar globale context of `useState`. Dat creëert twee bronnen van waarheid.
+
+## Wanneer is iets een feature?
+
+Een goede feature heeft een herkenbare verantwoordelijkheid. Mogelijke voorbeelden voor een evenementenapplicatie zijn:
+
+- `auth` voor aanmelden en de huidige gebruiker;
+- `events` voor het aanbod en details;
+- `bookings` voor inschrijvingen;
+- `profile` voor het beheren van een profiel.
+
+Vermijd zowel één gigantische `features/app` als tientallen features rond één component. Kijk naar functionaliteit die samen verandert en dezelfde domeintaal gebruikt.
+
+## Hoe groeit de structuur mee?
+
+Begin klein. Een nieuwe feature kan starten als:
+
+```text
+features/
+└── events/
+    └── components/
+        └── EventList.tsx
+```
+
+Wanneer er werkelijk API-code, types en formulieren bijkomen, groeit ze verder:
+
+```text
+features/
+└── events/
+    ├── api/
+    ├── components/
+    ├── schemas/
+    ├── types/
+    └── index.ts
+```
+
+Architectuur is geen eenmalige voorbereidende stap. De structuur evolueert mee met verantwoordelijkheden die in de code zichtbaar worden.
+
+## Afspraken voor oefeningen en project
+
+Gebruik de volgende vragen om een bestand te plaatsen:
+
+1. Is het uitsluitend van één feature? Plaats het bij die feature.
+2. Verbindt het de volledige applicatie? Plaats het onder `app`.
+3. Is het een route die features samenstelt? Plaats het onder `routes`.
+4. Is het generieke UI zonder domeinkennis? Plaats het onder `components/ui`.
+5. Is het gedeelde configuratie of infrastructuur? Plaats het onder `lib`.
+6. Bestaat de juiste map nog niet? Maak alleen de kleinste map die nu nodig is.
+
+Je moet je keuze kunnen uitleggen. Afwijken van de voorbeeldstructuur kan wanneer de alternatieve indeling consequent is, duidelijke grenzen heeft en past bij de grootte van het project.
+
+## Veelgemaakte fouten
+
+**De volledige mappenboom vooraf aanmaken**: Lege mappen en bestanden geven alleen de indruk van architectuur. Laat structuur volgen uit echte code.
+
+**Alles gedeeld noemen**: Gedeelde mappen worden dan een nieuwe onoverzichtelijke verzamelplaats.
+
+**Domeinlogica in generieke components plaatsen**: Een algemene `Button` mag niet weten hoe een reservatie opgeslagen wordt.
+
+**Een feature laten importeren uit een interne map van een andere feature**: Hierdoor raken features sterk gekoppeld. Gebruik een bewuste publieke ingang of verplaats de gedeelde verantwoordelijkheid.
+
+**Routecomponents laten uitgroeien tot volledige features**: Routes horen vooral parameters te lezen en onderdelen samen te stellen.
+
+**Structuur blind uit een voorbeeld kopiëren**: De bedoeling van iedere map kunnen uitleggen is belangrijker dan exact dezelfde boom reproduceren.
+
+## Oefeningen
+
+### Een bestaande map indelen
+
+Je krijgt bestanden voor een evenementenapplicatie: `EventCard`, `LoginForm`, `getEvents`, `apiClient`, `eventSchema`, `Spinner`, `EventsRoute` en `router`. Teken eerst een passende boom onder `src` en motiveer voor ieder bestand de eigenaar.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Plaats eventgebonden code onder `features/events`, login onder `features/auth`, de generieke `Spinner` onder `components/ui`, de Axios-instance onder `lib`, de route onder `routes` en de routerconfiguratie onder `app`. Andere indelingen kunnen kloppen wanneer de afhankelijkheidsrichting helder blijft.
+
+</details>
+
+### Een grens herkennen
+
+Een `EventCard` importeert rechtstreeks `logout` uit `features/auth/api/logout.ts`. Onderzoek waarom dit een vreemde afhankelijkheid is en stel een duidelijkere samenwerking voor zonder de twee features intern aan elkaar te koppelen.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Controleer eerst waarom een eventkaart authenticatiegedrag uitvoert. Vaak hoort een route of hoger samengestelde component beide verantwoordelijkheden te verbinden. Als auth werkelijk een publieke actie aanbiedt, exporteer die bewust via de publieke ingang van de authfeature.
+
+</details>
+
+### Een structuur laten groeien
+
+Start met één `EventList`. Voeg daarna denkbeeldig een detailrequest, filters en een bewerkformulier toe. Noteer na iedere uitbreiding welke nieuwe map of splitsing werkelijk nodig wordt en welke nog voorbarig is.
+
+<details>
+<summary>Toon een mogelijke aanpak</summary>
+
+Een enkele component kan eerst onder `features/events/components` staan. Een request geeft aanleiding tot `api`; gedeelde eventtypes kunnen binnen de feature onder `types`; een formulier met Zod kan een map `schemas` verantwoorden. Een globale store of algemene `utils`-map volgt niet uit deze vereisten.
+
+</details>
+
+## Check jezelf
+
+### Waarom organiseren we de meeste code per feature?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Code die om dezelfde functionele reden verandert, blijft bij elkaar. De eigenaar en afhankelijkheden zijn daardoor duidelijker en een feature kan eenvoudiger aangepast worden.
+
+</details>
+
+### Wanneer hoort een component onder `components/ui`?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Wanneer de component generieke UI voorstelt, geen domeinkennis bevat en door onafhankelijke features bruikbaar is. Een domeinspecifieke kaart of formulier hoort bij zijn feature.
+
+</details>
+
+### Waarom plaatsen we niet alle types in één globale map?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+De meeste types hebben één domeineigenaar. Ze globaal plaatsen maakt die eigenaar minder zichtbaar en vergroot onnodige koppeling tussen features.
+
+</details>
+
+### Wat is de taak van een routecomponent?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Een routecomponent vormt de grens met de router, leest waar nodig URL-informatie en stelt features samen. Omvangrijke featurelogica blijft buiten de route.
+
+</details>
+
+### Mag je afwijken van de voorbeeldstructuur?
+
+<details>
+<summary>Toon het antwoord</summary>
+
+Ja. De structuur moet passen bij het project en consequent toegepast worden. Je moet wel kunnen uitleggen wie eigenaar is van de code en waarom afhankelijkheden in die richting lopen.
+
+</details>
+
+## Officiële bronnen
+
+- [React: Thinking in React](https://react.dev/learn/thinking-in-react)
+- [React: Sharing State Between Components](https://react.dev/learn/sharing-state-between-components)
+- [React: Reusing Logic with Custom Hooks](https://react.dev/learn/reusing-logic-with-custom-hooks)
+- [Vite: Env Variables and Modes](https://vite.dev/guide/env-and-mode)
+
+## Architectuurreferentie
+
+- [Bulletproof React: project structure](https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md)
+
+<aside className="courseCallout courseCallout--note">
+
+<strong className="courseCallout__title">Officieel versus richtinggevend</strong>
+
+De React- en Vite-links zijn officiële documentatie. Bulletproof React is een communityreferentie die onze architectuurkeuze inspireert; het is geen officiële React-standaard.
+
+</aside>
